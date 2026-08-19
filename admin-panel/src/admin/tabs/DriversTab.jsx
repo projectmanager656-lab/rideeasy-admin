@@ -1,5 +1,6 @@
 import React from 'react'
 import { displayName, rowStableKey } from '../adminUtils'
+import { Card } from '../../components/AdminUIComponents'
 
 export default function DriversTab ({
   driversLoading,
@@ -18,16 +19,6 @@ export default function DriversTab ({
   deleteDriver,
   bulkDeleteDrivers,
 }) {
-<<<<<<< Updated upstream
-  return (
-    <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-xl">
-      <p className="border-b border-neutral-200 px-4 py-2 text-xs text-neutral-500">Approve new drivers or revoke approval. Use Block for abuse.</p>
-      {driversLoading ? (
-        <div className="p-12 text-center text-neutral-600">Loading drivers…</div>
-      ) : (
-        <>
-          <div className="flex flex-col gap-3 border-b border-neutral-200 px-3 py-3 sm:px-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
-=======
   const approvedCount = drivers.filter((driver) => driver.approved).length
   const pendingCount = drivers.filter((driver) => !driver.approved).length
   const blockedCount = drivers.filter((driver) => driver.blocked).length
@@ -123,113 +114,361 @@ export default function DriversTab ({
           <div className="relative flex-1">
             <i className="ri-search-line absolute left-4 top-1/2 -translate-y-1/2 text-base text-[#6B7280]" />
 
->>>>>>> Stashed changes
             <input
               type="search"
-              placeholder="Search driver, email, vehicle, city…"
+              placeholder="Search by driver name, email, vehicle or city…"
               value={tableSearch}
               onChange={(e) => setTableSearch(e.target.value)}
-              className="w-full max-w-full sm:max-w-md rounded-lg border border-neutral-300 bg-white text-black px-3 py-2 text-sm placeholder:text-neutral-500 focus:border-black focus:outline-none focus:ring-1 focus:ring-black"
+              className="w-full rounded-xl border border-[#E5E7EB] bg-[#F7F9FC] py-2.5 pl-11 pr-4 text-sm text-[#111827] placeholder:text-[#9CA3AF] outline-none transition-all focus:border-[#FFB21C] focus:ring-2 focus:ring-[#FFB21C]/20"
             />
-            {selectedIds.length > 0 && (
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="text-xs text-neutral-600">{selectedIds.length} selected</span>
-                <button type="button" onClick={clearSelection} className="text-xs text-neutral-600 hover:text-black">Clear</button>
-                <button type="button" onClick={bulkDeleteDrivers} className="rounded-lg border border-black bg-black px-2 py-1.5 sm:px-3 text-xs font-medium text-white hover:bg-neutral-800">Delete selected</button>
-              </div>
-            )}
           </div>
+
+          {selectedIds.length > 0 && (
+            <div className="flex flex-wrap items-center gap-2">
+
+              <span className="inline-flex items-center gap-2 rounded-xl bg-[#FFF4DF] px-3 py-2 text-sm font-semibold text-[#B86B00]">
+                <i className="ri-checkbox-multiple-line" />
+                {selectedIds.length} selected
+              </span>
+
+              <button
+                type="button"
+                onClick={clearSelection}
+                className="rounded-xl border border-[#E5E7EB] bg-white px-3 py-2 text-sm font-medium text-[#6B7280] transition hover:bg-[#F7F9FC] hover:text-[#111827]"
+              >
+                Clear
+              </button>
+
+              <button
+                type="button"
+                onClick={bulkDeleteDrivers}
+                className="inline-flex items-center gap-2 rounded-xl bg-[#EF4444] px-3 py-2 text-sm font-semibold text-white transition hover:bg-[#DC2626]"
+              >
+                <i className="ri-delete-bin-line" />
+                Delete ({selectedIds.length})
+              </button>
+
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Driver Table */}
+      <Card className="overflow-hidden rounded-2xl border border-[#E5E7EB] bg-white p-0 shadow-sm">
+
+        <div className="flex flex-col justify-between gap-2 border-b border-[#E5E7EB] px-5 py-4 sm:flex-row sm:items-center">
+
+          <div>
+            <h3 className="font-bold text-[#111827]">
+              All Drivers
+            </h3>
+
+            <p className="mt-0.5 text-xs text-[#6B7280]">
+              {filteredDrivers.length} driver
+              {filteredDrivers.length === 1 ? '' : 's'} shown
+            </p>
+          </div>
+
+          {blockedCount > 0 && (
+            <span className="inline-flex w-fit items-center gap-1.5 rounded-full bg-red-50 px-2.5 py-1 text-xs font-semibold text-[#DC2626]">
+              <span className="h-1.5 w-1.5 rounded-full bg-[#EF4444]" />
+              {blockedCount} blocked
+            </span>
+          )}
+
+        </div>
+
+        {driversLoading ? (
+
+          /* Loading */
+          <div className="flex min-h-[360px] flex-col items-center justify-center p-12 text-center">
+
+            <div className="grid h-12 w-12 place-items-center rounded-2xl bg-[#FFF4DF] text-[#FFB21C]">
+              <i className="ri-loader-4-line animate-spin text-2xl" />
+            </div>
+
+            <p className="mt-4 text-sm font-medium text-[#6B7280]">
+              Loading drivers…
+            </p>
+
+          </div>
+
+        ) : filteredDrivers.length === 0 ? (
+
+          /* Empty */
+          <div className="flex min-h-[360px] flex-col items-center justify-center p-12 text-center">
+
+            <div className="grid h-14 w-14 place-items-center rounded-2xl bg-[#F7F9FC] text-[#9CA3AF]">
+              <i className="ri-steering-2-line text-2xl" />
+            </div>
+
+            <h3 className="mt-4 font-bold text-[#111827]">
+              No drivers found
+            </h3>
+
+            <p className="mt-1 max-w-sm text-sm text-[#6B7280]">
+              {tableSearch
+                ? 'No drivers match your current search.'
+                : 'There are currently no registered drivers.'}
+            </p>
+
+          </div>
+
+        ) : (
+
+          /* Table */
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[800px] sm:min-w-[1040px] text-left text-sm text-neutral-900">
-              <thead className="border-b border-neutral-200 bg-neutral-100 text-xs uppercase tracking-wide text-neutral-500">
+
+            <table className="w-full min-w-full text-left text-xs sm:min-w-[950px] sm:text-sm">
+
+              <thead className="border-b border-[#E5E7EB] bg-[#F7F9FC]">
                 <tr>
-                  <th className="w-10 px-2 py-3">
+
+                  <th className="w-12 px-5 py-3.5">
                     <input
                       ref={tableHeaderSelectRef}
                       type="checkbox"
-                      className="h-4 w-4 rounded border-neutral-400 bg-white text-black border-neutral-400 focus:ring-black"
-                      checked={filteredDrivers.length > 0 && filteredDrivers.every((d) => selectedIds.includes(String(d._id)))}
-                      onChange={(e) => (e.target.checked ? selectAllVisible(filteredDrivers) : clearSelection())}
+                      className="h-4 w-4 cursor-pointer rounded border-slate-300 accent-[#FFB21C]"
+                      checked={
+                        filteredDrivers.length > 0 &&
+                        filteredDrivers.every((d) =>
+                          selectedIds.includes(String(d._id))
+                        )
+                      }
+                      onChange={(e) =>
+                        e.target.checked
+                          ? selectAllVisible(filteredDrivers)
+                          : clearSelection()
+                      }
                     />
                   </th>
-                  <th className="px-4 py-3">Driver</th>
-                  <th className="px-4 py-3">Email</th>
-                  <th className="px-4 py-3">City / Vehicle</th>
-                  <th className="px-4 py-3">Subscription</th>
-                  <th className="px-4 py-3 text-right">Rides</th>
-                  <th className="px-4 py-3 text-right">Income ₹</th>
-                  <th className="px-4 py-3">Flags</th>
-                  <th className="px-4 py-3">Actions</th>
+
+                  <th className="px-4 py-3.5 text-xs font-bold uppercase tracking-wide text-[#6B7280]">
+                    Driver
+                  </th>
+
+                  <th className="px-4 py-3.5 text-xs font-bold uppercase tracking-wide text-[#6B7280]">
+                    Email
+                  </th>
+
+                  <th className="px-4 py-3.5 text-xs font-bold uppercase tracking-wide text-[#6B7280]">
+                    Vehicle
+                  </th>
+
+                  <th className="px-4 py-3.5 text-xs font-bold uppercase tracking-wide text-[#6B7280]">
+                    City
+                  </th>
+
+                  <th className="px-4 py-3.5 text-xs font-bold uppercase tracking-wide text-[#6B7280]">
+                    Approval
+                  </th>
+
+                  <th className="px-4 py-3.5 text-xs font-bold uppercase tracking-wide text-[#6B7280]">
+                    Account
+                  </th>
+
+                  <th className="px-4 py-3.5 text-right text-xs font-bold uppercase tracking-wide text-[#6B7280]">
+                    Actions
+                  </th>
+
                 </tr>
               </thead>
-              <tbody className="divide-y divide-neutral-200">
-                {filteredDrivers.length === 0 && (
-                  <tr>
-                    <td colSpan={9} className="px-4 py-8 text-center text-neutral-500">
-                      {drivers.length === 0 ? 'No drivers yet.' : 'No drivers match your search.'}
-                    </td>
-                  </tr>
-                )}
+
+              <tbody className="divide-y divide-[#E5E7EB]">
+
                 {filteredDrivers.map((d, idx) => {
-                  const subStatus = d.effectiveSubscriptionStatus || d.subscriptionStatus
+
+                  const approved = Boolean(d.approved)
+                  const blocked = Boolean(d.blocked)
+
                   return (
-                    <tr key={rowStableKey(d, idx)} className="hover:bg-neutral-100">
-                      <td className="px-2 py-3">
+                    <tr
+                      key={rowStableKey(d, idx)}
+                      className="transition-colors hover:bg-[#FFFCF5]"
+                    >
+
+                      {/* Checkbox */}
+                      <td className="px-5 py-4">
                         <input
                           type="checkbox"
-                          className="h-4 w-4 rounded border-neutral-400 bg-white text-black border-neutral-400 focus:ring-black"
+                          className="h-4 w-4 cursor-pointer rounded border-slate-300 accent-[#FFB21C]"
                           checked={selectedIds.includes(String(d._id))}
                           onChange={() => toggleSelect(d._id)}
                         />
                       </td>
-                      <td className="px-4 py-3 font-medium text-black">{displayName(d.name) || '—'}</td>
-                      <td className="px-4 py-3 text-neutral-600">{d.email}</td>
-                      <td className="px-4 py-3 text-neutral-600">
-                        {d.city || '—'}
-                        <span className="block text-xs text-neutral-500">{d.vehicleType} {d.vehicleNumber}</span>
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                          subStatus === 'active' ? 'bg-black text-white' : 'bg-neutral-200 text-neutral-800'
-                        }`}
-                        >
-                          {subStatus || '—'}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-right tabular-nums text-neutral-700">{d.completedRides ?? 0}</td>
-                      <td className="px-4 py-3 text-right tabular-nums font-medium text-black">{d.driverIncome ?? 0}</td>
-                      <td className="px-4 py-3 text-xs text-neutral-600">
-                        {d.approved ? <span className="text-black font-medium">Approved</span> : <span className="text-neutral-600">Pending</span>}
-                        {d.blocked ? <span className="ml-2 text-neutral-600 border border-black/20 rounded px-1">Blocked</span> : null}
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="flex flex-col gap-1">
-                          {!d.approved && (
-                            <button type="button" onClick={() => approveDriver(d._id)} className="text-left text-sm font-medium text-black underline decoration-neutral-400 hover:decoration-black">
-                              Approve
-                            </button>
-                          )}
-                          {d.approved && (
-                            <button type="button" onClick={() => rejectDriver(d._id)} className="text-left text-sm font-medium text-neutral-700 underline hover:text-black">
-                              Reject
-                            </button>
-                          )}
-                          <button type="button" onClick={() => toggleDriverBlock(d._id, !d.blocked)} className="text-left text-sm text-neutral-600 hover:text-black">
-                            {d.blocked ? 'Unblock' : 'Block'}
-                          </button>
-                          <button type="button" onClick={() => deleteDriver(d._id)} className="text-left text-sm font-medium text-neutral-600 underline hover:text-black">
-                            Delete
-                          </button>
+
+                      {/* Driver */}
+                      <td className="px-4 py-4">
+                        <div className="flex items-center gap-3">
+
+                          <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#0B1B2B] text-sm font-bold text-white">
+                            {String(displayName(d.name) || 'D')
+                              .charAt(0)
+                              .toUpperCase()}
+                          </div>
+
+                          <div className="min-w-0">
+                            <p className="truncate font-semibold text-[#111827]">
+                              {displayName(d.name) || 'Unnamed Driver'}
+                            </p>
+
+                            <p className="text-xs text-[#9CA3AF]">
+                              Driver
+                            </p>
+                          </div>
+
                         </div>
                       </td>
+
+                      {/* Email */}
+                      <td className="px-4 py-4">
+                        <span className="text-sm text-[#6B7280]">
+                          {d.email || '—'}
+                        </span>
+                      </td>
+
+                      {/* Vehicle */}
+                      <td className="px-4 py-4">
+                        <div className="flex items-center gap-2">
+
+                          <div className="grid h-8 w-8 place-items-center rounded-lg bg-[#FFF4DF] text-[#B86B00]">
+                            <i className="ri-car-2-line" />
+                          </div>
+
+                          <span className="rounded-lg bg-[#FFF9E8] px-2.5 py-1 text-xs font-bold text-[#B86B00]">
+                            {d.vehicleType || 'N/A'}
+                          </span>
+
+                        </div>
+                      </td>
+
+                      {/* City */}
+                      <td className="px-4 py-4">
+                        <div className="flex items-center gap-1.5 text-sm text-[#6B7280]">
+                          <i className="ri-map-pin-line text-[#9CA3AF]" />
+                          {d.city || '—'}
+                        </div>
+                      </td>
+
+                      {/* Approval */}
+                      <td className="px-4 py-4">
+                        <span
+                          className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold ${
+                            approved
+                              ? 'bg-[#EAFBF2] text-[#16A34A]'
+                              : 'bg-[#FFF4DF] text-[#B86B00]'
+                          }`}
+                        >
+                          <span
+                            className={`h-1.5 w-1.5 rounded-full ${
+                              approved
+                                ? 'bg-[#22C55E]'
+                                : 'bg-[#F59E0B]'
+                            }`}
+                          />
+
+                          {approved ? 'Approved' : 'Pending'}
+                        </span>
+                      </td>
+
+                      {/* Account */}
+                      <td className="px-4 py-4">
+                        <span
+                          className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold ${
+                            blocked
+                              ? 'bg-red-50 text-[#DC2626]'
+                              : 'bg-[#EAFBF2] text-[#16A34A]'
+                          }`}
+                        >
+                          <span
+                            className={`h-1.5 w-1.5 rounded-full ${
+                              blocked
+                                ? 'bg-[#EF4444]'
+                                : 'bg-[#22C55E]'
+                            }`}
+                          />
+
+                          {blocked ? 'Blocked' : 'Active'}
+                        </span>
+                      </td>
+
+                      {/* Actions */}
+                      <td className="px-4 py-4">
+                        <div className="flex flex-wrap items-center justify-end gap-2">
+
+                          {!approved ? (
+                            <button
+                              type="button"
+                              onClick={() => approveDriver(d._id)}
+                              className="inline-flex items-center gap-1.5 rounded-lg bg-[#EAFBF2] px-3 py-2 text-xs font-semibold text-[#16A34A] transition hover:bg-[#DCFCE7]"
+                              title="Approve driver"
+                            >
+                              <i className="ri-check-line" />
+                              Approve
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => rejectDriver(d._id)}
+                              className="inline-flex items-center gap-1.5 rounded-lg bg-[#FFF4DF] px-3 py-2 text-xs font-semibold text-[#B86B00] transition hover:bg-[#FFE9B8]"
+                              title="Revoke approval"
+                            >
+                              <i className="ri-close-line" />
+                              Revoke
+                            </button>
+                          )}
+
+                          <button
+                            type="button"
+                            onClick={() =>
+                              toggleDriverBlock(d._id, !blocked)
+                            }
+                            className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold transition ${
+                              blocked
+                                ? 'bg-[#EAFBF2] text-[#16A34A] hover:bg-[#DCFCE7]'
+                                : 'bg-[#FFF4DF] text-[#B86B00] hover:bg-[#FFE9B8]'
+                            }`}
+                            title={
+                              blocked
+                                ? 'Unblock driver'
+                                : 'Block driver'
+                            }
+                          >
+                            <i
+                              className={
+                                blocked
+                                  ? 'ri-lock-unlock-line'
+                                  : 'ri-forbid-line'
+                              }
+                            />
+
+                            {blocked ? 'Unblock' : 'Block'}
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => deleteDriver(d._id)}
+                            className="inline-flex items-center gap-1.5 rounded-lg bg-red-50 px-3 py-2 text-xs font-semibold text-[#DC2626] transition hover:bg-red-100"
+                            title="Delete driver"
+                          >
+                            <i className="ri-delete-bin-line" />
+                            Delete
+                          </button>
+
+                        </div>
+                      </td>
+
                     </tr>
                   )
                 })}
+
               </tbody>
             </table>
+
           </div>
-        </>
-      )}
+        )}
+
+      </Card>
     </div>
   )
 }

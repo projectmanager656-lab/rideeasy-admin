@@ -69,6 +69,23 @@ export const adminApi = {
     return client.get('/admin/payments', { signal }).then((r) => normalizeListResponse(unwrap(r.data), 'payments'))
   },
 
+  getEmergencyAlerts (signal) {
+    return client.get('/admin/safety/emergency-alerts', { signal }).then((r) => unwrap(r.data))
+  },
+
+  acknowledgeEmergencyAlert (id, signal) {
+    return client.post(`/admin/safety/emergency-alerts/${id}/acknowledge`, {}, { signal }).then((r) => unwrap(r.data))
+  },
+
+  resolveEmergencyAlert (id, signal) {
+    return client.post(`/admin/safety/emergency-alerts/${id}/resolve`, {}, { signal }).then((r) => unwrap(r.data))
+  },
+
+  getPoliceStations (city, signal) {
+    const query = city ? `?city=${encodeURIComponent(city)}` : ''
+    return client.get(`/admin/safety/police-stations${query}`, { signal }).then((r) => unwrap(r.data))
+  },
+
   getPricing (signal) {
     return client.get('/admin/pricing', { signal }).then((r) => unwrap(r.data))
   },

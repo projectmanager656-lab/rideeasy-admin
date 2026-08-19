@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { adminApi } from '../services/adminApi'
 import { displayName } from '../admin/adminUtils'
+import AdminLayout from '../components/AdminLayout'
+import { AlertCard } from '../components/AdminUIComponents'
 import {
   OverviewTab,
   UsersTab,
@@ -9,27 +11,16 @@ import {
   RidesTab,
   PaymentsTab,
   PricingTab,
-<<<<<<< Updated upstream
-=======
   ServicesTab,
   SafetyTab,
   SettingsTab,
   ComplaintsTab,
   ReportsTab,
->>>>>>> Stashed changes
 } from '../admin/tabs'
 
-const TAB_LABELS = {
-  analytics: 'Overview',
-  users: 'Users',
-  drivers: 'Drivers',
-  rides: 'Rides',
-  payments: 'Payments',
-  pricing: 'Pricing',
-}
-
-const AdminDashboard = () => {
+const AdminDashboard = ({ initialTab = null }) => {
   const navigate = useNavigate()
+  const location = useLocation()
   const dataLoadedRef = useRef(new Set())
   const [statsNonce, setStatsNonce] = useState(0)
 
@@ -40,8 +31,12 @@ const AdminDashboard = () => {
   const [drivers, setDrivers] = useState([])
   const [rides, setRides] = useState([])
   const [payments, setPayments] = useState([])
+  const [services, setServices] = useState([])
   const [pricingJson, setPricingJson] = useState('')
-  const [tab, setTab] = useState('analytics')
+  const [emergencyAlerts, setEmergencyAlerts] = useState([])
+  const [policeStations, setPoliceStations] = useState([])
+  const [tab, setTab] = useState(() => initialTab || location.state?.tab || 'analytics')
+  const [highlightedEmergencyAlertId] = useState(() => location.state?.alertId || '')
   const [tabError, setTabError] = useState('')
   const [rideStatusFilter, setRideStatusFilter] = useState('all')
   const [tableSearch, setTableSearch] = useState('')
@@ -50,6 +45,7 @@ const AdminDashboard = () => {
   const [driversLoading, setDriversLoading] = useState(false)
   const [ridesLoading, setRidesLoading] = useState(false)
   const [paymentsLoading, setPaymentsLoading] = useState(false)
+  const [servicesLoading, setServicesLoading] = useState(false)
   const [pricingLoading, setPricingLoading] = useState(false)
   const tableHeaderSelectRef = useRef(null)
 
@@ -89,9 +85,25 @@ const AdminDashboard = () => {
       setAnalyticsError('')
       setAnalyticsLoading(true)
       try {
-        const d = await adminApi.getAnalytics(signal)
+        const [d, usersResult, driversResult, ridesResult, paymentsResult, alertsResult] = await Promise.all([
+          adminApi.getAnalytics(signal),
+          adminApi.getUsers(signal),
+          adminApi.getDrivers(signal),
+          adminApi.getRides('all', signal),
+          adminApi.getPayments(signal),
+          adminApi.getEmergencyAlerts(signal),
+        ])
         if (signal.aborted) return
         setAnalytics(d)
+        setUsers(usersResult)
+        setDrivers(driversResult)
+        setRides(ridesResult)
+        setPayments(paymentsResult)
+        setEmergencyAlerts(alertsResult.alerts || [])
+        dataLoadedRef.current.add('users')
+        dataLoadedRef.current.add('drivers')
+        dataLoadedRef.current.add('rides')
+        dataLoadedRef.current.add('payments')
         dataLoadedRef.current.add('analytics')
       } catch (e) {
         if (signal.aborted) return
@@ -180,16 +192,32 @@ const AdminDashboard = () => {
         return
       }
 
+      if (tab === 'services') {
+        setServicesLoading(true)
+        setTabError('')
+        try {
+          const list = await adminApi.getServices(signal)
+          if (signal.aborted) return
+          setServices(list)
+        } catch (e) {
+          if (signal.aborted) return
+          setTabError(fmtErr(e))
+        } finally {
+          if (!signal.aborted) setServicesLoading(false)
+        }
+        return
+      }
+
       if (tab === 'pricing') {
         if (dataLoadedRef.current.has('pricing')) return
         setPricingLoading(true)
         setTabError('')
         try {
-          const d = await adminApi.getPricing(signal)
+          const pricing = await adminApi.getPricing(signal)
           if (signal.aborted) return
           setPricingJson(JSON.stringify({
-            rates: d.rates || {},
-            driverPlans: d.driverPlans || {},
+            rates: pricing.rates || {},
+            driverPlans: pricing.driverPlans || {},
           }, null, 2))
           dataLoadedRef.current.add('pricing')
         } catch (e) {
@@ -198,6 +226,23 @@ const AdminDashboard = () => {
           setTabError(fmtErr(e))
         } finally {
           if (!signal.aborted) setPricingLoading(false)
+        }
+        return
+      }
+
+      if (tab === 'safety') {
+        setTabError('')
+        try {
+          const [alertsRes, policeRes] = await Promise.all([
+            adminApi.getEmergencyAlerts(signal),
+            adminApi.getPoliceStations('Kolhapur', signal),
+          ])
+          if (signal.aborted) return
+          setEmergencyAlerts(alertsRes.alerts || [])
+          setPoliceStations(policeRes.stations || [])
+        } catch (e) {
+          if (signal.aborted) return
+          setTabError(fmtErr(e))
         }
       }
     }
@@ -397,23 +442,65 @@ const AdminDashboard = () => {
     bulkDeleteRides()
   }
 
+  const acknowledgeEmergencyAlert = (id) => {
+    adminApi.acknowledgeEmergencyAlert(id)
+      .then((res) => {
+        const next = res.alert
+        setEmergencyAlerts((list) => list.map((alert) => String(alert._id) === String(next._id) ? { ...alert, ...next } : alert))
+      })
+      .catch((e) => alert(e.response?.data?.message || 'Unable to acknowledge emergency'))
+  }
+
+  const resolveEmergencyAlert = (id) => {
+    adminApi.resolveEmergencyAlert(id)
+      .then((res) => {
+        const next = res.alert
+        setEmergencyAlerts((list) => list.map((alert) => String(alert._id) === String(next._id) ? { ...alert, ...next } : alert))
+
+        const phone = res.nearestPolice?.phone?.replace(/[^\d+]/g, '')
+        if (!phone) {
+          alert('Emergency resolved, but no phone number is available for the nearest police station.')
+          return
+        }
+
+        window.location.href = `tel:${phone}`
+      })
+      .catch((e) => alert(e.response?.data?.message || 'Unable to resolve emergency'))
+  }
+
+  const refreshServices = async () => {
+    const list = await adminApi.getServices()
+    setServices(list)
+  }
+
+  const saveService = async (id, payload) => {
+    if (id) await adminApi.updateService(id, payload)
+    else await adminApi.createService(payload)
+    await refreshServices()
+  }
+
+  const deleteService = async (id) => {
+    await adminApi.deleteService(id)
+    await refreshServices()
+  }
+
   const savePricing = () => {
     try {
       const parsed = JSON.parse(pricingJson)
-      const payload =
-        parsed.rates != null && typeof parsed.rates === 'object'
-          ? {
-              rates: parsed.rates,
-              ...(parsed.driverPlans && typeof parsed.driverPlans === 'object'
-                ? { driverPlans: parsed.driverPlans }
-                : {}),
-            }
-          : { rates: parsed }
+      const payload = parsed.rates != null && typeof parsed.rates === 'object'
+        ? {
+            rates: parsed.rates,
+            ...(parsed.driverPlans && typeof parsed.driverPlans === 'object'
+              ? { driverPlans: parsed.driverPlans }
+              : {}),
+          }
+        : { rates: parsed }
+
       adminApi.putPricing(payload)
-        .then((d) => {
+        .then((pricing) => {
           setPricingJson(JSON.stringify({
-            rates: d.rates || {},
-            driverPlans: d.driverPlans || {},
+            rates: pricing.rates || {},
+            driverPlans: pricing.driverPlans || {},
           }, null, 2))
           alert('Pricing saved')
         })
@@ -430,63 +517,25 @@ const AdminDashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-white text-black">
-      <nav className="sticky top-0 z-20 border-b border-black/10 bg-white/95 backdrop-blur">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-3 py-3 sm:gap-4 sm:px-4">
-          <div>
-            <p className="text-[10px] font-semibold uppercase tracking-widest text-neutral-500">RideEasy</p>
-            <h1 className="text-base sm:text-lg font-semibold text-black">Super Admin</h1>
-          </div>
-          <div className="flex items-center gap-2 sm:gap-3">
-            <button
-              type="button"
-              onClick={refreshStats}
-              className="rounded-lg border border-neutral-300 bg-white px-2 py-1.5 text-xs font-medium text-black hover:bg-neutral-100 sm:px-3"
-            >
-              Refresh
-            </button>
-            <Link to="/" className="text-xs sm:text-sm text-neutral-600 hover:text-black hidden sm:block">Site</Link>
-            <button type="button" onClick={logout} className="text-xs sm:text-sm font-medium text-neutral-600 hover:text-black underline">
-              Log out
-            </button>
-          </div>
+    <AdminLayout
+      tab={tab}
+      setTab={setTab}
+      onRefresh={refreshStats}
+      onLogout={logout}
+      emergencyAlerts={emergencyAlerts}
+    >
+      {/* Error Alert */}
+      {tabError && (
+        <div className="mb-6">
+          <AlertCard
+            type="error"
+            title="Error"
+            message={tabError}
+            onClose={() => {}}
+          />
         </div>
-      </nav>
+      )}
 
-      <div className="mx-auto max-w-7xl px-3 py-4 sm:px-4 sm:py-6">
-        <div className="mb-4 sm:mb-6 max-w-3xl rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 sm:px-5 sm:py-4">
-          <p className="text-base sm:text-lg font-semibold text-black">Welcome, Super Admin</p>
-          <p className="mt-1 text-xs sm:text-sm text-neutral-600">
-            You are signed in with an admin JWT (<code className="rounded border border-neutral-200 bg-white px-1.5 py-0.5 text-[10px] sm:text-xs font-mono text-black">role: admin</code>).
-            This console covers users, drivers (captains), rides, payments from completed rides, and pricing.
-          </p>
-        </div>
-
-        <div className="mb-4 sm:mb-6 flex flex-wrap gap-2 overflow-x-auto pb-2 -mx-3 px-3 sm:mx-0 sm:px-0 sm:pb-0">
-          {['analytics', 'users', 'drivers', 'rides', 'payments', 'pricing'].map((t) => (
-            <button
-              key={t}
-              type="button"
-              onClick={() => setTab(t)}
-              className={`rounded-lg px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-medium transition flex-shrink-0 ${
-                tab === t
-                  ? 'bg-black text-white shadow-sm'
-                  : 'border border-neutral-300 bg-white text-neutral-700 hover:border-black hover:text-black'
-              }`}
-            >
-              {TAB_LABELS[t] || t}
-            </button>
-          ))}
-        </div>
-
-        {tabError && (
-          <div className="mb-4 rounded-xl border border-neutral-300 bg-neutral-100 px-4 py-3 text-sm text-neutral-900">
-            {tabError}
-          </div>
-        )}
-
-<<<<<<< Updated upstream
-=======
       {/* Tab Content */}
       <div className="space-y-6">
         {tab === 'more' && (
@@ -523,21 +572,17 @@ const AdminDashboard = () => {
           </div>
         )}
 
->>>>>>> Stashed changes
         {tab === 'analytics' && (
           <OverviewTab
             analytics={analytics}
             analyticsLoading={analyticsLoading}
             analyticsError={analyticsError}
-<<<<<<< Updated upstream
-=======
             users={users}
             drivers={drivers}
             rides={rides}
             payments={payments}
             onNavigate={setTab}
             emergencyAlerts={emergencyAlerts}
->>>>>>> Stashed changes
           />
         )}
 
@@ -615,6 +660,16 @@ const AdminDashboard = () => {
           />
         )}
 
+        {tab === 'services' && (
+          <ServicesTab
+            services={services}
+            loading={servicesLoading}
+            error={tabError}
+            onSave={saveService}
+            onDelete={deleteService}
+          />
+        )}
+
         {tab === 'pricing' && (
           <PricingTab
             pricingJson={pricingJson}
@@ -623,8 +678,6 @@ const AdminDashboard = () => {
             pricingLoading={pricingLoading}
           />
         )}
-<<<<<<< Updated upstream
-=======
 
         {tab === 'settings' && (
           <SettingsTab
@@ -647,9 +700,8 @@ const AdminDashboard = () => {
             highlightedAlertId={highlightedEmergencyAlertId}
           />
         )}
->>>>>>> Stashed changes
       </div>
-    </div>
+    </AdminLayout>
   )
 }
 

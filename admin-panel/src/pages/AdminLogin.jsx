@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { apiClient } from '../services/http'
 import { formatApiError } from '../utils/apiError'
 import { isAdminRoleToken } from '../utils/jwtPayload'
+import rideEasyAdminLogo from '../assets/rideeasy-admin-logo-reference.png'
 
 const AdminLogin = () => {
   const [email, setEmail] = useState('')
@@ -40,47 +41,41 @@ const AdminLogin = () => {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-white p-4 sm:p-6 text-black">
-      <div className="rounded-xl border border-neutral-200 bg-white p-6 sm:p-8 shadow-sm w-full max-w-md text-black">
-        <Link to="/" className="text-emerald-600 font-bold text-xl">RideEasy</Link>
-        <h1 className="text-2xl font-bold text-slate-900 mt-4 mb-2">Admin Login</h1>
-        <p className="text-slate-600 text-sm mb-6">Use your admin credentials</p>
-        <form onSubmit={submitHandler} className="space-y-4" autoComplete="off">
+    <div className="flex min-h-dvh min-h-screen items-center justify-center bg-[#020914] px-6 py-8 text-white sm:px-8">
+      <main className="w-full max-w-[420px] rounded-[24px] border border-[#1D3042] bg-[#06111D] px-6 py-8 shadow-[0_24px_70px_rgba(0,0,0,0.42)] sm:px-9 sm:py-10">
+        <div className="flex flex-col items-center text-center">
+          <Link to="/" aria-label="RideEasy home" className="grid h-16 w-16 place-items-center rounded-[18px] border-2 border-[#FFA726] bg-[#0B1B2B] shadow-[0_0_0_5px_rgba(255,167,38,0.08)]">
+            <img src={rideEasyAdminLogo} alt="RideEasy" className="h-12 w-12 rounded-xl object-contain" />
+          </Link>
+          <h1 className="mt-5 text-2xl font-bold tracking-tight text-white">RideEasy Admin</h1>
+        </div>
+
+        <form onSubmit={submitHandler} className="mt-8 space-y-5" autoComplete="off">
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Email</label>
-            <input
-              type="email"
-              name="rideeasy-admin-email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              autoComplete="off"
-              className="w-full px-4 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-emerald-500 outline-none text-slate-900 placeholder:text-slate-400"
-              required
-            />
+            <label htmlFor="rideeasy-admin-email" className="mb-2 block text-sm font-medium text-[#CBD5E1]">Email address</label>
+            <input id="rideeasy-admin-email" type="email" name="rideeasy-admin-email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="admin@rideeasyride.com" autoComplete="off" className="h-12 w-full rounded-xl border border-[#294057] bg-[#102235] px-4 text-base text-white outline-none placeholder:text-[#94A3B8] transition focus:border-[#FFA726] focus:ring-2 focus:ring-[#FFA726]/20" required />
           </div>
+
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Password</label>
-            <input
-              type="password"
-              name="rideeasy-admin-password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              autoComplete="off"
-              className="w-full px-4 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-emerald-500 outline-none text-slate-900 placeholder:text-slate-500"
-              required
-            />
+            <label htmlFor="rideeasy-admin-password" className="mb-2 block text-sm font-medium text-[#CBD5E1]">Password</label>
+            <input id="rideeasy-admin-password" type="password" name="rideeasy-admin-password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="off" className="h-12 w-full rounded-xl border border-[#294057] bg-[#102235] px-4 text-base text-white outline-none placeholder:text-[#94A3B8] transition focus:border-[#FFA726] focus:ring-2 focus:ring-[#FFA726]/20" required />
           </div>
-          {error && <p className="text-red-600 text-sm">{error}</p>}
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-slate-800 hover:bg-slate-900 text-white font-semibold py-2 rounded-lg transition disabled:opacity-50"
-          >
+
+          {error && <p className="rounded-xl border border-[#EF4444]/40 bg-[#EF4444]/10 px-3 py-2.5 text-sm leading-5 text-[#FCA5A5]">{error}</p>}
+
+          <button type="submit" disabled={loading} className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#FFA726] px-4 text-base font-bold text-[#06111D] shadow-[0_8px_18px_rgba(255,167,38,0.18)] transition hover:bg-[#FFB74D] active:translate-y-px active:bg-[#F59E0B] disabled:cursor-not-allowed disabled:opacity-60">
+            {loading && <i className="ri-loader-4-line animate-spin text-lg" />}
             {loading ? 'Logging in...' : 'Login'}
           </button>
         </form>
-        <Link to="/" className="block text-center text-slate-500 text-sm mt-4">Back to home</Link>
-      </div>
+
+        <div className="mt-7 flex items-center justify-center gap-2 text-sm text-[#94A3B8]">
+          <i className="ri-shield-check-line text-base text-[#FFA726]" />
+          <span>Secure admin access</span>
+        </div>
+
+        <Link to="/" className="mt-6 block text-center text-xs text-[#64748B] hover:text-[#CBD5E1]">Back to home</Link>
+      </main>
     </div>
   )
 }

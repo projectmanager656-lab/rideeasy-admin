@@ -5,16 +5,16 @@
 @layer base {
   html {
     -webkit-text-size-adjust: 100%;
+    scroll-behavior: smooth;
   }
+  
   body {
-    @apply overflow-x-hidden antialiased text-neutral-900 bg-white;
+    @apply overflow-x-hidden antialiased text-[#152238] bg-[#F7F9FC];
   }
+  
   #root {
-    @apply min-h-dvh min-h-screen min-h-[100dvh] text-neutral-900;
+    @apply min-h-dvh min-h-screen min-h-[100dvh] text-[#152238];
   }
-<<<<<<< Updated upstream
-}
-=======
 
   /* Typography */
   h1 {
@@ -493,4 +493,3 @@
   }
 }
 
->>>>>>> Stashed changes
