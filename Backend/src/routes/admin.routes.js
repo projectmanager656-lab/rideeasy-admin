@@ -23,9 +23,16 @@ router.delete('/drivers/:id', auth.authAdmin, adminController.deleteDriver);
 router.delete('/rides/:id', auth.authAdmin, adminController.deleteRide);
 router.get('/pricing', auth.authAdmin, adminController.getPricing);
 router.put('/pricing', auth.authAdmin, adminController.updatePricing);
+router.get('/services', auth.authAdmin, adminController.getServices);
+router.post('/services', auth.authAdmin, adminController.createService);
+router.put('/services/:id', auth.authAdmin, adminController.updateService);
+router.delete('/services/:id', auth.authAdmin, adminController.deleteService);
 router.get('/rides', auth.authAdmin, adminController.getRides);
 router.get('/payments', auth.authAdmin, adminController.getPayments);
 router.get('/subscriptions', auth.authAdmin, adminController.getSubscriptions);
+router.get('/safety/emergency-alerts', auth.authAdmin, adminController.getEmergencyAlerts);
+router.get('/safety/police-stations', auth.authAdmin, adminController.getPoliceStations);
+router.post('/safety/emergency-alerts/:id/acknowledge', auth.authAdmin, adminController.acknowledgeEmergencyAlert);
+router.post('/safety/emergency-alerts/:id/resolve', auth.authAdmin, adminController.resolveEmergencyAlert);
 
 module.exports = router;
-

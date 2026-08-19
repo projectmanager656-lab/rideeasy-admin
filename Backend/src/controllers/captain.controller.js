@@ -36,7 +36,7 @@ module.exports.registerCaptain = async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) return fail(res, req, 400, 'Validation failed', { errors: errors.array() });
 
-    const { name, phone, email, password, vehicleType, vehicleNumber, license, city } = req.body;
+    const { name, phone, email, password, gender, vehicleType, vehicleNumber, license, city } = req.body;
     const selectedPlan = [ 'weekly', 'monthly', 'yearly' ].includes(req.body?.subscriptionPlan) ? req.body.subscriptionPlan : 'monthly';
     const existing = await captainModel.findOne({ email: String(email).toLowerCase() });
     if (existing) return fail(res, req, 400, 'Driver already exist');
@@ -62,6 +62,7 @@ module.exports.registerCaptain = async (req, res) => {
         name: String(name).trim(),
         phone: String(phone).trim(),
         email: String(email).toLowerCase().trim(),
+        gender: [ 'male', 'female', 'other' ].includes(String(gender || '').toLowerCase()) ? String(gender).toLowerCase() : 'other',
         password: hashed,
         vehicleType: String(vehicleType).toUpperCase(),
         vehicleNumber: String(vehicleNumber).trim(),

@@ -6,6 +6,7 @@ const userSchema = new mongoose.Schema({
     name: { type: String, required: true, minlength: 2 },
     phone: { type: String, required: true },
     email: { type: String, required: true, unique: true, lowercase: true },
+    gender: { type: String, enum: [ 'male', 'female', 'other' ], default: 'other' },
     city: { type: String, enum: [ 'Kolhapur', 'Ichalkaranji', 'Sangli' ], default: 'Kolhapur' },
     /** Quick picks on the booking screen (home / work). */
     savedAddresses: {

@@ -1,7 +1,8 @@
 import React, { Suspense, lazy, useContext } from 'react'
 import { Navigate, Route, Routes } from 'react-router-dom'
 import InstallPWAButton from './components/InstallPWAButton'
-import BottomNav from './components/BottomNav'
+import BottomNavigation from './components/BottomNavigation'
+import Sidebar from './components/Sidebar'
 import NativeAndroidFlavorRedirect from './components/NativeAndroidFlavorRedirect'
 import RidingRouteGuard from './components/RidingRouteGuard'
 import { UserDataContext } from './context/UserContext'
@@ -44,29 +45,34 @@ const App = () => {
   return (
     <div className="min-h-dvh min-h-screen bg-black text-white pb-[calc(3.5rem+env(safe-area-inset-bottom,0px))] sm:pb-20">
       <NativeAndroidFlavorRedirect />
-      <Suspense fallback={<div className="h-screen flex items-center justify-center text-zinc-400 text-sm bg-black">Loading RideEasy…</div>}>
-        <Routes>
-          <Route path="/" element={<UserAppRoot />} />
-          <Route path="/login" element={<UserLogin />} />
-          <Route path="/signup" element={<UserSignup />} />
-          <Route
-            path="/riding"
-            element={(
-              <UserProtectWrapper>
-                <RidingRouteGuard>
-                  <Riding />
-                </RidingRouteGuard>
-              </UserProtectWrapper>
-            )}
-          />
-          <Route path="/home" element={<UserProtectWrapper><Home /></UserProtectWrapper>} />
-          <Route path="/history" element={<UserProtectWrapper><RideHistory /></UserProtectWrapper>} />
-          <Route path="/profile" element={<UserProtectWrapper><UserProfile /></UserProtectWrapper>} />
-          <Route path="/user/logout" element={<UserProtectWrapper><UserLogout /></UserProtectWrapper>} />
-        </Routes>
-      </Suspense>
+      <div className="mx-auto flex min-h-screen w-full max-w-[1600px] overflow-x-hidden">
+        <Sidebar />
+        <div className="flex-1 min-w-0">
+          <Suspense fallback={<div className="h-screen flex items-center justify-center text-zinc-400 text-sm bg-black">Loading RideEasy…</div>}>
+            <Routes>
+              <Route path="/" element={<UserAppRoot />} />
+              <Route path="/login" element={<UserLogin />} />
+              <Route path="/signup" element={<UserSignup />} />
+              <Route
+                path="/riding"
+                element={(
+                  <UserProtectWrapper>
+                    <RidingRouteGuard>
+                      <Riding />
+                    </RidingRouteGuard>
+                  </UserProtectWrapper>
+                )}
+              />
+              <Route path="/home" element={<UserProtectWrapper><Home /></UserProtectWrapper>} />
+              <Route path="/history" element={<UserProtectWrapper><RideHistory /></UserProtectWrapper>} />
+              <Route path="/profile" element={<UserProtectWrapper><UserProfile /></UserProtectWrapper>} />
+              <Route path="/user/logout" element={<UserProtectWrapper><UserLogout /></UserProtectWrapper>} />
+            </Routes>
+          </Suspense>
+        </div>
+      </div>
       <InstallPWAButton />
-      <BottomNav />
+      <BottomNavigation />
     </div>
   )
 }

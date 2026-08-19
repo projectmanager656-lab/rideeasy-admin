@@ -1,0 +1,55 @@
+import React from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
+
+const items = [
+  { id: 'analytics', label: 'Dashboard', icon: 'ri-dashboard-3-line', tab: 'analytics' },
+  { id: 'users', label: 'Users', icon: 'ri-user-3-line', tab: 'users' },
+  { id: 'drivers', label: 'Drivers', icon: 'ri-taxi-line', tab: 'drivers' },
+  { id: 'rides', label: 'Bookings', icon: 'ri-calendar-check-line', tab: 'rides' },
+  { id: 'more', label: 'More', icon: 'ri-more-2-fill', tab: 'more' },
+]
+
+const BottomNav = ({ tab, setTab }) => {
+  const navigate = useNavigate()
+  const location = useLocation()
+
+  const moreTabs = new Set(['more', 'settings', 'safety', 'services', 'payments'])
+
+  const handleClick = (item) => {
+    if (location.pathname !== '/admin/dashboard' && location.pathname !== '/admin') {
+      navigate('/admin/dashboard', { state: { tab: item.tab } })
+    }
+
+    setTab(item.tab)
+  }
+
+  return (
+    <nav aria-label="Admin navigation" className="admin-mobile-nav md:hidden">
+      <div className="admin-mobile-nav__track">
+        {items.map((item) => {
+          const active = item.id === 'more'
+            ? moreTabs.has(tab) || tab === 'more'
+            : tab === item.tab
+
+          return (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => handleClick(item)}
+              className={`admin-mobile-nav__item ${active ? 'admin-mobile-nav__item--active' : ''}`}
+              aria-current={active ? 'page' : undefined}
+            >
+              <span className="admin-mobile-nav__icon">
+                <i className={item.icon} />
+              </span>
+              <span>{item.label}</span>
+            </button>
+          )
+        })}
+      </div>
+    </nav>
+  )
+}
+
+export default BottomNav
+

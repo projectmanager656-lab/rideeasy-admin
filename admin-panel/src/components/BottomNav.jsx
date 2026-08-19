@@ -1,70 +1,225 @@
-import React from 'react'
-import { NavLink, useLocation } from 'react-router-dom'
+import React, { useState } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 
-const BottomNav = () => {
+const items = [
+  {
+    id: 'analytics',
+    label: 'Dashboard',
+    icon: 'ri-dashboard-3-line',
+    tab: 'analytics',
+  },
+  {
+    id: 'users',
+    label: 'Users',
+    icon: 'ri-user-3-line',
+    tab: 'users',
+  },
+  {
+    id: 'drivers',
+    label: 'Drivers',
+    icon: 'ri-taxi-line',
+    tab: 'drivers',
+  },
+  {
+    id: 'rides',
+    label: 'Bookings',
+    icon: 'ri-calendar-check-line',
+    tab: 'rides',
+  },
+  {
+    id: 'more',
+    label: 'More',
+    icon: 'ri-more-2-fill',
+    tab: 'more',
+  },
+]
+
+const moreItems = [
+  {
+    id: 'safety',
+    label: 'Safety',
+    description: 'Emergency controls',
+    icon: 'ri-shield-check-line',
+    path: '/admin/safety',
+  },
+  {
+    id: 'settings',
+    label: 'Settings',
+    description: 'Admin preferences',
+    icon: 'ri-settings-3-line',
+    path: '/admin/settings',
+  },
+  {
+    id: 'services',
+    label: 'Services',
+    description: 'Manage service offerings',
+    icon: 'ri-tools-line',
+    path: '/admin/services',
+  },
+  {
+    id: 'complaints',
+    label: 'Complaints',
+    description: 'Review user and driver complaints',
+    icon: 'ri-error-warning-line',
+    path: null,
+  },
+  {
+    id: 'reports',
+    label: 'Reports',
+    description: 'View platform reports',
+    icon: 'ri-bar-chart-box-line',
+    path: null,
+  },
+]
+
+const BottomNav = ({ tab, setTab }) => {
+  const navigate = useNavigate()
   const location = useLocation()
-  const isHiddenOnAdmin = location.pathname.startsWith('/admin')
 
-  if (isHiddenOnAdmin) return null
+  const [showMore, setShowMore] = useState(false)
 
-  const base =
-    'flex flex-col items-center justify-center flex-1 gap-0.5 text-xs font-medium transition-colors'
+  const moreTabs = new Set([
+    'more',
+    'settings',
+    'safety',
+    'services',
+    'complaints',
+    'reports',
+  ])
+
+  const handleMainClick = (item) => {
+    if (item.id === 'more') {
+      setShowMore(true)
+      setTab('more')
+      return
+    }
+
+    setShowMore(false)
+
+    if (
+      location.pathname !== '/admin/dashboard' &&
+      location.pathname !== '/admin'
+    ) {
+      navigate('/admin/dashboard', {
+        state: { tab: item.tab },
+      })
+    }
+
+    setTab(item.tab)
+  }
+
+  const handleMoreClick = (item) => {
+    if (!item.path) {
+      // Complaints and Reports routes are not available yet.
+      setTab(item.id)
+      setShowMore(false)
+      return
+    }
+
+    setShowMore(false)
+    navigate(item.path)
+  }
 
   return (
-    <nav
-      className="fixed bottom-0 left-0 right-0 z-20 bg-slate-900/95 border-t border-slate-800 backdrop-blur"
-      style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
-    >
-      <div className="mx-auto flex h-14 max-w-lg items-center justify-between px-1 min-[400px]:px-3 sm:px-4">
-        <NavLink
-          to="/"
-          className={({ isActive }) =>
-            `${base} ${isActive ? 'text-emerald-400' : 'text-slate-400'}`
-          }
+    <>
+      {/* Dark overlay */}
+      {showMore && (
+        <button
+          type="button"
+          aria-label="Close More menu"
+          className="admin-more-overlay md:hidden"
+          onClick={() => setShowMore(false)}
+        />
+      )}
+
+      {/* More Bottom Sheet */}
+      {showMore && (
+        <section
+          className="admin-more-sheet md:hidden"
+          role="dialog"
+          aria-modal="true"
+          aria-label="More options"
         >
-          <i className="ri-home-5-line text-lg" />
-          <span className="max-[380px]:text-[10px]">Home</span>
-        </NavLink>
-        <NavLink
-          to="/home"
-          className={({ isActive }) =>
-            `${base} ${isActive ? 'text-emerald-400' : 'text-slate-400'}`
-          }
-        >
-          <i className="ri-taxi-wifi-line text-lg" />
-          <span className="max-[380px]:text-[10px]">Ride</span>
-        </NavLink>
-        <NavLink
-          to="/history"
-          className={({ isActive }) =>
-            `${base} ${isActive ? 'text-emerald-400' : 'text-slate-400'}`
-          }
-        >
-          <i className="ri-history-line text-lg" />
-          <span className="max-[380px]:text-[10px]">Trips</span>
-        </NavLink>
-        <NavLink
-          to="/profile"
-          className={({ isActive }) =>
-            `${base} ${isActive ? 'text-emerald-400' : 'text-slate-400'}`
-          }
-        >
-          <i className="ri-user-3-line text-lg" />
-          <span className="max-[380px]:text-[10px]">Profile</span>
-        </NavLink>
-        <NavLink
-          to="/captain-home"
-          className={({ isActive }) =>
-            `${base} ${isActive ? 'text-emerald-400' : 'text-slate-400'}`
-          }
-        >
-          <i className="ri-steering-2-line text-lg" />
-          <span className="max-[380px]:text-[10px]">Captain</span>
-        </NavLink>
-      </div>
-    </nav>
+          <div className="admin-more-sheet__handle" />
+
+          <div className="admin-more-sheet__header">
+            <div>
+              <p className="admin-more-sheet__eyebrow">ADMIN</p>
+              <h2>More</h2>
+            </div>
+
+            <button
+              type="button"
+              className="admin-more-sheet__close"
+              onClick={() => setShowMore(false)}
+              aria-label="Close"
+            >
+              <i className="ri-close-line" />
+            </button>
+          </div>
+
+          <div className="admin-more-sheet__list">
+            {moreItems.map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                className={`admin-more-sheet__item ${
+                  !item.path ? 'admin-more-sheet__item--disabled' : ''
+                }`}
+                onClick={() => handleMoreClick(item)}
+              >
+                <span className="admin-more-sheet__item-icon">
+                  <i className={item.icon} />
+                </span>
+
+                <span className="admin-more-sheet__item-content">
+                  <strong>{item.label}</strong>
+                  <small>{item.description}</small>
+                </span>
+
+                <i className="ri-arrow-right-s-line admin-more-sheet__arrow" />
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Floating Bottom Navigation */}
+      <nav
+        aria-label="Admin navigation"
+        className="admin-mobile-nav md:hidden"
+      >
+        <div className="admin-mobile-nav__track">
+          {items.map((item) => {
+            const active =
+              item.id === 'more'
+                ? moreTabs.has(tab) || showMore
+                : tab === item.tab
+
+            return (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => handleMainClick(item)}
+                className={`admin-mobile-nav__item ${
+                  active
+                    ? 'admin-mobile-nav__item--active'
+                    : ''
+                }`}
+                aria-current={active ? 'page' : undefined}
+              >
+                <span className="admin-mobile-nav__icon">
+                  <i className={item.icon} />
+                </span>
+
+                <span>{item.label}</span>
+              </button>
+            )
+          })}
+        </div>
+      </nav>
+    </>
   )
 }
 
 export default BottomNav
-

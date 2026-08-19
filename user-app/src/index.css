@@ -3,13 +3,31 @@
 @tailwind utilities;
 
 @layer base {
+  :root {
+    color-scheme: dark;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
   html {
     -webkit-text-size-adjust: 100%;
+    overflow-x: hidden;
   }
+
   body {
     @apply overflow-x-hidden antialiased text-white bg-zinc-950;
+    margin: 0;
   }
+
   #root {
-    @apply min-h-dvh min-h-screen relative mx-auto max-w-[480px] w-full bg-black shadow-2xl overflow-x-hidden;
+    @apply relative min-h-dvh min-h-screen w-full overflow-x-hidden bg-black;
+  }
+}
+
+@media (min-width: 768px) {
+  #root {
+    max-width: 1600px;
   }
 }

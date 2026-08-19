@@ -18,6 +18,7 @@ export default function DriversTab ({
   deleteDriver,
   bulkDeleteDrivers,
 }) {
+<<<<<<< Updated upstream
   return (
     <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-xl">
       <p className="border-b border-neutral-200 px-4 py-2 text-xs text-neutral-500">Approve new drivers or revoke approval. Use Block for abuse.</p>
@@ -26,6 +27,103 @@ export default function DriversTab ({
       ) : (
         <>
           <div className="flex flex-col gap-3 border-b border-neutral-200 px-3 py-3 sm:px-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+=======
+  const approvedCount = drivers.filter((driver) => driver.approved).length
+  const pendingCount = drivers.filter((driver) => !driver.approved).length
+  const blockedCount = drivers.filter((driver) => driver.blocked).length
+  const offlineCount = drivers.filter((driver) => driver.approved && !driver.blocked && driver.online === false).length
+  const activeCount = drivers.filter((driver) => driver.approved && !driver.blocked && driver.online !== false).length
+
+  return (
+    <div className="space-y-6">
+
+      {/* Page Header */}
+      <div className="rounded-2xl border border-[#E5E7EB] bg-white p-5 shadow-sm sm:p-6">
+
+        <div className="flex flex-col justify-between gap-5 lg:flex-row lg:items-center">
+
+          <div>
+            <h2 className="text-2xl font-bold tracking-tight text-[#111827]">
+              Drivers
+            </h2>
+
+            <p className="mt-1 text-sm text-[#6B7280]">
+              Manage driver approvals, vehicles and account status.
+            </p>
+          </div>
+
+          <div className="grid w-full gap-3 sm:grid-cols-2 xl:grid-cols-4">
+
+            <div className="flex items-center gap-2 rounded-xl border border-[#E5E7EB] bg-[#F7F9FC] px-3 py-2">
+              <div className="grid h-8 w-8 place-items-center rounded-lg bg-[#EAF4FF] text-[#2563EB]">
+                <i className="ri-steering-2-line" />
+              </div>
+
+              <div>
+                <p className="text-[11px] text-[#6B7280]">
+                  Active
+                </p>
+                <p className="font-bold text-[#111827]">
+                  {activeCount}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 rounded-xl border border-[#E5E7EB] bg-[#F7F9FC] px-3 py-2">
+              <div className="grid h-8 w-8 place-items-center rounded-lg bg-[#EAFBF2] text-[#16A34A]">
+                <i className="ri-checkbox-circle-line" />
+              </div>
+
+              <div>
+                <p className="text-[11px] text-[#6B7280]">
+                  Approved
+                </p>
+                <p className="font-bold text-[#111827]">
+                  {approvedCount}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 rounded-xl border border-[#E5E7EB] bg-[#F7F9FC] px-3 py-2">
+              <div className="grid h-8 w-8 place-items-center rounded-lg bg-[#FFF4DF] text-[#B86B00]">
+                <i className="ri-time-line" />
+              </div>
+
+              <div>
+                <p className="text-[11px] text-[#6B7280]">
+                  Pending
+                </p>
+                <p className="font-bold text-[#111827]">
+                  {pendingCount}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 rounded-xl border border-[#E5E7EB] bg-[#F7F9FC] px-3 py-2">
+              <div className="grid h-8 w-8 place-items-center rounded-lg bg-[#F1F5F9] text-[#64748B]">
+                <i className="ri-user-off-line" />
+              </div>
+
+              <div>
+                <p className="text-[11px] text-[#6B7280]">
+                  Offline
+                </p>
+                <p className="font-bold text-[#111827]">
+                  {offlineCount}
+                </p>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        {/* Search + Actions */}
+        <div className="mt-5 flex flex-col gap-3 lg:flex-row lg:items-center">
+
+          <div className="relative flex-1">
+            <i className="ri-search-line absolute left-4 top-1/2 -translate-y-1/2 text-base text-[#6B7280]" />
+
+>>>>>>> Stashed changes
             <input
               type="search"
               placeholder="Search driver, email, vehicle, city…"

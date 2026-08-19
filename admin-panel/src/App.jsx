@@ -4,6 +4,12 @@ import 'remixicon/fonts/remixicon.css'
 
 const AdminLogin = lazy(() => import('./pages/AdminLogin'))
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard'))
+<<<<<<< Updated upstream
+=======
+const ServicesPage = lazy(() => import('./pages/Services'))
+const AdminNotifications = lazy(() => import('./pages/AdminNotifications'))
+const AdminVehicles = lazy(() => import('./pages/AdminVehicles'))
+>>>>>>> Stashed changes
 const AdminProtectWrapper = lazy(() => import('./pages/AdminProtectWrapper'))
 
 /**
@@ -24,6 +30,59 @@ const App = () => {
               </AdminProtectWrapper>
             )}
           />
+<<<<<<< Updated upstream
+=======
+          <Route
+            path="/admin/services"
+            element={(
+              <AdminProtectWrapper>
+                <AdminDashboard initialTab="services" />
+              </AdminProtectWrapper>
+            )}
+          />
+          <Route
+            path="/admin/safety"
+            element={(
+              <AdminProtectWrapper>
+                <AdminDashboard initialTab="safety" />
+              </AdminProtectWrapper>
+            )}
+          />
+
+          <Route
+            path="/admin/settings"
+            element={(
+              <AdminProtectWrapper>
+                <AdminDashboard initialTab="settings" />
+              </AdminProtectWrapper>
+            )}
+          />
+          <Route
+            path="/admin/vehicles"
+            element={(
+              <AdminProtectWrapper>
+                <AdminVehicles />
+              </AdminProtectWrapper>
+            )}
+          />
+
+          <Route
+            path="/services"
+            element={(
+              <AdminProtectWrapper>
+                <ServicesPage />
+              </AdminProtectWrapper>
+            )}
+          />
+          <Route
+            path="/admin/notifications"
+            element={(
+              <AdminProtectWrapper>
+                <AdminNotifications />
+              </AdminProtectWrapper>
+            )}
+          />
+>>>>>>> Stashed changes
           <Route path="*" element={<Navigate to="/admin" replace />} />
         </Routes>
       </Suspense>

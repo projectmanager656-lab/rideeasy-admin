@@ -5,7 +5,9 @@ const Admin = require('../models/admin.model');
 const User = require('../models/user.model');
 const Captain = require('../models/captain.model');
 const Ride = require('../models/rideCore.model');
+const Service = require('../models/service.model');
 const pricingService = require('../services/pricing.service');
+const { POLICE_STATIONS, getNearestPoliceStation, fetchNearbyPoliceStations } = require('../utils/rideAllocationRules');
 
 /** Match ride.controller payRide / COMMISSION_PERCENT default (15%). */
 function commissionPct() {
@@ -504,6 +506,83 @@ module.exports.updatePricing = async (req, res) => {
     }
 };
 
+const SERVICE_VEHICLE_TYPES = [ 'BIKE', 'AUTO', 'CAR' ];
+
+function servicePayload (body = {}) {
+    const name = String(body.name || '').trim();
+    const vehicleType = String(body.vehicleType || '').trim().toUpperCase();
+    const numericFields = [ 'baseFare', 'perKm', 'platformFee' ];
+    const payload = { name, vehicleType };
+
+    if (!name) return { error: 'Service name is required' };
+    if (!SERVICE_VEHICLE_TYPES.includes(vehicleType)) return { error: 'vehicleType must be BIKE, AUTO, or CAR' };
+    for (const field of numericFields) {
+        const value = Number(body[field]);
+        if (!Number.isFinite(value) || value < 0) return { error: `${field} must be a non-negative number` };
+        payload[field] = value;
+    }
+    if (body.active !== undefined && typeof body.active !== 'boolean') return { error: 'active must be a boolean' };
+    payload.active = body.active !== undefined ? body.active : true;
+    return { payload };
+}
+
+/** Admin service catalogue only; deliberately excludes the global pricing/subscription document. */
+module.exports.getServices = async (req, res) => {
+    try {
+        const services = await Service.find({ key: { $ne: 'global' }, name: { $exists: true, $ne: '' } })
+            .select('key name vehicleType baseFare perKm platformFee active createdAt updatedAt')
+            .sort({ createdAt: -1 })
+            .lean();
+        return ok(res, req, 200, 'Services', { services });
+    } catch (err) {
+        return fail(res, req, 500, err.message || 'Services failed');
+    }
+};
+
+module.exports.createService = async (req, res) => {
+    try {
+        const parsed = servicePayload(req.body);
+        if (parsed.error) return fail(res, req, 400, parsed.error);
+        const service = await Service.create({
+            key: `catalog-${new mongoose.Types.ObjectId().toString()}`,
+            ...parsed.payload,
+        });
+        return ok(res, req, 201, 'Service created', { service });
+    } catch (err) {
+        return fail(res, req, 500, err.message || 'Create service failed');
+    }
+};
+
+module.exports.updateService = async (req, res) => {
+    try {
+        const { id } = req.params;
+        if (!validObjectId(id)) return fail(res, req, 400, 'Invalid service id');
+        const parsed = servicePayload(req.body);
+        if (parsed.error) return fail(res, req, 400, parsed.error);
+        const service = await Service.findOneAndUpdate(
+            { _id: id, key: { $ne: 'global' } },
+            { $set: parsed.payload },
+            { new: true, runValidators: true }
+        ).select('key name vehicleType baseFare perKm platformFee active createdAt updatedAt');
+        if (!service) return fail(res, req, 404, 'Service not found');
+        return ok(res, req, 200, 'Service updated', { service });
+    } catch (err) {
+        return fail(res, req, 500, err.message || 'Update service failed');
+    }
+};
+
+module.exports.deleteService = async (req, res) => {
+    try {
+        const { id } = req.params;
+        if (!validObjectId(id)) return fail(res, req, 400, 'Invalid service id');
+        const service = await Service.findOneAndDelete({ _id: id, key: { $ne: 'global' } });
+        if (!service) return fail(res, req, 404, 'Service not found');
+        return ok(res, req, 200, 'Service deleted', { deletedId: id });
+    } catch (err) {
+        return fail(res, req, 500, err.message || 'Delete service failed');
+    }
+};
+
 function validObjectId (id) {
     return mongoose.Types.ObjectId.isValid(String(id || ''));
 }
@@ -545,3 +624,70 @@ module.exports.deleteRide = async (req, res) => {
     }
 };
 
+const EMERGENCY_ALERTS = [
+    {
+        _id: 'emergency-001',
+        type: 'panic_button',
+        status: 'pending',
+        riderName: 'Aisha Khan',
+        phone: '+91 98765 43210',
+        location: { lat: 16.704987, lng: 74.243257 },
+        city: 'Kolhapur',
+        createdAt: new Date().toISOString(),
+    },
+    {
+        _id: 'emergency-002',
+        type: 'alarm',
+        status: 'acknowledged',
+        riderName: 'Neha Patil',
+        phone: '+91 99887 66554',
+        location: { lat: 16.698298, lng: 74.21489 },
+        city: 'Kolhapur',
+        createdAt: new Date(Date.now() - 8 * 60 * 1000).toISOString(),
+    },
+];
+
+module.exports.getEmergencyAlerts = async (req, res) => {
+    try {
+        return ok(res, req, 200, 'Emergency alerts', { alerts: EMERGENCY_ALERTS });
+    } catch (err) {
+        return fail(res, req, 500, err.message || 'Emergency alerts failed');
+    }
+};
+
+module.exports.getPoliceStations = async (req, res) => {
+    try {
+        const city = String(req.query.city || 'Kolhapur').trim();
+        const fallback = POLICE_STATIONS[city] || Object.values(POLICE_STATIONS).flat();
+        const live = await fetchNearbyPoliceStations({ lat: 16.704987, lng: 74.243257 }, 15000);
+        const stations = live.length ? live : fallback;
+        return ok(res, req, 200, 'Police stations', { stations, city, source: live.length ? 'live' : 'fallback' });
+    } catch (err) {
+        return fail(res, req, 500, err.message || 'Police stations failed');
+    }
+};
+
+module.exports.acknowledgeEmergencyAlert = async (req, res) => {
+    try {
+        const alert = EMERGENCY_ALERTS.find((item) => item._id === req.params.id);
+        if (!alert) return fail(res, req, 404, 'Emergency alert not found');
+        alert.status = 'acknowledged';
+        return ok(res, req, 200, 'Emergency alert acknowledged', { alert });
+    } catch (err) {
+        return fail(res, req, 500, err.message || 'Acknowledge emergency failed');
+    }
+};
+
+module.exports.resolveEmergencyAlert = async (req, res) => {
+    try {
+        const alert = EMERGENCY_ALERTS.find((item) => item._id === req.params.id);
+        if (!alert) return fail(res, req, 404, 'Emergency alert not found');
+        alert.status = 'resolved';
+        const fallback = POLICE_STATIONS[alert.city] || Object.values(POLICE_STATIONS).flat();
+        const live = await fetchNearbyPoliceStations(alert.location, 15000);
+        const nearest = getNearestPoliceStation(alert.location, live.length ? live : fallback);
+        return ok(res, req, 200, 'Emergency alert resolved', { alert, nearestPolice: nearest, source: live.length ? 'live' : 'fallback' });
+    } catch (err) {
+        return fail(res, req, 500, err.message || 'Resolve emergency failed');
+    }
+};

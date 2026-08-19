@@ -17,9 +17,6 @@ const AdminProtectWrapper = ({ children }) => {
       return
     }
     if (!isAdminRoleToken(token)) {
-      try {
-        localStorage.removeItem('adminToken')
-      } catch { /* ignore */ }
       navigate('/admin', { replace: true })
     }
   }, [token, navigate])

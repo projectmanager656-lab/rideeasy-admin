@@ -23,7 +23,7 @@ module.exports.registerUser = async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) return fail(res, req, 400, 'Validation failed', { errors: errors.array() });
 
-    const { name, phone, email, password, city, bankDetails, referredByCode } = req.body;
+    const { name, phone, email, password, gender, city, bankDetails, referredByCode } = req.body;
     const existing = await userModel.findOne({ email: String(email).toLowerCase() });
     if (existing) return fail(res, req, 400, 'User already exists');
 
@@ -43,6 +43,7 @@ module.exports.registerUser = async (req, res) => {
         name: String(name).trim(),
         phone: String(phone).trim(),
         email: String(email).toLowerCase().trim(),
+        gender: [ 'male', 'female', 'other' ].includes(String(gender || '').toLowerCase()) ? String(gender).toLowerCase() : 'other',
         city: city || 'Kolhapur',
         bankDetails: verification.normalized,
         password: hashed,

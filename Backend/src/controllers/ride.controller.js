@@ -15,6 +15,7 @@ const {
     logServiceAreaDistances,
     SERVICE_AREA_ERROR,
 } = require('../utils/serviceArea');
+const { userNeedsFemaleDriver, buildDriverGenderFilter } = require('../utils/rideAllocationRules');
 
 const { emitToUser, emitToCaptain, emitStandardRidePhase } = require('../socket');
 const {
@@ -263,8 +264,9 @@ async function notifyPassengerAccepted(ride, otpPlain, prebuiltConfirmation = nu
     }
 }
 
-async function findNearbyDriverIds({ rideCity, vehicleType, pickupLng, pickupLat }) {
+async function findNearbyDriverIds({ rideCity, vehicleType, pickupLng, pickupLat, userGender }) {
     if (pickupLng == null || pickupLat == null) return [];
+    const genderFilter = buildDriverGenderFilter(userGender, vehicleType);
     const drivers = await captainModel
         .find({
             approved: true,
@@ -273,6 +275,7 @@ async function findNearbyDriverIds({ rideCity, vehicleType, pickupLng, pickupLat
             ...driverPresenceMatch(),
             city: rideCity,
             vehicleType: { $in: captainVehicleTypesForRide(vehicleType) },
+            ...genderFilter,
             location: {
                 $near: {
                     $geometry: { type: 'Point', coordinates: [ pickupLng, pickupLat ] },
@@ -286,7 +289,8 @@ async function findNearbyDriverIds({ rideCity, vehicleType, pickupLng, pickupLat
 }
 
 /** When no one is within 5km (GPS mismatch / dev), still notify online drivers in same city + vehicle type. */
-async function findCityFallbackDriverIds({ rideCity, vehicleType }) {
+async function findCityFallbackDriverIds({ rideCity, vehicleType, userGender }) {
+    const genderFilter = buildDriverGenderFilter(userGender, vehicleType);
     const drivers = await captainModel
         .find({
             approved: true,
@@ -295,6 +299,7 @@ async function findCityFallbackDriverIds({ rideCity, vehicleType }) {
             ...driverPresenceMatch(),
             city: rideCity,
             vehicleType: { $in: captainVehicleTypesForRide(vehicleType) },
+            ...genderFilter,
         })
         .limit(40)
         .select('_id');
@@ -434,15 +439,18 @@ module.exports.createRide = async (req, res) => {
         });
 
         const populated = await rideModel.findById(ride._id).populate('user').populate('captain');
+        const userGender = populated.user?.gender || req.user?.gender || 'other';
         const nearbyDriverIds = await findNearbyDriverIds({
             rideCity,
             vehicleType: populated.vehicleType,
             pickupLng: pickupCoordinates.lng,
             pickupLat: pickupCoordinates.lat,
+            userGender,
         });
         const cityDriverIds = await findCityFallbackDriverIds({
             rideCity,
             vehicleType: populated.vehicleType,
+            userGender,
         });
         let driverIds = mergeUniqueIds(nearbyDriverIds, cityDriverIds);
         if (driverIds.length === 0) {
@@ -497,15 +505,18 @@ module.exports.retryAssign = async (req, res) => {
             requestId: req.requestId,
         });
 
+        const userGender = ride.user?.gender || req.user?.gender || 'other';
         const nearbyDriverIds = await findNearbyDriverIds({
             rideCity: ride.city,
             vehicleType: ride.vehicleType,
             pickupLng,
             pickupLat,
+            userGender,
         });
         const cityDriverIds = await findCityFallbackDriverIds({
             rideCity: ride.city,
             vehicleType: ride.vehicleType,
+            userGender,
         });
         let driverIds = mergeUniqueIds(nearbyDriverIds, cityDriverIds);
         if (driverIds.length === 0) {

@@ -6,6 +6,7 @@ const captainSchema = new mongoose.Schema({
     name: { type: String, required: true, minlength: 2 },
     phone: { type: String, required: true },
     email: { type: String, required: true, unique: true, lowercase: true },
+    gender: { type: String, enum: [ 'male', 'female', 'other' ], default: 'other' },
     password: { type: String, required: true, select: false },
     socketId: { type: String },
     vehicleType: { type: String, required: true, enum: [ 'BIKE', 'AUTO', 'CAR' ] },

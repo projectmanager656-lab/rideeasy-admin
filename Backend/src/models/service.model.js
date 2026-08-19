@@ -14,6 +14,13 @@ const serviceAreaSchema = new mongoose.Schema({
  */
 const serviceSchema = new mongoose.Schema({
     key: { type: String, default: 'global', unique: true },
+    /** Optional admin-managed service catalog entry. The global pricing document leaves these unset. */
+    name: { type: String, trim: true },
+    vehicleType: { type: String, trim: true, uppercase: true, enum: [ 'BIKE', 'AUTO', 'CAR' ] },
+    baseFare: { type: Number, min: 0 },
+    perKm: { type: Number, min: 0 },
+    platformFee: { type: Number, min: 0 },
+    active: { type: Boolean, default: true },
     rates: {
         BIKE: { baseFare: Number, perKm: Number, platformFee: Number },
         AUTO: { baseFare: Number, perKm: Number, platformFee: Number },

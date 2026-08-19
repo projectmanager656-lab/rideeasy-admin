@@ -17,12 +17,57 @@ export default function UsersTab ({
   bulkDeleteUsers,
 }) {
   return (
+<<<<<<< Updated upstream
     <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-xl">
       {usersLoading ? (
         <div className="p-12 text-center text-neutral-600">Loading users…</div>
       ) : (
         <>
           <div className="flex flex-col gap-3 border-b border-neutral-200 px-3 py-3 sm:px-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+=======
+    <div className="space-y-6">
+
+      {/* Page Header */}
+      <div className="flex flex-col gap-5 rounded-2xl border border-[#E5E7EB] bg-white p-5 shadow-sm sm:p-6">
+
+        <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+
+          <div>
+            <h2 className="text-2xl font-bold tracking-tight text-[#111827]">
+              Users
+            </h2>
+
+            <p className="mt-1 text-sm text-[#6B7280]">
+              Manage registered RideEasy passengers.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2">
+
+            <div className="grid h-10 w-10 place-items-center rounded-xl bg-[#FFF4DF] text-[#B86B00]">
+              <i className="ri-user-3-line text-lg" />
+            </div>
+
+            <div>
+              <p className="text-xs text-[#6B7280]">
+                Total users
+              </p>
+
+              <p className="text-lg font-bold text-[#111827]">
+                {users.length.toLocaleString('en-IN')}
+              </p>
+            </div>
+
+          </div>
+        </div>
+
+        {/* Search + Bulk Actions */}
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+
+          <div className="relative flex-1">
+            <i className="ri-search-line absolute left-4 top-1/2 -translate-y-1/2 text-base text-[#6B7280]" />
+
+>>>>>>> Stashed changes
             <input
               type="search"
               placeholder="Search name, email, phone, city…"
