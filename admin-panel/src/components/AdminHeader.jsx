@@ -43,6 +43,7 @@ const AdminHeader = ({
     notifications: 'Notifications',
   }[tab] || 'Dashboard'
   const isSecondaryPage = ['safety', 'settings', 'services', 'complaints', 'reports', 'vehicles'].includes(tab)
+  const hideMobilePageTitle = ['analytics', 'users', 'drivers', 'rides'].includes(tab)
 
   const pendingAlerts = emergencyAlerts.filter(
     (alert) =>
@@ -148,7 +149,7 @@ const AdminHeader = ({
         </div>
       </header>
 
-      {!isSecondaryPage && <div className="border-b border-[#E5E7EB] bg-white px-4 py-3 md:hidden"><h2 className="text-lg font-bold text-[#111827]">{pageTitle}</h2></div>}
+      {!hideMobilePageTitle && !isSecondaryPage && <div className="border-b border-[#E5E7EB] bg-white px-4 py-3 md:hidden"><h2 className="text-lg font-bold text-[#111827]">{pageTitle}</h2></div>}
     </>
   )
 }
