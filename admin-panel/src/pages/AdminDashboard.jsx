@@ -85,7 +85,7 @@ const AdminDashboard = ({ initialTab = null }) => {
       setAnalyticsError('')
       setAnalyticsLoading(true)
       try {
-        const [d, usersResult, driversResult, ridesResult, paymentsResult, alertsResult] = await Promise.all([
+const [d, usersResult, driversResult, ridesResult, paymentsResult, alertsResult] = await Promise.all([
           adminApi.getAnalytics(signal),
           adminApi.getUsers(signal),
           adminApi.getDrivers(signal),

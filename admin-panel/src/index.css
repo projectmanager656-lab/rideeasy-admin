@@ -1,122 +1,271 @@
+@import './styles/design-tokens.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* =========================================================
+   RideEasy Admin - Design Tokens
+   ========================================================= */
+
+:root {
+  /* Colors */
+  --admin-primary: #FFB000;
+  --admin-primary-hover: #FFC34D;
+
+  --admin-navy: #071A2B;
+  --admin-background: #F7F9FC;
+  --admin-surface: #FFFFFF;
+
+  --admin-text: #152238;
+  --admin-muted: #718096;
+  --admin-border: #E6EBF2;
+
+  --admin-success: #1FAA59;
+  --admin-warning: #B8860B;
+  --admin-danger: #E5484D;
+  --admin-info: #2563EB;
+
+  /* Typography */
+  --admin-font-xs: 12px;
+  --admin-font-sm: 14px;
+  --admin-font-md: 16px;
+  --admin-font-lg: 20px;
+  --admin-font-xl: 24px;
+  --admin-font-2xl: 28px;
+
+  /* Spacing */
+  --admin-space-xs: 4px;
+  --admin-space-sm: 8px;
+  --admin-space-md: 12px;
+  --admin-space-lg: 16px;
+  --admin-space-xl: 20px;
+  --admin-space-2xl: 24px;
+  --admin-space-3xl: 32px;
+
+  /* Border radius */
+  --admin-radius-sm: 8px;
+  --admin-radius-md: 12px;
+  --admin-radius-lg: 16px;
+  --admin-radius-xl: 20px;
+  --admin-radius-2xl: 24px;
+
+  /* Component heights */
+  --admin-input-height: 40px;
+  --admin-button-height-sm: 36px;
+  --admin-button-height: 40px;
+  --admin-button-height-lg: 44px;
+
+  /* Cards */
+  --admin-card-padding: 20px;
+}
+
+/* =========================================================
+   Dark Theme Tokens
+   ========================================================= */
+
+.dark {
+  --admin-background: #0F172A;
+  --admin-surface: #172033;
+
+  --admin-text: #F8FAFC;
+  --admin-muted: #94A3B8;
+  --admin-border: #334155;
+
+  --admin-navy: #020617;
+}
+
+/* =========================================================
+   Base
+   ========================================================= */
 
 @layer base {
   html {
     -webkit-text-size-adjust: 100%;
     scroll-behavior: smooth;
   }
-  
+
   body {
-    @apply overflow-x-hidden antialiased text-[#152238] bg-[#F7F9FC];
+    @apply overflow-x-hidden antialiased;
+    color: var(--admin-text);
+    background: var(--admin-background);
   }
-  
+
   #root {
-    @apply min-h-dvh min-h-screen min-h-[100dvh] text-[#152238];
+    @apply min-h-dvh min-h-screen min-h-[100dvh];
+    color: var(--admin-text);
   }
 
   /* Typography */
+
   h1 {
     @apply font-bold tracking-tight;
   }
-  
+
   h2 {
     @apply font-bold tracking-tight;
   }
-  
-  h3, h4, h5, h6 {
+
+  h3,
+  h4,
+  h5,
+  h6 {
     @apply font-semibold tracking-tight;
   }
 
   /* Links */
+
   a {
     @apply transition-colors;
   }
 
   /* Forms */
-  input, textarea, select {
+
+  input,
+  textarea,
+  select {
     @apply transition-colors;
   }
-  
-  input:focus, textarea:focus, select:focus {
+
+  input:focus,
+  textarea:focus,
+  select:focus {
     @apply outline-none ring-2 ring-[#FFB000]/25 ring-offset-1;
   }
 
   /* Buttons */
+
   button {
     @apply transition-all duration-200;
   }
 }
 
+/* =========================================================
+   Admin Components
+   ========================================================= */
+
 @layer components {
-  /* Admin specific components */
+  /* Sidebar */
+
   .admin-sidebar {
-    @apply fixed left-0 top-0 h-screen w-64 bg-[#071A2B] text-white shadow-xl;
+    @apply fixed left-0 top-0 h-screen w-64 text-white shadow-xl;
+    background: var(--admin-navy);
   }
 
+  /* Header */
+
   .admin-header {
-    @apply sticky top-0 right-0 z-10 bg-white border-b border-neutral-200 shadow-sm;
+    @apply sticky top-0 right-0 z-10 border-b shadow-sm;
+    background: var(--admin-surface);
+    border-color: var(--admin-border);
   }
+
+  /* Content */
 
   .admin-content {
     @apply flex-1 overflow-y-auto;
   }
 
   /* Cards */
+
   .card-base {
-    @apply rounded-xl border border-neutral-200 bg-white p-6 shadow-sm;
+    @apply rounded-xl border bg-white p-6 shadow-sm;
+    border-color: var(--admin-border);
+    background: var(--admin-surface);
   }
 
   .card-hover {
-    @apply transition-shadow hover:shadow-md cursor-pointer;
+    @apply cursor-pointer transition-shadow hover:shadow-md;
   }
 
   /* Buttons */
+
   .btn-primary {
-    @apply px-4 py-2 rounded-lg bg-[#FFB000] text-[#152238] font-medium hover:bg-[#FFC34D] transition-colors;
+    @apply rounded-lg px-4 py-2 font-medium transition-colors;
+    background: var(--admin-primary);
+    color: var(--admin-text);
+  }
+
+  .btn-primary:hover {
+    background: var(--admin-primary-hover);
   }
 
   .btn-secondary {
-    @apply px-4 py-2 rounded-lg border border-[#E6EBF2] bg-white text-[#152238] font-medium hover:bg-[#F7F9FC] transition-colors;
+    @apply rounded-lg border bg-white px-4 py-2 font-medium transition-colors;
+    border-color: var(--admin-border);
+    color: var(--admin-text);
+  }
+
+  .btn-secondary:hover {
+    background: var(--admin-background);
   }
 
   .btn-danger {
-    @apply px-4 py-2 rounded-lg bg-[#EF4444] text-white font-medium hover:bg-[#DC2626] transition-colors;
+    @apply rounded-lg px-4 py-2 font-medium text-white transition-colors;
+    background: var(--admin-danger);
+  }
+
+  .btn-danger:hover {
+    background: #DC2626;
   }
 
   /* Tables */
+
   .table-header {
-    @apply sticky top-0 bg-[#F7F9FC] font-semibold text-[#152238] text-sm;
+    @apply sticky top-0 text-sm font-semibold;
+    background: var(--admin-background);
+    color: var(--admin-text);
   }
 
   .table-row {
-    @apply border-b border-[#E6EBF2] hover:bg-[#FFF9ED] transition-colors;
+    @apply border-b transition-colors;
+    border-color: var(--admin-border);
+  }
+
+  .table-row:hover {
+    background: #FFF9ED;
   }
 
   .table-cell {
-    @apply px-4 py-3 text-sm text-[#718096];
+    @apply px-4 py-3 text-sm;
+    color: var(--admin-muted);
   }
 
   /* Alerts */
+
   .alert-success {
-    @apply rounded-lg bg-green-50 border border-green-200 p-4 text-green-900;
+    @apply rounded-lg border p-4;
+    background: #F0FDF4;
+    border-color: #BBF7D0;
+    color: #14532D;
   }
 
   .alert-error {
-    @apply rounded-lg bg-red-50 border border-red-200 p-4 text-red-900;
+    @apply rounded-lg border p-4;
+    background: #FEF2F2;
+    border-color: #FECACA;
+    color: #7F1D1D;
   }
 
   .alert-warning {
-    @apply rounded-lg bg-yellow-50 border border-yellow-200 p-4 text-yellow-900;
+    @apply rounded-lg border p-4;
+    background: #FEFCE8;
+    border-color: #FDE68A;
+    color: #713F12;
   }
 
   .alert-info {
-    @apply rounded-lg bg-blue-50 border border-blue-200 p-4 text-blue-900;
+    @apply rounded-lg border p-4;
+    background: #EFF6FF;
+    border-color: #BFDBFE;
+    color: #1E3A8A;
   }
 }
 
-/* Responsive adjustments */
+/* =========================================================
+   Responsive
+   ========================================================= */
+
 @media (max-width: 768px) {
   .admin-sidebar {
     @apply w-full h-auto;
@@ -131,7 +280,10 @@
   }
 }
 
-/* Scrollbar styling */
+/* =========================================================
+   Scrollbar
+   ========================================================= */
+
 ::-webkit-scrollbar {
   @apply w-2 h-2;
 }
@@ -141,10 +293,18 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  @apply bg-neutral-400 rounded hover:bg-neutral-500;
+  @apply rounded;
+  background: #A3A3A3;
 }
 
-/* Print styles */
+::-webkit-scrollbar-thumb:hover {
+  background: #737373;
+}
+
+/* =========================================================
+   Print
+   ========================================================= */
+
 @media print {
   .no-print {
     @apply hidden;
@@ -153,10 +313,10 @@
 
 /* =========================================================
    RideEasy Admin - Floating Mobile Bottom Navigation
+   DO NOT CHANGE
    ========================================================= */
 
 @media (max-width: 767px) {
-
   .admin-mobile-nav {
     position: fixed;
     left: 12px;
@@ -258,7 +418,17 @@
   }
 
   /* Keep page content above the floating navigation */
-  .admin-main-content {
-    padding-bottom: 100px !important;
+  .admin-page-content {
+    padding-bottom: 110px;
+  }
+}
+
+/* =========================================================
+   Desktop - Hide Mobile Navigation
+   ========================================================= */
+
+@media (min-width: 768px) {
+  .admin-mobile-nav {
+    display: none;
   }
 }

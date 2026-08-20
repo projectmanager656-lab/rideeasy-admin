@@ -7,12 +7,13 @@ const TAB_CONFIG = [
   { id: 'users', label: 'Users', icon: 'ri-user-3-line' },
   { id: 'drivers', label: 'Drivers', icon: 'ri-steering-2-line' },
   { id: 'vehicles', label: 'Vehicles', icon: 'ri-car-line' },
-  { id: 'rides', label: 'Bookings', icon: 'ri-calendar-line' },
+  { id: 'verification', label: 'Verification', icon: 'ri-checkbox-circle-line' },
+  { id: 'rides', label: 'Rides', icon: 'ri-calendar-line' },
+  { id: 'finance', label: 'Finance', icon: 'ri-money-rupee-circle-line' },
   { id: 'payments', label: 'Payments', icon: 'ri-bank-card-line' },
-  { id: 'services', label: 'Services', icon: 'ri-taxi-line' },
-  { id: 'pricing', label: 'Pricing', icon: 'ri-money-rupee-circle-line' },
-  { id: 'notifications', label: 'Notifications', icon: 'ri-notification-3-line' },
-  { id: 'safety', label: 'Safety', icon: 'ri-shield-cross-line' },
+  { id: 'sos', label: 'SOS', icon: 'ri-alarm-warning-line' },
+  { id: 'support', label: 'Support', icon: 'ri-customer-service-2-line' },
+  { id: 'reports', label: 'Reports', icon: 'ri-bar-chart-line' },
   { id: 'settings', label: 'Settings', icon: 'ri-settings-3-line' },
 ]
 
@@ -20,35 +21,60 @@ const AdminSidebar = ({ tab, setTab }) => {
   const navigate = useNavigate()
 
   const handleTabClick = (tabId) => {
-    if (tabId === 'notifications') {
-      navigate('/admin/notifications')
-      return
-    }
-
-    if (tabId === 'services') {
-      navigate('/services')
-      return
-    }
-
-    if (tabId === 'vehicles') {
-      navigate('/admin/vehicles')
-      return
-    }
-
-    if (tabId === 'pricing') {
-      setTab('pricing')
-      navigate('/admin/dashboard', { state: { tab: 'pricing' } })
-      return
-    }
-
-    if (tabId === 'payments') {
-      navigate('/admin/dashboard', { state: { tab: 'payments' } })
-      setTab('payments')
-      return
-    }
-
-    setTab(tabId)
+  if (tabId === 'vehicles') {
+    navigate('/admin/vehicles')
+    return
   }
+
+  if (tabId === 'verification') {
+    setTab('drivers')
+    navigate('/admin/dashboard', { state: { tab: 'drivers' } })
+    return
+  }
+
+  if (tabId === 'sos') {
+    setTab('safety')
+    navigate('/admin/dashboard', { state: { tab: 'safety' } })
+    return
+  }
+
+  if (tabId === 'support') {
+    setTab('complaints')
+    navigate('/admin/dashboard', { state: { tab: 'complaints' } })
+    return
+  }
+
+  if (tabId === 'reports') {
+    setTab('reports')
+    navigate('/admin/dashboard', { state: { tab: 'reports' } })
+    return
+  }
+
+  if (tabId === 'payments') {
+    setTab('payments')
+    navigate('/admin/dashboard', { state: { tab: 'payments' } })
+    return
+  }
+
+  if (tabId === 'settings') {
+    setTab('settings')
+    navigate('/admin/dashboard', { state: { tab: 'settings' } })
+    return
+  }
+
+  if (tabId === 'rides') {
+    setTab('rides')
+    navigate('/admin/dashboard', { state: { tab: 'rides' } })
+    return
+  }
+
+  if (tabId === 'finance') {
+    setTab('finance')
+    return
+  }
+
+  setTab(tabId)
+}
 
   const renderItems = () =>
     TAB_CONFIG.map((item) => {

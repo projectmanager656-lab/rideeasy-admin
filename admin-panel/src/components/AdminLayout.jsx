@@ -3,12 +3,24 @@ import AdminSidebar from './AdminSidebar'
 import AdminHeader from './AdminHeader'
 import BottomNav from './BottomNav'
 
-const AdminLayout = ({ tab, setTab, onRefresh, onLogout, emergencyAlerts, children }) => {
+const AdminLayout = ({
+  tab,
+  setTab,
+  onRefresh,
+  onLogout,
+  emergencyAlerts,
+  children,
+}) => {
   return (
-    <div className="admin-shell min-h-dvh min-h-screen bg-[#FAFAFA] text-[#111827]">
-      <AdminSidebar tab={tab} setTab={setTab} />
+    <div className="admin-shell flex min-h-dvh min-h-screen w-full bg-[#F7F9FC] text-[#152238]">
+      {/* Desktop Sidebar */}
+      <AdminSidebar
+        tab={tab}
+        setTab={setTab}
+      />
 
-      <div className="admin-main-panel flex min-h-screen flex-1 flex-col md:ml-[260px]">
+      {/* Main Area */}
+      <div className="admin-main-panel flex min-h-screen min-w-0 flex-1 flex-col">
         <AdminHeader
           onRefresh={onRefresh}
           onLogout={onLogout}
@@ -16,13 +28,21 @@ const AdminLayout = ({ tab, setTab, onRefresh, onLogout, emergencyAlerts, childr
           emergencyAlerts={emergencyAlerts}
         />
 
-        <main id="admin-main-content" className="admin-main-content flex-1 overflow-y-auto bg-[#F7F9FC] pb-[88px] md:pb-0">
-          <div className="mx-auto w-full max-w-[1600px] px-4 py-4 sm:px-6 sm:py-6 lg:px-8">
+        <main
+          id="admin-main-content"
+          className="admin-main-content min-w-0 flex-1 overflow-y-auto bg-[#F7F9FC] pb-[96px] md:pb-0"
+        >
+          <div className="mx-auto w-full max-w-[1600px] px-4 py-5 sm:px-6 sm:py-6 lg:px-8 lg:py-7">
             {children}
           </div>
         </main>
 
-        <BottomNav tab={tab} setTab={setTab} onLogout={onLogout} />
+        {/* Mobile Bottom Navigation */}
+        <BottomNav
+          tab={tab}
+          setTab={setTab}
+          onLogout={onLogout}
+        />
       </div>
     </div>
   )

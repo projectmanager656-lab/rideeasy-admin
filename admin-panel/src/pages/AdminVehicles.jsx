@@ -4,25 +4,70 @@ import AdminLayout from '../components/AdminLayout'
 import { adminApi } from '../services/adminApi'
 import { displayName } from '../admin/adminUtils'
 import MobileRecordCard, { MobileField } from '../components/MobileRecordCard'
-
-const statusStyles = {
-  active: 'bg-[#EAFBF2] text-[#15803D]',
-  inactive: 'bg-[#F1F5F9] text-[#64748B]',
-  pending: 'bg-[#FFF4DF] text-[#B86B00]',
-  blocked: 'bg-[#FEF2F2] text-[#DC2626]',
-}
+import {
+  Card,
+  Search,
+  Filter,
+  Badge,
+  Loader,
+  EmptyState,
+  ErrorState,
+} from '../components/AdminUIComponents'
 
 const vehicleStatus = (driver) => {
-  if (driver.blocked) return { label: 'Blocked', key: 'blocked' }
-  if (!driver.approved) return { label: 'Pending Verification', key: 'pending' }
-  if (String(driver.status).toLowerCase() === 'active' || driver.isOnline) return { label: 'Active', key: 'active' }
-  return { label: 'Inactive', key: 'inactive' }
+  if (driver.blocked) {
+    return {
+      label: 'Blocked',
+      variant: 'danger',
+      key: 'blocked',
+    }
+  }
+
+  if (!driver.approved) {
+    return {
+      label: 'Pending Verification',
+      variant: 'warning',
+      key: 'pending',
+    }
+  }
+
+  if (
+    String(driver.status).toLowerCase() === 'active' ||
+    driver.isOnline
+  ) {
+    return {
+      label: 'Active',
+      variant: 'success',
+      key: 'active',
+    }
+  }
+
+  return {
+    label: 'Inactive',
+    variant: 'neutral',
+    key: 'inactive',
+  }
 }
 
-const valueOrUnavailable = (value) => value || 'Not available'
+const valueOrUnavailable = (value) => {
+  return value || 'Not available'
+}
 
-export default function AdminVehicles () {
+const formatDate = (value) => {
+  if (!value) return 'Not available'
+
+  const date = new Date(value)
+
+  if (Number.isNaN(date.getTime())) {
+    return 'Not available'
+  }
+
+  return date.toLocaleDateString('en-IN')
+}
+
+export default function AdminVehicles() {
   const navigate = useNavigate()
+
   const [drivers, setDrivers] = useState([])
   const [alerts, setAlerts] = useState([])
   const [loading, setLoading] = useState(true)
@@ -33,48 +78,213 @@ export default function AdminVehicles () {
   const loadVehicles = useCallback(async (signal) => {
     setLoading(true)
     setError('')
+
     try {
       const [driverList, alertResponse] = await Promise.all([
         adminApi.getDrivers(signal),
         adminApi.getEmergencyAlerts(signal),
       ])
+
       if (signal?.aborted) return
-      setDrivers(driverList)
-      setAlerts(alertResponse.alerts || [])
+
+      setDrivers(Array.isArray(driverList) ? driverList : [])
+      setAlerts(alertResponse?.alerts || [])
     } catch (loadError) {
       if (signal?.aborted) return
-      setError(loadError?.response?.data?.message || loadError?.message || 'Unable to load vehicles')
+
+      setError(
+        loadError?.response?.data?.message ||
+        loadError?.message ||
+        'Unable to load vehicles'
+      )
     } finally {
-      if (!signal?.aborted) setLoading(false)
+      if (!signal?.aborted) {
+        setLoading(false)
+      }
     }
   }, [])
 
   useEffect(() => {
     const controller = new AbortController()
+
     loadVehicles(controller.signal)
+
     return () => controller.abort()
   }, [loadVehicles])
 
   const filteredVehicles = useMemo(() => {
     const query = search.trim().toLowerCase()
+
     return drivers.filter((driver) => {
       const status = vehicleStatus(driver).key
-      const matchesStatus = statusFilter === 'all' || status === statusFilter
-      const matchesSearch = !query || [
+
+      const matchesStatus =
+        statusFilter === 'all' ||
+        status === statusFilter
+
+      const searchableText = [
         driver.vehicleNumber,
         driver.vehicleType,
         driver.vehicleModel,
+        driver.model,
         displayName(driver.name),
         driver.email,
-      ].filter(Boolean).join(' ').toLowerCase().includes(query)
+        driver.city,
+      ]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase()
+
+      const matchesSearch =
+        !query || searchableText.includes(query)
+
       return matchesStatus && matchesSearch
     })
   }, [drivers, search, statusFilter])
 
+  const counts = useMemo(() => {
+    return {
+      all: drivers.length,
+
+      active: drivers.filter(
+        (driver) =>
+          vehicleStatus(driver).key === 'active'
+      ).length,
+
+      pending: drivers.filter(
+        (driver) =>
+          vehicleStatus(driver).key === 'pending'
+      ).length,
+
+      blocked: drivers.filter(
+        (driver) =>
+          vehicleStatus(driver).key === 'blocked'
+      ).length,
+
+      inactive: drivers.filter(
+        (driver) =>
+          vehicleStatus(driver).key === 'inactive'
+      ).length,
+    }
+  }, [drivers])
+
+  const statusOptions = [
+    {
+      value: 'all',
+      label: `All (${counts.all})`,
+    },
+    {
+      value: 'active',
+      label: `Active (${counts.active})`,
+    },
+    {
+      value: 'pending',
+      label: `Pending (${counts.pending})`,
+    },
+    {
+      value: 'blocked',
+      label: `Blocked (${counts.blocked})`,
+    },
+    {
+      value: 'inactive',
+      label: `Inactive (${counts.inactive})`,
+    },
+  ]
+
+  const tableColumns = [
+    {
+      key: 'vehicle',
+      label: 'Vehicle',
+      render: (driver) => (
+        <div>
+          <p className="font-bold text-[#152238]">
+            {valueOrUnavailable(driver.vehicleNumber)}
+          </p>
+
+          <p className="mt-0.5 text-xs text-[#718096]">
+            {valueOrUnavailable(driver.vehicleType)}
+          </p>
+        </div>
+      ),
+    },
+
+    {
+      key: 'model',
+      label: 'Model',
+      render: (driver) =>
+        valueOrUnavailable(
+          driver.vehicleModel || driver.model
+        ),
+    },
+
+    {
+      key: 'driver',
+      label: 'Driver',
+      render: (driver) => (
+        <div>
+          <p className="font-semibold text-[#152238]">
+            {displayName(driver.name) || 'Unnamed driver'}
+          </p>
+
+          <p className="mt-0.5 text-xs text-[#718096]">
+            {driver.email || 'Not available'}
+          </p>
+        </div>
+      ),
+    },
+
+    {
+      key: 'rcStatus',
+      label: 'RC Status',
+      render: (driver) =>
+        valueOrUnavailable(
+          driver.rcStatus || driver.rc?.status
+        ),
+    },
+
+    {
+      key: 'insuranceStatus',
+      label: 'Insurance',
+      render: (driver) =>
+        valueOrUnavailable(
+          driver.insuranceStatus ||
+          driver.insurance?.status
+        ),
+    },
+
+    {
+      key: 'registrationDate',
+      label: 'Registration Date',
+      render: (driver) =>
+        formatDate(
+          driver.registrationDate ||
+          driver.createdAt
+        ),
+    },
+
+    {
+      key: 'status',
+      label: 'Vehicle Status',
+      render: (driver) => {
+        const status = vehicleStatus(driver)
+
+        return (
+          <Badge variant={status.variant}>
+            {status.label}
+          </Badge>
+        )
+      },
+    },
+  ]
+
   return (
     <AdminLayout
       tab="vehicles"
-      setTab={(nextTab) => navigate('/admin/dashboard', { state: { tab: nextTab } })}
+      setTab={(nextTab) =>
+        navigate('/admin/dashboard', {
+          state: { tab: nextTab },
+        })
+      }
       onRefresh={() => loadVehicles()}
       onLogout={() => {
         localStorage.removeItem('adminToken')
@@ -83,39 +293,270 @@ export default function AdminVehicles () {
       emergencyAlerts={alerts}
     >
       <div className="space-y-5 pb-5 sm:space-y-6">
+
+        {/* Page Header */}
         <div className="flex items-start justify-between gap-3">
           <div>
-            <h1 className="text-[28px] font-bold tracking-[-0.04em] text-[#152238] sm:text-[32px]">Vehicles</h1>
-            <p className="mt-1 text-sm text-[#718096]">Manage registered vehicles and verification status</p>
+            <h1 className="text-[28px] font-bold tracking-[-0.04em] text-[#152238] sm:text-[32px]">
+              Vehicles
+            </h1>
+
+            <p className="mt-1 text-sm text-[#718096]">
+              Manage registered vehicles and verification status
+            </p>
           </div>
-          <button type="button" onClick={() => navigate('/admin/dashboard', { state: { tab: 'drivers' } })} className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-[#E6EBF2] bg-white text-[#152238] shadow-sm hover:bg-[#F8FAFC]" aria-label="Back to drivers">
+
+          <button
+            type="button"
+            onClick={() =>
+              navigate('/admin/dashboard', {
+                state: { tab: 'drivers' },
+              })
+            }
+            className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-[#E6EBF2] bg-white text-[#152238] shadow-sm transition hover:bg-[#F8FAFC]"
+            aria-label="Back to drivers"
+          >
             <i className="ri-arrow-left-line text-lg" />
           </button>
         </div>
 
+        {/* Vehicle Statistics */}
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          {[
-            ['All Vehicles', drivers.length, 'ri-car-line', 'blue', 'all'],
-            ['Active', drivers.filter((driver) => vehicleStatus(driver).key === 'active').length, 'ri-checkbox-circle-line', 'green', 'active'],
-            ['Pending Verification', drivers.filter((driver) => vehicleStatus(driver).key === 'pending').length, 'ri-time-line', 'orange', 'pending'],
-            ['Blocked', drivers.filter((driver) => vehicleStatus(driver).key === 'blocked').length, 'ri-forbid-2-line', 'red', 'blocked'],
-          ].map(([label, count, icon, tone, filter]) => (
-            <button key={label} type="button" onClick={() => setStatusFilter(filter)} className={`rounded-2xl border bg-white p-3 text-left shadow-[0_2px_10px_rgba(15,23,42,0.05)] ${statusFilter === filter ? 'border-[#FFB21C] ring-2 ring-[#FFB21C]/20' : 'border-[#E6EBF2]'}`}>
-              <span className={`grid h-9 w-9 place-items-center rounded-xl ${tone === 'blue' ? 'bg-[#EAF4FF] text-[#2563EB]' : tone === 'green' ? 'bg-[#EAFBF2] text-[#16A34A]' : tone === 'orange' ? 'bg-[#FFF4DF] text-[#B86B00]' : 'bg-[#FEF2F2] text-[#DC2626]'}`}><i className={icon} /></span>
-              <span className="mt-2 block text-[10px] font-semibold uppercase tracking-[0.08em] text-[#718096]">{label}</span>
-              <strong className="mt-1 block text-xl text-[#152238]">{count}</strong>
-            </button>
-          ))}
+
+          <button
+            type="button"
+            onClick={() => setStatusFilter('all')}
+            className={`rounded-2xl border bg-white p-4 text-left shadow-sm transition ${
+              statusFilter === 'all'
+                ? 'border-[#FFB21C] ring-2 ring-[#FFB21C]/20'
+                : 'border-[#E6EBF2]'
+            }`}
+          >
+            <div className="grid h-10 w-10 place-items-center rounded-xl bg-[#EAF4FF] text-[#2563EB]">
+              <i className="ri-car-line text-lg" />
+            </div>
+
+            <p className="mt-3 text-[10px] font-semibold uppercase tracking-[0.08em] text-[#718096]">
+              All Vehicles
+            </p>
+
+            <p className="mt-1 text-xl font-bold text-[#152238]">
+              {counts.all}
+            </p>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setStatusFilter('active')}
+            className={`rounded-2xl border bg-white p-4 text-left shadow-sm transition ${
+              statusFilter === 'active'
+                ? 'border-[#FFB21C] ring-2 ring-[#FFB21C]/20'
+                : 'border-[#E6EBF2]'
+            }`}
+          >
+            <div className="grid h-10 w-10 place-items-center rounded-xl bg-[#EAFBF2] text-[#16A34A]">
+              <i className="ri-checkbox-circle-line text-lg" />
+            </div>
+
+            <p className="mt-3 text-[10px] font-semibold uppercase tracking-[0.08em] text-[#718096]">
+              Active
+            </p>
+
+            <p className="mt-1 text-xl font-bold text-[#152238]">
+              {counts.active}
+            </p>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setStatusFilter('pending')}
+            className={`rounded-2xl border bg-white p-4 text-left shadow-sm transition ${
+              statusFilter === 'pending'
+                ? 'border-[#FFB21C] ring-2 ring-[#FFB21C]/20'
+                : 'border-[#E6EBF2]'
+            }`}
+          >
+            <div className="grid h-10 w-10 place-items-center rounded-xl bg-[#FFF4DF] text-[#B86B00]">
+              <i className="ri-time-line text-lg" />
+            </div>
+
+            <p className="mt-3 text-[10px] font-semibold uppercase tracking-[0.08em] text-[#718096]">
+              Pending
+            </p>
+
+            <p className="mt-1 text-xl font-bold text-[#152238]">
+              {counts.pending}
+            </p>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setStatusFilter('blocked')}
+            className={`rounded-2xl border bg-white p-4 text-left shadow-sm transition ${
+              statusFilter === 'blocked'
+                ? 'border-[#FFB21C] ring-2 ring-[#FFB21C]/20'
+                : 'border-[#E6EBF2]'
+            }`}
+          >
+            <div className="grid h-10 w-10 place-items-center rounded-xl bg-[#FEF2F2] text-[#DC2626]">
+              <i className="ri-forbid-2-line text-lg" />
+            </div>
+
+            <p className="mt-3 text-[10px] font-semibold uppercase tracking-[0.08em] text-[#718096]">
+              Blocked
+            </p>
+
+            <p className="mt-1 text-xl font-bold text-[#152238]">
+              {counts.blocked}
+            </p>
+          </button>
+
         </div>
 
-        <div className="rounded-2xl border border-[#E6EBF2] bg-white p-4 shadow-[0_2px_10px_rgba(15,23,42,0.05)]">
-          <label className="relative block"><span className="sr-only">Search vehicles</span><i className="ri-search-line absolute left-3 top-1/2 -translate-y-1/2 text-[#718096]" /><input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search vehicle number, type or driver..." className="w-full rounded-xl border border-[#E6EBF2] bg-[#F7F9FC] py-2.5 pl-10 pr-3 text-sm text-[#152238] outline-none focus:border-[#FFB21C] focus:ring-2 focus:ring-[#FFB21C]/20" /></label>
-        </div>
+        {/* Search + Filter */}
+        <Card className="p-4">
+          <div className="flex flex-col gap-3 md:flex-row md:items-center">
 
-        <div className="overflow-hidden rounded-2xl border border-[#E6EBF2] bg-white shadow-[0_2px_10px_rgba(15,23,42,0.05)]">
-          {error && <p className="border-b border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>}
-          {loading ? <div className="py-16 text-center text-sm text-[#718096]"><i className="ri-loader-4-line mr-2 inline-block animate-spin text-xl text-[#FFB21C]" />Loading vehicles...</div> : filteredVehicles.length === 0 ? <div className="py-16 text-center"><i className="ri-car-line text-3xl text-[#9CA3AF]" /><p className="mt-3 text-sm font-semibold text-[#152238]">No vehicles found</p><p className="mt-1 text-xs text-[#718096]">Vehicle records are sourced from registered drivers.</p></div> : <><div className="space-y-3 p-3 md:hidden">{filteredVehicles.map((driver) => { const status = vehicleStatus(driver); return <MobileRecordCard key={driver._id} title={valueOrUnavailable(driver.vehicleNumber)} subtitle={displayName(driver.name) || 'Unnamed driver'} badge={<span className={`rounded-full px-2 py-1 text-[10px] font-semibold ${statusStyles[status.key]}`}>{status.label}</span>}><MobileField label="Type" value={driver.vehicleType} /><MobileField label="Model" value={driver.vehicleModel || driver.model} /><MobileField label="RC" value={driver.rcStatus || driver.rc?.status} /><MobileField label="Insurance" value={driver.insuranceStatus || driver.insurance?.status} /><MobileField label="Registered" value={driver.registrationDate ? new Date(driver.registrationDate).toLocaleDateString('en-IN') : driver.createdAt ? new Date(driver.createdAt).toLocaleDateString('en-IN') : 'Not available'} /></MobileRecordCard>})}</div><div className="hidden overflow-x-auto md:block"><table className="w-full min-w-[1050px] text-left text-sm"><thead className="border-b border-[#E6EBF2] bg-[#F7F9FC]"><tr>{['Vehicle', 'Type', 'Model', 'Driver', 'RC status', 'Insurance status', 'Registration date', 'Vehicle status'].map((heading) => <th key={heading} className="whitespace-nowrap px-4 py-3 text-[10px] font-bold uppercase tracking-[0.08em] text-[#718096]">{heading}</th>)}</tr></thead><tbody className="divide-y divide-[#E6EBF2]">{filteredVehicles.map((driver) => { const status = vehicleStatus(driver); return <tr key={driver._id} className="hover:bg-[#FAFBFC]"><td className="px-4 py-4 font-bold text-[#152238]">{valueOrUnavailable(driver.vehicleNumber)}</td><td className="px-4 py-4 text-[#536174]">{valueOrUnavailable(driver.vehicleType)}</td><td className="px-4 py-4 text-[#536174]">{valueOrUnavailable(driver.vehicleModel || driver.model)}</td><td className="px-4 py-4"><p className="font-semibold text-[#152238]">{displayName(driver.name) || 'Unnamed driver'}</p><p className="mt-0.5 text-xs text-[#718096]">{driver.email || 'Not available'}</p></td><td className="px-4 py-4 text-xs text-[#718096]">{valueOrUnavailable(driver.rcStatus || driver.rc?.status)}</td><td className="px-4 py-4 text-xs text-[#718096]">{valueOrUnavailable(driver.insuranceStatus || driver.insurance?.status)}</td><td className="px-4 py-4 text-xs text-[#718096]">{driver.registrationDate ? new Date(driver.registrationDate).toLocaleDateString('en-IN') : driver.createdAt ? new Date(driver.createdAt).toLocaleDateString('en-IN') : 'Not available'}</td><td className="px-4 py-4"><span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${statusStyles[status.key]}`}>{status.label}</span></td></tr> })}</tbody></table></div></>}
-        </div>
+            <Search
+              value={search}
+              onChange={setSearch}
+              placeholder="Search vehicle number, type, model or driver..."
+              className="flex-1"
+            />
+
+            <Filter
+              label="Status"
+              value={statusFilter}
+              onChange={setStatusFilter}
+              options={statusOptions}
+            />
+
+          </div>
+        </Card>
+
+        {/* Error */}
+        {error && (
+          <ErrorState
+            title="Unable to load vehicles"
+            message={error}
+            onRetry={() => loadVehicles()}
+          />
+        )}
+
+        {/* Desktop Table */}
+        {!error && (
+          <div className="hidden md:block">
+
+            {loading ? (
+              <Card>
+                <Loader label="Loading vehicles..." />
+              </Card>
+            ) : filteredVehicles.length === 0 ? (
+              <EmptyState
+                title="No vehicles found"
+                message={
+                  search || statusFilter !== 'all'
+                    ? 'No vehicles match your current search or filter.'
+                    : 'Vehicle records are sourced from registered drivers.'
+                }
+                icon="ri-car-line"
+              />
+            ) : (
+              <Card className="overflow-hidden p-0">
+                <Table
+                  columns={tableColumns}
+                  data={filteredVehicles}
+                  rowKey="_id"
+                  className="rounded-none border-0"
+                />
+              </Card>
+            )}
+
+          </div>
+        )}
+
+        {/* Mobile Records */}
+        {!error && (
+          <div className="space-y-3 md:hidden">
+
+            {loading ? (
+              <Card>
+                <Loader label="Loading vehicles..." />
+              </Card>
+            ) : filteredVehicles.length === 0 ? (
+              <EmptyState
+                title="No vehicles found"
+                message={
+                  search || statusFilter !== 'all'
+                    ? 'No vehicles match your current search or filter.'
+                    : 'Vehicle records are sourced from registered drivers.'
+                }
+                icon="ri-car-line"
+              />
+            ) : (
+              filteredVehicles.map((driver) => {
+                const status = vehicleStatus(driver)
+
+                return (
+                  <MobileRecordCard
+                    key={driver._id}
+                    title={valueOrUnavailable(
+                      driver.vehicleNumber
+                    )}
+                    subtitle={
+                      displayName(driver.name) ||
+                      'Unnamed driver'
+                    }
+                    badge={
+                      <Badge variant={status.variant}>
+                        {status.label}
+                      </Badge>
+                    }
+                  >
+                    <MobileField
+                      label="Type"
+                      value={driver.vehicleType}
+                    />
+
+                    <MobileField
+                      label="Model"
+                      value={
+                        driver.vehicleModel ||
+                        driver.model
+                      }
+                    />
+
+                    <MobileField
+                      label="RC"
+                      value={
+                        driver.rcStatus ||
+                        driver.rc?.status
+                      }
+                    />
+
+                    <MobileField
+                      label="Insurance"
+                      value={
+                        driver.insuranceStatus ||
+                        driver.insurance?.status
+                      }
+                    />
+
+                    <MobileField
+                      label="Registered"
+                      value={formatDate(
+                        driver.registrationDate ||
+                        driver.createdAt
+                      )}
+                    />
+                  </MobileRecordCard>
+                )
+              })
+            )}
+
+          </div>
+        )}
+
       </div>
     </AdminLayout>
   )
