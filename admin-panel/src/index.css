@@ -5,78 +5,9 @@
 @tailwind utilities;
 
 /* =========================================================
-   RideEasy Admin - Design Tokens
-   ========================================================= */
-
-:root {
-  /* Colors */
-  --admin-primary: #FFB000;
-  --admin-primary-hover: #FFC34D;
-
-  --admin-navy: #071A2B;
-  --admin-background: #F7F9FC;
-  --admin-surface: #FFFFFF;
-
-  --admin-text: #152238;
-  --admin-muted: #718096;
-  --admin-border: #E6EBF2;
-
-  --admin-success: #1FAA59;
-  --admin-warning: #B8860B;
-  --admin-danger: #E5484D;
-  --admin-info: #2563EB;
-
-  /* Typography */
-  --admin-font-xs: 12px;
-  --admin-font-sm: 14px;
-  --admin-font-md: 16px;
-  --admin-font-lg: 20px;
-  --admin-font-xl: 24px;
-  --admin-font-2xl: 28px;
-
-  /* Spacing */
-  --admin-space-xs: 4px;
-  --admin-space-sm: 8px;
-  --admin-space-md: 12px;
-  --admin-space-lg: 16px;
-  --admin-space-xl: 20px;
-  --admin-space-2xl: 24px;
-  --admin-space-3xl: 32px;
-
-  /* Border radius */
-  --admin-radius-sm: 8px;
-  --admin-radius-md: 12px;
-  --admin-radius-lg: 16px;
-  --admin-radius-xl: 20px;
-  --admin-radius-2xl: 24px;
-
-  /* Component heights */
-  --admin-input-height: 40px;
-  --admin-button-height-sm: 36px;
-  --admin-button-height: 40px;
-  --admin-button-height-lg: 44px;
-
-  /* Cards */
-  --admin-card-padding: 20px;
-}
-
-/* =========================================================
-   Dark Theme Tokens
-   ========================================================= */
-
-.dark {
-  --admin-background: #0F172A;
-  --admin-surface: #172033;
-
-  --admin-text: #F8FAFC;
-  --admin-muted: #94A3B8;
-  --admin-border: #334155;
-
-  --admin-navy: #020617;
-}
-
-/* =========================================================
-   Base
+   RideEasy Admin - Base
+   Single source of truth:
+   src/styles/design-tokens.css
    ========================================================= */
 
 @layer base {
@@ -87,16 +18,15 @@
 
   body {
     @apply overflow-x-hidden antialiased;
-    color: var(--admin-text);
-    background: var(--admin-background);
+    color: var(--color-text-primary);
+    background: var(--color-background);
+    font-family: var(--font-family-base);
   }
 
   #root {
     @apply min-h-dvh min-h-screen min-h-[100dvh];
-    color: var(--admin-text);
+    color: var(--color-text-primary);
   }
-
-  /* Typography */
 
   h1 {
     @apply font-bold tracking-tight;
@@ -113,13 +43,9 @@
     @apply font-semibold tracking-tight;
   }
 
-  /* Links */
-
   a {
     @apply transition-colors;
   }
-
-  /* Forms */
 
   input,
   textarea,
@@ -130,10 +56,9 @@
   input:focus,
   textarea:focus,
   select:focus {
-    @apply outline-none ring-2 ring-[#FFB000]/25 ring-offset-1;
+    @apply outline-none ring-2 ring-offset-1;
+    border-color: var(--color-primary);
   }
-
-  /* Buttons */
 
   button {
     @apply transition-all duration-200;
@@ -148,16 +73,20 @@
   /* Sidebar */
 
   .admin-sidebar {
-    @apply fixed left-0 top-0 h-screen w-64 text-white shadow-xl;
-    background: var(--admin-navy);
+    @apply fixed left-0 top-0 h-screen;
+    width: var(--sidebar-width);
+    color: var(--color-text-inverse);
+    background: var(--color-sidebar);
+    box-shadow: var(--shadow-card-hover);
   }
 
   /* Header */
 
   .admin-header {
-    @apply sticky top-0 right-0 z-10 border-b shadow-sm;
-    background: var(--admin-surface);
-    border-color: var(--admin-border);
+    @apply sticky top-0 right-0 z-10 border-b;
+    height: var(--header-height);
+    background: var(--color-surface);
+    border-color: var(--color-border);
   }
 
   /* Content */
@@ -169,96 +98,122 @@
   /* Cards */
 
   .card-base {
-    @apply rounded-xl border bg-white p-6 shadow-sm;
-    border-color: var(--admin-border);
-    background: var(--admin-surface);
+    @apply border shadow-sm;
+    padding: var(--card-padding-md);
+    border-radius: var(--radius-xl);
+    border-color: var(--color-border);
+    background: var(--color-surface);
+    box-shadow: var(--shadow-card);
   }
 
   .card-hover {
-    @apply cursor-pointer transition-shadow hover:shadow-md;
+    @apply cursor-pointer transition-shadow;
   }
 
-  /* Buttons */
+  .card-hover:hover {
+    box-shadow: var(--shadow-card-hover);
+  }
+
+  /* Primary Button */
 
   .btn-primary {
-    @apply rounded-lg px-4 py-2 font-medium transition-colors;
-    background: var(--admin-primary);
-    color: var(--admin-text);
+    @apply font-medium transition-colors;
+    min-height: var(--height-button-md);
+    padding-inline: var(--space-4);
+    padding-block: var(--space-2);
+    border-radius: var(--radius-md);
+    background: var(--color-primary);
+    color: var(--color-text-inverse);
   }
 
   .btn-primary:hover {
-    background: var(--admin-primary-hover);
+    background: var(--color-primary-hover);
   }
 
+  /* Secondary Button */
+
   .btn-secondary {
-    @apply rounded-lg border bg-white px-4 py-2 font-medium transition-colors;
-    border-color: var(--admin-border);
-    color: var(--admin-text);
+    @apply border font-medium transition-colors;
+    min-height: var(--height-button-md);
+    padding-inline: var(--space-4);
+    padding-block: var(--space-2);
+    border-radius: var(--radius-md);
+    border-color: var(--color-border);
+    background: var(--color-surface);
+    color: var(--color-text-primary);
   }
 
   .btn-secondary:hover {
-    background: var(--admin-background);
+    background: var(--color-background);
   }
 
+  /* Danger Button */
+
   .btn-danger {
-    @apply rounded-lg px-4 py-2 font-medium text-white transition-colors;
-    background: var(--admin-danger);
+    @apply font-medium text-white transition-colors;
+    min-height: var(--height-button-md);
+    padding-inline: var(--space-4);
+    padding-block: var(--space-2);
+    border-radius: var(--radius-md);
+    background: var(--color-danger);
   }
 
   .btn-danger:hover {
-    background: #DC2626;
+    background: var(--color-danger-hover);
   }
 
   /* Tables */
 
   .table-header {
     @apply sticky top-0 text-sm font-semibold;
-    background: var(--admin-background);
-    color: var(--admin-text);
+    background: var(--color-background);
+    color: var(--color-text-primary);
   }
 
   .table-row {
     @apply border-b transition-colors;
-    border-color: var(--admin-border);
+    border-color: var(--color-border);
   }
 
   .table-row:hover {
-    background: #FFF9ED;
+    background: var(--color-primary-soft);
   }
 
   .table-cell {
-    @apply px-4 py-3 text-sm;
-    color: var(--admin-muted);
+    @apply text-sm;
+    padding-inline: var(--space-4);
+    padding-block: var(--space-3);
+    color: var(--color-text-secondary);
   }
 
   /* Alerts */
 
   .alert-success {
     @apply rounded-lg border p-4;
-    background: #F0FDF4;
-    border-color: #BBF7D0;
-    color: #14532D;
+    background: var(--color-success-soft);
+    border-color: var(--color-success);
+    color: var(--color-success);
   }
 
   .alert-error {
     @apply rounded-lg border p-4;
-    background: #FEF2F2;
-    border-color: #FECACA;
-    color: #7F1D1D;
+    background: var(--color-danger-soft);
+    border-color: var(--color-danger);
+    color: var(--color-danger);
   }
 
   .alert-warning {
     @apply rounded-lg border p-4;
-    background: #FEFCE8;
-    border-color: #FDE68A;
-    color: #713F12;
+    background: var(--color-warning-soft);
+    border-color: var(--color-warning);
+    color: var(--color-warning);
   }
 
   .alert-info {
     @apply rounded-lg border p-4;
-    background: #EFF6FF;
-    border-color: #BFDBFE;
-    color: #1E3A8A;
+    background: var(--color-info-soft);
+    border-color: var(--color-info);
+    color: var(--color-info);
   }
 }
 
@@ -276,7 +231,9 @@
   }
 
   .table-cell {
-    @apply px-2 py-2 text-xs;
+    @apply text-xs;
+    padding-inline: var(--space-2);
+    padding-block: var(--space-2);
   }
 }
 
@@ -289,16 +246,16 @@
 }
 
 ::-webkit-scrollbar-track {
-  @apply bg-neutral-100;
+  background: var(--color-background);
 }
 
 ::-webkit-scrollbar-thumb {
   @apply rounded;
-  background: #A3A3A3;
+  background: var(--color-border-strong);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #737373;
+  background: var(--color-text-muted);
 }
 
 /* =========================================================
@@ -313,31 +270,32 @@
 
 /* =========================================================
    RideEasy Admin - Floating Mobile Bottom Navigation
-   DO NOT CHANGE
    ========================================================= */
 
 @media (max-width: 767px) {
   .admin-mobile-nav {
     position: fixed;
-    left: 12px;
-    right: 12px;
-    bottom: 12px;
+    left: var(--space-3);
+    right: var(--space-3);
+    bottom: var(--space-3);
     z-index: 1000;
 
     display: block;
 
     padding: 7px;
 
-    background: #0B1B2B;
+    background: var(--color-sidebar);
 
     border: 1px solid rgba(255, 255, 255, 0.12);
-    border-radius: 22px;
+    border-radius: var(--radius-2xl);
 
     box-shadow:
       0 12px 30px rgba(0, 0, 0, 0.25),
       0 4px 10px rgba(0, 0, 0, 0.15);
 
-    padding-bottom: calc(7px + env(safe-area-inset-bottom));
+    padding-bottom: calc(
+      7px + env(safe-area-inset-bottom)
+    );
   }
 
   .admin-mobile-nav__track {
@@ -357,18 +315,17 @@
     min-height: 58px;
 
     gap: 4px;
-
     padding: 7px 2px;
 
     border: 0;
-    border-radius: 16px;
+    border-radius: var(--radius-lg);
 
     background: transparent;
 
-    color: #94A3B8;
+    color: var(--color-sidebar-text);
 
-    font-size: 10px;
-    font-weight: 600;
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-semibold);
     line-height: 1.1;
 
     cursor: pointer;
@@ -381,7 +338,7 @@
 
   .admin-mobile-nav__item:hover {
     background: rgba(255, 255, 255, 0.06);
-    color: #FFFFFF;
+    color: var(--color-text-inverse);
   }
 
   .admin-mobile-nav__item:active {
@@ -401,23 +358,25 @@
   }
 
   .admin-mobile-nav__item--active {
-    background: #FFB21C;
-    color: #0B1B2B;
+    background: var(--color-sidebar-active);
+    color: var(--color-sidebar);
 
     box-shadow:
       0 5px 12px rgba(255, 178, 28, 0.25);
   }
 
-  .admin-mobile-nav__item--active .admin-mobile-nav__icon {
-    color: #0B1B2B;
+  .admin-mobile-nav__item--active
+  .admin-mobile-nav__icon {
+    color: var(--color-sidebar);
   }
 
   .admin-mobile-nav__item--active:hover {
-    background: #FFB21C;
-    color: #0B1B2B;
+    background: var(--color-sidebar-active);
+    color: var(--color-sidebar);
   }
 
-  /* Keep page content above the floating navigation */
+  /* Keep page content above floating navigation */
+
   .admin-page-content {
     padding-bottom: 110px;
   }
