@@ -14,16 +14,15 @@ const AdminLayout = ({ tab, setTab, onRefresh, onLogout, emergencyAlerts, childr
           onLogout={onLogout}
           tab={tab}
           emergencyAlerts={emergencyAlerts}
-          onToggleSidebar={() => {}}
         />
 
-        <main className="admin-main-content flex-1 overflow-y-auto bg-[#F7F9FC] pb-[88px] md:pb-0">
+        <main id="admin-main-content" className="admin-main-content flex-1 overflow-y-auto bg-[#F7F9FC] pb-[88px] md:pb-0">
           <div className="mx-auto w-full max-w-[1600px] px-4 py-4 sm:px-6 sm:py-6 lg:px-8">
             {children}
           </div>
         </main>
 
-        <BottomNav tab={tab} setTab={setTab} />
+        <BottomNav tab={tab} setTab={setTab} onLogout={onLogout} />
       </div>
     </div>
   )

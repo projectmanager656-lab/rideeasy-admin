@@ -539,38 +539,36 @@ const AdminDashboard = ({ initialTab = null }) => {
       {/* Tab Content */}
       <div className="space-y-6">
         {tab === 'more' && (
-          <div className="mx-auto max-w-md space-y-5">
-            <h2 className="text-[28px] font-bold tracking-[-0.04em] text-[#152238]">More</h2>
-            {[
-              { title: 'ACCOUNT & PREFERENCES', items: [
-                { label: 'Settings', description: 'Admin preferences', icon: 'ri-settings-3-line', path: '/admin/settings' },
-                { label: 'Safety', description: 'Emergency controls', icon: 'ri-shield-check-line', path: '/admin/safety' },
-              ] },
-              { title: 'MANAGEMENT', items: [
-                { label: 'Services', description: 'Manage service offerings', icon: 'ri-tools-line', path: '/admin/services' },
-                { label: 'Payments', description: 'Review payment history', icon: 'ri-bank-card-line', path: '/admin/dashboard', tab: 'payments' },
-              ] },
-              { title: 'OTHER', items: [
-                { label: 'Notifications', description: 'View all notifications', icon: 'ri-notification-3-line', path: '/admin/notifications' },
-                { label: 'Help & Support', description: 'Get help and support', icon: 'ri-customer-service-2-line', path: '/admin/help' },
-                { label: 'Terms & Conditions', description: 'Review platform terms', icon: 'ri-file-text-line', path: '/admin/terms' },
-                { label: 'Privacy Policy', description: 'Review privacy policy', icon: 'ri-shield-line', path: '/admin/privacy' },
-                { label: 'About App', description: 'RideEasy administrator console', icon: 'ri-information-line', path: '/admin/about' },
-              ] },
-            ].map((group) => (
-              <section key={group.title}>
-                <h3 className="mb-2 px-1 text-[10px] font-bold uppercase tracking-[0.16em] text-[#718096]">{group.title}</h3>
-                <div className="overflow-hidden rounded-2xl border border-[#E5E7EB] bg-white shadow-sm">
-                  {group.items.map((item) => (
-                    <button key={item.label} type="button" onClick={() => item.tab ? setTab(item.tab) : navigate(item.path)} className="flex w-full items-center gap-4 border-b border-[#E6EBF2] px-5 py-4 text-left last:border-b-0 hover:bg-[#F7F9FC]">
-                      <span className="grid h-11 w-11 place-items-center rounded-xl bg-[#F7F9FC] text-lg text-[#071A2B]"><i className={item.icon} /></span>
-                      <span className="min-w-0 flex-1"><span className="block font-semibold text-[#152238]">{item.label}</span><span className="mt-0.5 block text-xs text-[#718096]">{item.description}</span></span>
-                      <i className="ri-arrow-right-s-line text-xl text-[#718096]" />
-                    </button>
-                  ))}
-                </div>
-              </section>
-            ))}
+          <div className="mx-auto max-w-md space-y-4">
+            <div className="rounded-2xl border border-[#E5E7EB] bg-white p-5 shadow-sm">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#F5A623]">More</p>
+              <h2 className="mt-1 text-2xl font-bold text-[#152238]">More</h2>
+            </div>
+
+            <div className="overflow-hidden rounded-2xl border border-[#E5E7EB] bg-white shadow-sm">
+              {[
+                { id: 'settings', label: 'Settings', icon: 'ri-settings-3-line', description: 'Admin preferences' },
+                { id: 'safety', label: 'Safety', icon: 'ri-shield-check-line', description: 'Emergency controls' },
+                { id: 'services', label: 'Services', icon: 'ri-tools-line', description: 'Manage service offerings' },
+                { id: 'payments', label: 'Payments', icon: 'ri-bank-card-line', description: 'Review payment history' },
+              ].map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => setTab(item.id)}
+                  className="flex w-full items-center gap-4 border-b border-[#E6EBF2] px-5 py-4 text-left last:border-b-0 hover:bg-[#F7F9FC]"
+                >
+                  <span className="grid h-11 w-11 place-items-center rounded-xl bg-[#F7F9FC] text-lg text-[#071A2B]">
+                    <i className={item.icon} />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block font-semibold text-[#152238]">{item.label}</span>
+                    <span className="mt-0.5 block text-xs text-[#718096]">{item.description}</span>
+                  </span>
+                  <i className="ri-arrow-right-s-line text-xl text-[#718096]" />
+                </button>
+              ))}
+            </div>
           </div>
         )}
 

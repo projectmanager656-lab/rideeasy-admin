@@ -4,6 +4,7 @@ import 'remixicon/fonts/remixicon.css'
 
 const AdminLogin = lazy(() => import('./pages/AdminLogin'))
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard'))
+const AdminInfoPage = lazy(() => import('./pages/AdminInfoPage'))
 const AdminNotifications = lazy(() => import('./pages/AdminNotifications'))
 const AdminVehicles = lazy(() => import('./pages/AdminVehicles'))
 const AdminProtectWrapper = lazy(() => import('./pages/AdminProtectWrapper'))
@@ -13,15 +14,8 @@ const AdminProtectWrapper = lazy(() => import('./pages/AdminProtectWrapper'))
  */
 const App = () => {
   return (
-    <div className="min-h-dvh min-h-screen bg-[#FAFAFA] text-[#111827]">
-      <Suspense fallback={
-        <div className="h-screen flex items-center justify-center text-[#6B7280] text-sm bg-[#FAFAFA]">
-          <div className="flex flex-col items-center gap-3">
-            <i className="ri-loader-4-line animate-spin text-3xl text-[#FFA726]"></i>
-            <span>Loading RideEasy Admin…</span>
-          </div>
-        </div>
-      }>
+    <div className="min-h-dvh min-h-screen bg-white text-black">
+      <Suspense fallback={<div className="h-screen flex items-center justify-center text-neutral-600 text-sm bg-white">Loading admin…</div>}>
         <Routes>
           <Route path="/" element={<Navigate to="/admin" replace />} />
           <Route path="/admin" element={<AdminLogin />} />
@@ -66,8 +60,7 @@ const App = () => {
               </AdminProtectWrapper>
             )}
           />
-            
-   
+
           <Route
             path="/admin/notifications"
             element={(
@@ -76,6 +69,10 @@ const App = () => {
               </AdminProtectWrapper>
             )}
           />
+          <Route path="/admin/help" element={<AdminProtectWrapper><AdminInfoPage section="help" /></AdminProtectWrapper>} />
+          <Route path="/admin/terms" element={<AdminProtectWrapper><AdminInfoPage section="terms" /></AdminProtectWrapper>} />
+          <Route path="/admin/privacy" element={<AdminProtectWrapper><AdminInfoPage section="privacy" /></AdminProtectWrapper>} />
+          <Route path="/admin/about" element={<AdminProtectWrapper><AdminInfoPage section="about" /></AdminProtectWrapper>} />
           <Route path="*" element={<Navigate to="/admin" replace />} />
         </Routes>
       </Suspense>

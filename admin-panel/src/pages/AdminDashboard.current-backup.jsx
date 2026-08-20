@@ -1,9 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { adminApi } from '../services/adminApi'
 import { displayName } from '../admin/adminUtils'
-import AdminLayout from '../components/AdminLayout'
-import { AlertCard } from '../components/AdminUIComponents'
 import {
   OverviewTab,
   UsersTab,
@@ -18,9 +16,17 @@ import {
   ReportsTab,
 } from '../admin/tabs'
 
-const AdminDashboard = ({ initialTab = null }) => {
+const TAB_LABELS = {
+  analytics: 'Overview',
+  users: 'Users',
+  drivers: 'Drivers',
+  rides: 'Rides',
+  payments: 'Payments',
+  pricing: 'Pricing',
+}
+
+const AdminDashboard = () => {
   const navigate = useNavigate()
-  const location = useLocation()
   const dataLoadedRef = useRef(new Set())
   const [statsNonce, setStatsNonce] = useState(0)
 
@@ -31,12 +37,12 @@ const AdminDashboard = ({ initialTab = null }) => {
   const [drivers, setDrivers] = useState([])
   const [rides, setRides] = useState([])
   const [payments, setPayments] = useState([])
-  const [services, setServices] = useState([])
-  const [pricingJson, setPricingJson] = useState('')
   const [emergencyAlerts, setEmergencyAlerts] = useState([])
   const [policeStations, setPoliceStations] = useState([])
-  const [tab, setTab] = useState(() => initialTab || location.state?.tab || 'analytics')
-  const [highlightedEmergencyAlertId] = useState(() => location.state?.alertId || '')
+  const [highlightedEmergencyAlertId] = useState('')
+  const [pricingJson, setPricingJson] = useState('')
+  const [tab, setTab] = useState('analytics')
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
   const [tabError, setTabError] = useState('')
   const [rideStatusFilter, setRideStatusFilter] = useState('all')
   const [tableSearch, setTableSearch] = useState('')
@@ -45,7 +51,6 @@ const AdminDashboard = ({ initialTab = null }) => {
   const [driversLoading, setDriversLoading] = useState(false)
   const [ridesLoading, setRidesLoading] = useState(false)
   const [paymentsLoading, setPaymentsLoading] = useState(false)
-  const [servicesLoading, setServicesLoading] = useState(false)
   const [pricingLoading, setPricingLoading] = useState(false)
   const tableHeaderSelectRef = useRef(null)
 
@@ -70,6 +75,11 @@ const AdminDashboard = ({ initialTab = null }) => {
     setTableSearch('')
   }, [tab])
 
+  useEffect(() => {
+    document.getElementById('admin-main-content')?.scrollTo({ top: 0, behavior: 'auto' })
+    window.scrollTo({ top: 0, behavior: 'auto' })
+  }, [tab])
+
   const fmtErr = (e) => e?.response?.data?.message || e?.message || 'Request failed'
 
   /** Overview only — `statsNonce` bumps on "Refresh stats" without re-fetching rides/users/etc. */
@@ -85,25 +95,13 @@ const AdminDashboard = ({ initialTab = null }) => {
       setAnalyticsError('')
       setAnalyticsLoading(true)
       try {
-        const [d, usersResult, driversResult, ridesResult, paymentsResult, alertsResult] = await Promise.all([
+        const [d, alertsResult] = await Promise.all([
           adminApi.getAnalytics(signal),
-          adminApi.getUsers(signal),
-          adminApi.getDrivers(signal),
-          adminApi.getRides('all', signal),
-          adminApi.getPayments(signal),
           adminApi.getEmergencyAlerts(signal),
         ])
         if (signal.aborted) return
         setAnalytics(d)
-        setUsers(usersResult)
-        setDrivers(driversResult)
-        setRides(ridesResult)
-        setPayments(paymentsResult)
         setEmergencyAlerts(alertsResult.alerts || [])
-        dataLoadedRef.current.add('users')
-        dataLoadedRef.current.add('drivers')
-        dataLoadedRef.current.add('rides')
-        dataLoadedRef.current.add('payments')
         dataLoadedRef.current.add('analytics')
       } catch (e) {
         if (signal.aborted) return
@@ -192,32 +190,16 @@ const AdminDashboard = ({ initialTab = null }) => {
         return
       }
 
-      if (tab === 'services') {
-        setServicesLoading(true)
-        setTabError('')
-        try {
-          const list = await adminApi.getServices(signal)
-          if (signal.aborted) return
-          setServices(list)
-        } catch (e) {
-          if (signal.aborted) return
-          setTabError(fmtErr(e))
-        } finally {
-          if (!signal.aborted) setServicesLoading(false)
-        }
-        return
-      }
-
       if (tab === 'pricing') {
         if (dataLoadedRef.current.has('pricing')) return
         setPricingLoading(true)
         setTabError('')
         try {
-          const pricing = await adminApi.getPricing(signal)
+          const d = await adminApi.getPricing(signal)
           if (signal.aborted) return
           setPricingJson(JSON.stringify({
-            rates: pricing.rates || {},
-            driverPlans: pricing.driverPlans || {},
+            rates: d.rates || {},
+            driverPlans: d.driverPlans || {},
           }, null, 2))
           dataLoadedRef.current.add('pricing')
         } catch (e) {
@@ -227,19 +209,18 @@ const AdminDashboard = ({ initialTab = null }) => {
         } finally {
           if (!signal.aborted) setPricingLoading(false)
         }
-        return
       }
 
       if (tab === 'safety') {
         setTabError('')
         try {
-          const [alertsRes, policeRes] = await Promise.all([
+          const [alertsResult, stationsResult] = await Promise.all([
             adminApi.getEmergencyAlerts(signal),
             adminApi.getPoliceStations('Kolhapur', signal),
           ])
           if (signal.aborted) return
-          setEmergencyAlerts(alertsRes.alerts || [])
-          setPoliceStations(policeRes.stations || [])
+          setEmergencyAlerts(alertsResult.alerts || [])
+          setPoliceStations(stationsResult.stations || [])
         } catch (e) {
           if (signal.aborted) return
           setTabError(fmtErr(e))
@@ -250,6 +231,34 @@ const AdminDashboard = ({ initialTab = null }) => {
     run()
     return () => ac.abort()
   }, [tab, rideStatusFilter])
+
+  const acknowledgeEmergencyAlert = (id) => {
+    adminApi.acknowledgeEmergencyAlert(id)
+      .then((response) => {
+        const updatedAlert = response?.alert
+        if (updatedAlert) {
+          setEmergencyAlerts((list) => list.map((alert) => (
+            String(alert._id) === String(updatedAlert._id) ? { ...alert, ...updatedAlert } : alert
+          )))
+        }
+      })
+      .catch((e) => alert(e.response?.data?.message || 'Unable to acknowledge emergency'))
+  }
+
+  const resolveEmergencyAlert = (id) => {
+    adminApi.resolveEmergencyAlert(id)
+      .then((response) => {
+        const updatedAlert = response?.alert
+        if (updatedAlert) {
+          setEmergencyAlerts((list) => list.map((alert) => (
+            String(alert._id) === String(updatedAlert._id) ? { ...alert, ...updatedAlert } : alert
+          )))
+        }
+        const phone = response?.nearestPolice?.phone?.replace(/[^\d+]/g, '')
+        if (phone) window.location.href = `tel:${phone}`
+      })
+      .catch((e) => alert(e.response?.data?.message || 'Unable to resolve emergency'))
+  }
 
   const mergeDriver = (doc) => {
     if (!doc?._id) return
@@ -442,65 +451,23 @@ const AdminDashboard = ({ initialTab = null }) => {
     bulkDeleteRides()
   }
 
-  const acknowledgeEmergencyAlert = (id) => {
-    adminApi.acknowledgeEmergencyAlert(id)
-      .then((res) => {
-        const next = res.alert
-        setEmergencyAlerts((list) => list.map((alert) => String(alert._id) === String(next._id) ? { ...alert, ...next } : alert))
-      })
-      .catch((e) => alert(e.response?.data?.message || 'Unable to acknowledge emergency'))
-  }
-
-  const resolveEmergencyAlert = (id) => {
-    adminApi.resolveEmergencyAlert(id)
-      .then((res) => {
-        const next = res.alert
-        setEmergencyAlerts((list) => list.map((alert) => String(alert._id) === String(next._id) ? { ...alert, ...next } : alert))
-
-        const phone = res.nearestPolice?.phone?.replace(/[^\d+]/g, '')
-        if (!phone) {
-          alert('Emergency resolved, but no phone number is available for the nearest police station.')
-          return
-        }
-
-        window.location.href = `tel:${phone}`
-      })
-      .catch((e) => alert(e.response?.data?.message || 'Unable to resolve emergency'))
-  }
-
-  const refreshServices = async () => {
-    const list = await adminApi.getServices()
-    setServices(list)
-  }
-
-  const saveService = async (id, payload) => {
-    if (id) await adminApi.updateService(id, payload)
-    else await adminApi.createService(payload)
-    await refreshServices()
-  }
-
-  const deleteService = async (id) => {
-    await adminApi.deleteService(id)
-    await refreshServices()
-  }
-
   const savePricing = () => {
     try {
       const parsed = JSON.parse(pricingJson)
-      const payload = parsed.rates != null && typeof parsed.rates === 'object'
-        ? {
-            rates: parsed.rates,
-            ...(parsed.driverPlans && typeof parsed.driverPlans === 'object'
-              ? { driverPlans: parsed.driverPlans }
-              : {}),
-          }
-        : { rates: parsed }
-
+      const payload =
+        parsed.rates != null && typeof parsed.rates === 'object'
+          ? {
+              rates: parsed.rates,
+              ...(parsed.driverPlans && typeof parsed.driverPlans === 'object'
+                ? { driverPlans: parsed.driverPlans }
+                : {}),
+            }
+          : { rates: parsed }
       adminApi.putPricing(payload)
-        .then((pricing) => {
+        .then((d) => {
           setPricingJson(JSON.stringify({
-            rates: pricing.rates || {},
-            driverPlans: pricing.driverPlans || {},
+            rates: d.rates || {},
+            driverPlans: d.driverPlans || {},
           }, null, 2))
           alert('Pricing saved')
         })
@@ -517,60 +484,348 @@ const AdminDashboard = ({ initialTab = null }) => {
   }
 
   return (
-    <AdminLayout
-      tab={tab}
-      setTab={setTab}
-      onRefresh={refreshStats}
-      onLogout={logout}
-      emergencyAlerts={emergencyAlerts}
-    >
-      {/* Error Alert */}
-      {tabError && (
-        <div className="mb-6">
-          <AlertCard
-            type="error"
-            title="Error"
-            message={tabError}
-            onClose={() => {}}
-          />
+    <div className="min-h-screen bg-white text-black">
+      <nav className="sticky top-0 z-20 border-b border-black/10 bg-white/95 backdrop-blur">
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-3 py-3 sm:gap-4 sm:px-4">
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-widest text-neutral-500">RideEasy</p>
+            <h1 className="text-base sm:text-lg font-semibold text-black">Super Admin</h1>
+          </div>
+          <div className="flex items-center gap-2 sm:gap-3">
+            <button
+              type="button"
+              onClick={refreshStats}
+              className="rounded-lg border border-neutral-300 bg-white px-2 py-1.5 text-xs font-medium text-black hover:bg-neutral-100 sm:px-3"
+            >
+              Refresh
+            </button>
+            <Link to="/" className="text-xs sm:text-sm text-neutral-600 hover:text-black hidden sm:block">Site</Link>
+            <button type="button" onClick={logout} className="text-xs sm:text-sm font-medium text-neutral-600 hover:text-black underline">
+              Log out
+            </button>
+          </div>
         </div>
-      )}
+      </nav>
+
+      <div className="mx-auto max-w-7xl px-3 py-4 sm:px-4 sm:py-6">
+        <div className="mb-4 sm:mb-6 max-w-3xl rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 sm:px-5 sm:py-4">
+          <p className="text-base sm:text-lg font-semibold text-black">Welcome, Super Admin</p>
+          <p className="mt-1 text-xs sm:text-sm text-neutral-600">
+            You are signed in with an admin JWT (<code className="rounded border border-neutral-200 bg-white px-1.5 py-0.5 text-[10px] sm:text-xs font-mono text-black">role: admin</code>).
+            This console covers users, drivers (captains), rides, payments from completed rides, and pricing.
+          </p>
+        </div>
+
+        <div className="mb-4 sm:mb-6 flex flex-wrap gap-2 overflow-x-auto pb-2 -mx-3 px-3 sm:mx-0 sm:px-0 sm:pb-0">
+          {['analytics', 'users', 'drivers', 'rides', 'payments', 'pricing'].map((t) => (
+            <button
+              key={t}
+              type="button"
+              onClick={() => setTab(t)}
+              className={`rounded-lg px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-medium transition flex-shrink-0 ${
+                tab === t
+                  ? 'bg-black text-white shadow-sm'
+                  : 'border border-neutral-300 bg-white text-neutral-700 hover:border-black hover:text-black'
+              }`}
+            >
+              {TAB_LABELS[t] || t}
+            </button>
+          ))}
+        </div>
+
+        {tabError && (
+          <div className="mb-4 rounded-xl border border-neutral-300 bg-neutral-100 px-4 py-3 text-sm text-neutral-900">
+            {tabError}
+          </div>
+        )}
 
       {/* Tab Content */}
       <div className="space-y-6">
         {tab === 'more' && (
-          <div className="mx-auto max-w-md space-y-5">
-            <h2 className="text-[28px] font-bold tracking-[-0.04em] text-[#152238]">More</h2>
-            {[
-              { title: 'ACCOUNT & PREFERENCES', items: [
-                { label: 'Settings', description: 'Admin preferences', icon: 'ri-settings-3-line', path: '/admin/settings' },
-                { label: 'Safety', description: 'Emergency controls', icon: 'ri-shield-check-line', path: '/admin/safety' },
-              ] },
-              { title: 'MANAGEMENT', items: [
-                { label: 'Services', description: 'Manage service offerings', icon: 'ri-tools-line', path: '/admin/services' },
-                { label: 'Payments', description: 'Review payment history', icon: 'ri-bank-card-line', path: '/admin/dashboard', tab: 'payments' },
-              ] },
-              { title: 'OTHER', items: [
-                { label: 'Notifications', description: 'View all notifications', icon: 'ri-notification-3-line', path: '/admin/notifications' },
-                { label: 'Help & Support', description: 'Get help and support', icon: 'ri-customer-service-2-line', path: '/admin/help' },
-                { label: 'Terms & Conditions', description: 'Review platform terms', icon: 'ri-file-text-line', path: '/admin/terms' },
-                { label: 'Privacy Policy', description: 'Review privacy policy', icon: 'ri-shield-line', path: '/admin/privacy' },
-                { label: 'About App', description: 'RideEasy administrator console', icon: 'ri-information-line', path: '/admin/about' },
-              ] },
-            ].map((group) => (
-              <section key={group.title}>
-                <h3 className="mb-2 px-1 text-[10px] font-bold uppercase tracking-[0.16em] text-[#718096]">{group.title}</h3>
-                <div className="overflow-hidden rounded-2xl border border-[#E5E7EB] bg-white shadow-sm">
-                  {group.items.map((item) => (
-                    <button key={item.label} type="button" onClick={() => item.tab ? setTab(item.tab) : navigate(item.path)} className="flex w-full items-center gap-4 border-b border-[#E6EBF2] px-5 py-4 text-left last:border-b-0 hover:bg-[#F7F9FC]">
-                      <span className="grid h-11 w-11 place-items-center rounded-xl bg-[#F7F9FC] text-lg text-[#071A2B]"><i className={item.icon} /></span>
-                      <span className="min-w-0 flex-1"><span className="block font-semibold text-[#152238]">{item.label}</span><span className="mt-0.5 block text-xs text-[#718096]">{item.description}</span></span>
-                      <i className="ri-arrow-right-s-line text-xl text-[#718096]" />
+          <div className="space-y-5 pb-6">
+
+            {/* Page Header */}
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#F5A623]">
+                Admin
+              </p>
+              <h2 className="mt-1 text-[28px] font-bold tracking-[-0.04em] text-[#152238]">
+                More
+              </h2>
+              <p className="mt-1 text-sm text-[#718096]">
+                Manage your RideEasy admin preferences.
+              </p>
+            </div>
+
+            {/* Account & Preferences */}
+            <section>
+              <h3 className="mb-2 px-1 text-xs font-bold uppercase tracking-[0.12em] text-[#718096]">
+                Account & Preferences
+              </h3>
+
+              <div className="overflow-hidden rounded-2xl border border-[#E6EBF2] bg-white shadow-sm">
+                <button
+                  type="button"
+                  onClick={() => navigate('/admin/settings')}
+                  className="flex min-h-[68px] w-full items-center gap-3 border-b border-[#E6EBF2] px-4 py-3.5 text-left transition hover:bg-[#F8FAFC] sm:px-5"
+                >
+                  <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-[#F5F7FA] text-[#152238]">
+                    <i className="ri-settings-3-line text-xl" />
+                  </span>
+
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-sm font-bold text-[#152238]">
+                      Settings
+                    </span>
+                    <span className="mt-0.5 block text-xs text-[#718096]">
+                      Admin preferences
+                    </span>
+                  </span>
+
+                  <i className="ri-arrow-right-s-line text-xl text-[#718096]" />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => navigate('/admin/safety')}
+                  className="flex min-h-[68px] w-full items-center gap-3 px-4 py-3.5 text-left transition hover:bg-[#F8FAFC] sm:px-5"
+                >
+                  <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-[#F5F7FA] text-[#152238]">
+                    <i className="ri-shield-check-line text-xl" />
+                  </span>
+
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-sm font-bold text-[#152238]">
+                      Safety
+                    </span>
+                    <span className="mt-0.5 block text-xs text-[#718096]">
+                      Emergency controls
+                    </span>
+                  </span>
+
+                  <i className="ri-arrow-right-s-line text-xl text-[#718096]" />
+                </button>
+              </div>
+            </section>
+
+            {/* Management */}
+            <section>
+              <h3 className="mb-2 px-1 text-xs font-bold uppercase tracking-[0.12em] text-[#718096]">
+                Management
+              </h3>
+
+              <div className="overflow-hidden rounded-2xl border border-[#E6EBF2] bg-white shadow-sm">
+                <button
+                  type="button"
+                  onClick={() => navigate('/admin/services')}
+                  className="flex min-h-[68px] w-full items-center gap-3 border-b border-[#E6EBF2] px-4 py-3.5 text-left transition hover:bg-[#F8FAFC] sm:px-5"
+                >
+                  <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-[#F5F7FA] text-[#152238]">
+                    <i className="ri-tools-line text-xl" />
+                  </span>
+
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-sm font-bold text-[#152238]">
+                      Services
+                    </span>
+                    <span className="mt-0.5 block text-xs text-[#718096]">
+                      Manage service offerings
+                    </span>
+                  </span>
+
+                  <i className="ri-arrow-right-s-line text-xl text-[#718096]" />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setTab('payments')}
+                  className="flex min-h-[68px] w-full items-center gap-3 px-4 py-3.5 text-left transition hover:bg-[#F8FAFC] sm:px-5"
+                >
+                  <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-[#F5F7FA] text-[#152238]">
+                    <i className="ri-bank-card-line text-xl" />
+                  </span>
+
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-sm font-bold text-[#152238]">
+                      Payments
+                    </span>
+                    <span className="mt-0.5 block text-xs text-[#718096]">
+                      Review payment history
+                    </span>
+                  </span>
+
+                  <i className="ri-arrow-right-s-line text-xl text-[#718096]" />
+                </button>
+              </div>
+            </section>
+
+            {/* Other */}
+            <section>
+              <h3 className="mb-2 px-1 text-xs font-bold uppercase tracking-[0.12em] text-[#718096]">
+                Other
+              </h3>
+
+              <div className="overflow-hidden rounded-2xl border border-[#E6EBF2] bg-white shadow-sm">
+                <button
+                  type="button"
+                  onClick={() => navigate('/admin/notifications')}
+                  className="flex min-h-[68px] w-full items-center gap-3 border-b border-[#E6EBF2] px-4 py-3.5 text-left transition hover:bg-[#F8FAFC] sm:px-5"
+                >
+                  <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-[#F5F7FA] text-[#152238]">
+                    <i className="ri-notification-3-line text-xl" />
+                  </span>
+
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-sm font-bold text-[#152238]">
+                      Notifications
+                    </span>
+                    <span className="mt-0.5 block text-xs text-[#718096]">
+                      View all notifications
+                    </span>
+                  </span>
+
+                  <i className="ri-arrow-right-s-line text-xl text-[#718096]" />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => navigate('/admin/help')}
+                  className="flex min-h-[68px] w-full items-center gap-3 border-b border-[#E6EBF2] px-4 py-3.5 text-left transition hover:bg-[#F8FAFC] sm:px-5"
+                >
+                  <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-[#F5F7FA] text-[#152238]">
+                    <i className="ri-customer-service-2-line text-xl" />
+                  </span>
+
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-sm font-bold text-[#152238]">
+                      Help & Support
+                    </span>
+                    <span className="mt-0.5 block text-xs text-[#718096]">
+                      Get help and support
+                    </span>
+                  </span>
+
+                  <i className="ri-arrow-right-s-line text-xl text-[#718096]" />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => navigate('/admin/terms')}
+                  className="flex min-h-[68px] w-full items-center gap-3 border-b border-[#E6EBF2] px-4 py-3.5 text-left transition hover:bg-[#F8FAFC] sm:px-5"
+                >
+                  <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-[#F5F7FA] text-[#152238]">
+                    <i className="ri-file-text-line text-xl" />
+                  </span>
+
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-sm font-bold text-[#152238]">
+                      Terms & Conditions
+                    </span>
+                    <span className="mt-0.5 block text-xs text-[#718096]">
+                      Review platform terms
+                    </span>
+                  </span>
+
+                  <i className="ri-arrow-right-s-line text-xl text-[#718096]" />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => navigate('/admin/privacy')}
+                  className="flex min-h-[68px] w-full items-center gap-3 border-b border-[#E6EBF2] px-4 py-3.5 text-left transition hover:bg-[#F8FAFC] sm:px-5"
+                >
+                  <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-[#F5F7FA] text-[#152238]">
+                    <i className="ri-shield-line text-xl" />
+                  </span>
+
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-sm font-bold text-[#152238]">
+                      Privacy Policy
+                    </span>
+                    <span className="mt-0.5 block text-xs text-[#718096]">
+                      Review privacy policy
+                    </span>
+                  </span>
+
+                  <i className="ri-arrow-right-s-line text-xl text-[#718096]" />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => navigate('/admin/about')}
+                  className="flex min-h-[68px] w-full items-center gap-3 px-4 py-3.5 text-left transition hover:bg-[#F8FAFC] sm:px-5"
+                >
+                  <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-[#F5F7FA] text-[#152238]">
+                    <i className="ri-information-line text-xl" />
+                  </span>
+
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-sm font-bold text-[#152238]">
+                      About App
+                    </span>
+                    <span className="mt-0.5 block text-xs text-[#718096]">
+                      RideEasy administrator console
+                    </span>
+                  </span>
+
+                  <i className="ri-arrow-right-s-line text-xl text-[#718096]" />
+                </button>
+              </div>
+            </section>
+
+            {/* Logout */}
+            <button
+              type="button"
+              onClick={() => setShowLogoutConfirm(true)}
+              className="flex min-h-[52px] w-full items-center justify-center gap-2 rounded-2xl border border-[#FECACA] bg-white px-4 py-3 text-sm font-bold text-[#EF4444] transition hover:bg-red-50"
+            >
+              <i className="ri-logout-box-r-line text-lg" />
+              Log Out
+            </button>
+
+            {showLogoutConfirm && (
+              <div
+                className="fixed inset-0 z-[10000] grid place-items-center bg-[#020914]/60 p-5"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="dashboard-logout-title"
+              >
+                <div className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-2xl">
+                  <h2
+                    id="dashboard-logout-title"
+                    className="text-lg font-bold text-[#152238]"
+                  >
+                    Log Out?
+                  </h2>
+
+                  <p className="mt-2 text-sm text-[#718096]">
+                    Are you sure you want to logout from the admin panel?
+                  </p>
+
+                  <div className="mt-5 flex justify-end gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setShowLogoutConfirm(false)}
+                      className="rounded-xl border border-[#E6EBF2] px-4 py-2.5 text-sm font-semibold text-[#536174]"
+                    >
+                      Cancel
                     </button>
-                  ))}
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowLogoutConfirm(false)
+                        logout()
+                      }}
+                      className="rounded-xl bg-[#EF4444] px-4 py-2.5 text-sm font-bold text-white"
+                    >
+                      Log Out
+                    </button>
+                  </div>
                 </div>
-              </section>
-            ))}
+              </div>
+            )}
+
           </div>
         )}
 
@@ -662,16 +917,6 @@ const AdminDashboard = ({ initialTab = null }) => {
           />
         )}
 
-        {tab === 'services' && (
-          <ServicesTab
-            services={services}
-            loading={servicesLoading}
-            error={tabError}
-            onSave={saveService}
-            onDelete={deleteService}
-          />
-        )}
-
         {tab === 'pricing' && (
           <PricingTab
             pricingJson={pricingJson}
@@ -703,7 +948,8 @@ const AdminDashboard = ({ initialTab = null }) => {
           />
         )}
       </div>
-    </AdminLayout>
+    </div>
+    </div>
   )
 }
 

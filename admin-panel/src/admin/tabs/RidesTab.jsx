@@ -1,5 +1,6 @@
 import React from 'react'
 import { displayName, rowStableKey, statusBadgeClass, RIDE_STATUSES } from '../adminUtils'
+import MobileRecordCard, { MobileField } from '../../components/MobileRecordCard'
 
 export default function RidesTab ({
   ridesLoading,
@@ -53,7 +54,12 @@ export default function RidesTab ({
         {ridesLoading ? (
           <div className="p-12 text-center text-neutral-600">Loading rides…</div>
         ) : (
-          <div className="overflow-x-auto">
+          <>
+          <div className="space-y-3 p-3 md:hidden">
+            {filteredRides.map((ride, index) => <MobileRecordCard key={rowStableKey(ride, index)} title={`Ride ${String(ride._id).slice(-8)}`} subtitle={ride.createdAt ? new Date(ride.createdAt).toLocaleString() : 'Date unavailable'} badge={<span className={`rounded-full border px-2 py-1 text-[10px] font-semibold capitalize ${statusBadgeClass(ride.status)}`}>{ride.status || '—'}</span>} checked={selectedIds.includes(String(ride._id))} onCheck={() => toggleSelect(ride._id)} actions={<button type="button" onClick={() => deleteRide(ride._id)} className="rounded-lg bg-red-50 px-3 py-2 text-xs font-semibold text-[#DC2626]">Delete</button>}><MobileField label="Pickup" value={ride.pickupLocation} /><MobileField label="Drop" value={ride.dropLocation} /><MobileField label="User" value={displayName(ride.user?.name)} /><MobileField label="Driver" value={displayName(ride.captain?.name) || 'Unassigned'} /><MobileField label="Fare" value={ride.price != null ? `₹${ride.price}` : '—'} /><MobileField label="Payment" value={ride.paymentStatus} /></MobileRecordCard>)}
+          </div>
+
+          <div className="hidden overflow-x-auto md:block">
             <table className="w-full min-w-[700px] sm:min-w-[960px] text-left text-sm text-neutral-900">
               <thead className="border-b border-neutral-200 bg-neutral-100 text-xs uppercase tracking-wide text-neutral-500">
                 <tr>
@@ -133,6 +139,7 @@ export default function RidesTab ({
               </tbody>
             </table>
           </div>
+          </>
         )}
       </div>
     </div>

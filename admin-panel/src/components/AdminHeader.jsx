@@ -6,7 +6,6 @@ const AdminHeader = ({
   onRefresh,
   onLogout,
   tab,
-  onToggleSidebar,
   emergencyAlerts = [],
 }) => {
   const navigate = useNavigate()
@@ -43,7 +42,7 @@ const AdminHeader = ({
     notifications: 'Notifications',
   }[tab] || 'Dashboard'
   const isSecondaryPage = ['safety', 'settings', 'services', 'complaints', 'reports', 'vehicles'].includes(tab)
-  const hideMobilePageTitle = ['analytics', 'users', 'drivers', 'rides'].includes(tab)
+  const hideMobilePageTitle = ['analytics', 'users', 'drivers', 'rides', 'more'].includes(tab)
 
   const pendingAlerts = emergencyAlerts.filter(
     (alert) =>
@@ -71,6 +70,7 @@ const AdminHeader = ({
               <img src={rideEasyAdminLogo} alt="RideEasy Admin" className="h-7 w-7 rounded-lg object-contain bg-white/5" />
               <span className="truncate text-sm font-semibold text-white">RideEasy Admin</span>
             </div>
+            {tab !== 'more' && <h1 className="min-w-0 truncate text-base font-bold text-white md:hidden">{pageTitle}</h1>}
 
             <div className="hidden min-w-0 md:flex md:items-center md:gap-3">
               <div className={`grid h-10 w-10 place-items-center rounded-xl ${isSecondaryPage ? 'bg-white/10 text-white ring-1 ring-white/15' : 'bg-[#F7F9FC] text-[#152238] ring-1 ring-[#E5E7EB]'}`}>
@@ -107,6 +107,10 @@ const AdminHeader = ({
             >
               <i className="ri-refresh-line" />
               <span className="hidden xl:inline">Refresh</span>
+            </button>
+
+            <button type="button" onClick={() => {}} className="grid h-10 w-10 place-items-center rounded-xl border border-white/15 bg-white/5 text-white sm:hidden" aria-label="Admin profile">
+              <i className="ri-user-3-line text-lg" />
             </button>
 
             <button

@@ -1,5 +1,6 @@
 import React from 'react'
 import { rowStableKey, paymentStatusClass } from '../adminUtils'
+import MobileRecordCard, { MobileField } from '../../components/MobileRecordCard'
 
 export default function PaymentsTab ({
   paymentsLoading,
@@ -38,7 +39,11 @@ export default function PaymentsTab ({
               </div>
             )}
           </div>
-          <div className="overflow-x-auto">
+          <div className="space-y-3 p-3 md:hidden">
+            {filteredPayments.map((payment, index) => <MobileRecordCard key={rowStableKey(payment, index)} title={payment.summary || payment.city || 'Ride payment'} subtitle={payment.completedAt ? new Date(payment.completedAt).toLocaleString() : 'Date unavailable'} badge={<span className={`rounded-full px-2 py-1 text-[10px] font-semibold ${paymentStatusClass(payment.paymentStatus)}`}>{payment.paymentStatus || '—'}</span>} checked={selectedIds.includes(String(payment._id))} onCheck={() => toggleSelect(payment._id)} actions={<button type="button" onClick={() => deleteRide(payment._id)} className="rounded-lg bg-red-50 px-3 py-2 text-xs font-semibold text-[#DC2626]">Delete ride</button>}><MobileField label="Payment ID" value={payment._id} /><MobileField label="Amount" value={payment.amount != null ? `₹${payment.amount}` : '—'} /><MobileField label="Method" value={payment.paymentMode} /><MobileField label="Driver net" value={payment.captainNetEarning != null ? `₹${payment.captainNetEarning}` : '—'} /></MobileRecordCard>)}
+          </div>
+
+          <div className="hidden overflow-x-auto md:block">
             <table className="w-full min-w-[700px] sm:min-w-[1000px] text-left text-sm text-neutral-900">
               <thead className="border-b border-neutral-200 bg-neutral-100 text-xs uppercase tracking-wide text-neutral-500">
                 <tr>
@@ -107,7 +112,7 @@ export default function PaymentsTab ({
               </tbody>
             </table>
           </div>
-        </>
+          </>
       )}
     </div>
   )
