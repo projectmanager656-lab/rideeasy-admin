@@ -9,11 +9,14 @@ const TAB_CONFIG = [
   { id: 'vehicles', label: 'Vehicles', icon: 'ri-car-line' },
   { id: 'verification', label: 'Verification', icon: 'ri-checkbox-circle-line' },
   { id: 'rides', label: 'Rides', icon: 'ri-calendar-line' },
+{ id: 'live-operations', label: 'Live Operations', icon: 'ri-radar-line' },
   { id: 'finance', label: 'Finance', icon: 'ri-money-rupee-circle-line' },
   { id: 'payments', label: 'Payments', icon: 'ri-bank-card-line' },
   { id: 'sos', label: 'SOS', icon: 'ri-alarm-warning-line' },
   { id: 'support', label: 'Support', icon: 'ri-customer-service-2-line' },
   { id: 'reports', label: 'Reports', icon: 'ri-bar-chart-line' },
+  { id: 'notifications', label: 'Notifications', icon: 'ri-notification-3-line' },
+  { id: 'roles', label: 'Roles & Permissions', icon: 'ri-shield-user-line' },
   { id: 'settings', label: 'Settings', icon: 'ri-settings-3-line' },
 ]
 
@@ -49,6 +52,10 @@ const AdminSidebar = ({ tab, setTab }) => {
     navigate('/admin/dashboard', { state: { tab: 'reports' } })
     return
   }
+  if (tabId === 'notifications') {
+  navigate('/admin/notifications')
+  return
+}
 
   if (tabId === 'payments') {
     setTab('payments')

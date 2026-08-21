@@ -1,46 +1,52 @@
 :root {
   /* =====================================================
-     RideEasy Admin - Design Tokens
+     RideEasy Admin Design System
+     Dark-first UI
      ===================================================== */
 
   /* Brand */
   --color-primary: #FFB21C;
   --color-primary-hover: #F5A900;
-  --color-primary-soft: #FFF4D6;
+  --color-primary-soft: #3A2A08;
 
-  /* Surface */
-  --color-background: #F7F9FC;
-  --color-surface: #FFFFFF;
-  --color-surface-muted: #F7F9FC;
+  /* Backgrounds */
+  --color-background: #071A2B;
+  --color-surface: #0B1B2B;
+  --color-surface-muted: #111827;
+  --color-surface-elevated: #142538;
 
   /* Text */
-  --color-text-primary: #152238;
-  --color-text-secondary: #718096;
-  --color-text-muted: #9CA3AF;
-  --color-text-inverse: #FFFFFF;
+  --color-text-primary: #F8FAFC;
+  --color-text-secondary: #94A3B8;
+  --color-text-muted: #64748B;
+  --color-text-inverse: #071A2B;
 
-  /* Border */
-  --color-border: #E5E7EB;
-  --color-border-strong: #D8DEE8;
+  /* Borders */
+  --color-border: #24384A;
+  --color-border-strong: #334A5E;
 
   /* Navigation */
-  --color-sidebar: #0B1B2B;
+  --color-sidebar: #071A2B;
   --color-sidebar-text: #94A3B8;
   --color-sidebar-active: #FFB21C;
+  --color-sidebar-hover: #102437;
 
   /* Status */
-  --color-success: #16A34A;
-  --color-success-soft: #F0FDF4;
+  --color-success: #22C55E;
+  --color-success-soft: #123522;
 
   --color-warning: #F59E0B;
-  --color-warning-soft: #FFFBEB;
+  --color-warning-soft: #3A2A08;
 
   --color-danger: #EF4444;
   --color-danger-hover: #DC2626;
-  --color-danger-soft: #FEF2F2;
+  --color-danger-soft: #3A1518;
 
-  --color-info: #2563EB;
-  --color-info-soft: #EFF6FF;
+  --color-info: #3B82F6;
+  --color-info-soft: #102A4A;
+
+  --color-purple: #A855F7;
+  --color-purple-soft: #26163D;
 
   /* Typography */
   --font-family-base:
@@ -58,6 +64,7 @@
   --font-size-lg: 1.125rem;
   --font-size-xl: 1.25rem;
   --font-size-2xl: 1.5rem;
+  --font-size-3xl: 1.875rem;
 
   --font-weight-normal: 400;
   --font-weight-medium: 500;
@@ -76,10 +83,10 @@
 
   /* Radius */
   --radius-sm: 0.5rem;
-  --radius-md: 0.75rem;
-  --radius-lg: 1rem;
-  --radius-xl: 1.25rem;
-  --radius-2xl: 1.5rem;
+  --radius-md: 0.625rem;
+  --radius-lg: 0.875rem;
+  --radius-xl: 1rem;
+  --radius-2xl: 1.25rem;
   --radius-full: 9999px;
 
   /* Component heights */
@@ -88,38 +95,43 @@
   --height-button-md: 2.5rem;
   --height-button-lg: 2.75rem;
 
-  /* Card */
+  /* Cards */
   --card-padding-sm: 1rem;
-  --card-padding-md: 1.5rem;
-  --card-padding-lg: 1.75rem;
+  --card-padding-md: 1.25rem;
+  --card-padding-lg: 1.5rem;
 
   /* Layout */
   --sidebar-width: 260px;
   --header-height: 72px;
+  --mobile-header-height: 64px;
+  --mobile-nav-height: 76px;
 
   /* Shadows */
-  --shadow-card: 0 1px 3px rgba(15, 23, 42, 0.08);
-  --shadow-card-hover: 0 8px 24px rgba(15, 23, 42, 0.10);
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.25);
+  --shadow-card-hover: 0 8px 24px rgba(0, 0, 0, 0.30);
+  --shadow-modal: 0 20px 50px rgba(0, 0, 0, 0.45);
 }
 
 /* =====================================================
-   Dark theme
+   Light theme
    ===================================================== */
 
-[data-theme="dark"] {
-  --color-background: #071A2B;
-  --color-surface: #0B1B2B;
-  --color-surface-muted: #102437;
+[data-theme="light"] {
+  --color-background: #F7F9FC;
+  --color-surface: #FFFFFF;
+  --color-surface-muted: #F1F5F9;
+  --color-surface-elevated: #FFFFFF;
 
-  --color-text-primary: #F8FAFC;
-  --color-text-secondary: #CBD5E1;
+  --color-text-primary: #152238;
+  --color-text-secondary: #64748B;
   --color-text-muted: #94A3B8;
-  --color-text-inverse: #0B1B2B;
+  --color-text-inverse: #FFFFFF;
 
-  --color-border: #24384A;
-  --color-border-strong: #334A5E;
+  --color-border: #E2E8F0;
+  --color-border-strong: #CBD5E1;
 
-  --color-sidebar: #061521;
+  --color-sidebar: #071A2B;
   --color-sidebar-text: #94A3B8;
   --color-sidebar-active: #FFB21C;
+  --color-sidebar-hover: #102437;
 }

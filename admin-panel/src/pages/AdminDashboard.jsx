@@ -17,6 +17,9 @@ import {
   ComplaintsTab,
   ReportsTab,
 } from '../admin/tabs'
+import AdminLiveOperations from './AdminLiveOperations'
+import AdminRoles from './AdminRoles'
+import AdminFinance from './AdminFinance'
 
 const AdminDashboard = ({ initialTab = null }) => {
   const navigate = useNavigate()
@@ -538,33 +541,165 @@ const [d, usersResult, driversResult, ridesResult, paymentsResult, alertsResult]
 
       {/* Tab Content */}
       <div className="space-y-6">
+
+        {/* MORE */}
         {tab === 'more' && (
           <div className="mx-auto max-w-md space-y-5">
-            <h2 className="text-[28px] font-bold tracking-[-0.04em] text-[#152238]">More</h2>
+            <h2 className="text-[28px] font-bold tracking-[-0.04em] text-[#152238]">
+              More
+            </h2>
+
             {[
-              { title: 'ACCOUNT & PREFERENCES', items: [
-                { label: 'Settings', description: 'Admin preferences', icon: 'ri-settings-3-line', path: '/admin/settings' },
-                { label: 'Safety', description: 'Emergency controls', icon: 'ri-shield-check-line', path: '/admin/safety' },
-              ] },
-              { title: 'MANAGEMENT', items: [
-                { label: 'Services', description: 'Manage service offerings', icon: 'ri-tools-line', path: '/admin/services' },
-                { label: 'Payments', description: 'Review payment history', icon: 'ri-bank-card-line', path: '/admin/dashboard', tab: 'payments' },
-              ] },
-              { title: 'OTHER', items: [
-                { label: 'Notifications', description: 'View all notifications', icon: 'ri-notification-3-line', path: '/admin/notifications' },
-                { label: 'Help & Support', description: 'Get help and support', icon: 'ri-customer-service-2-line', path: '/admin/help' },
-                { label: 'Terms & Conditions', description: 'Review platform terms', icon: 'ri-file-text-line', path: '/admin/terms' },
-                { label: 'Privacy Policy', description: 'Review privacy policy', icon: 'ri-shield-line', path: '/admin/privacy' },
-                { label: 'About App', description: 'RideEasy administrator console', icon: 'ri-information-line', path: '/admin/about' },
-              ] },
+              {
+                title: 'ACCOUNT & PREFERENCES',
+                items: [
+                  {
+                    label: 'Settings',
+                    description: 'Admin preferences',
+                    icon: 'ri-settings-3-line',
+                    path: '/admin/settings',
+                  },
+                  {
+                    label: 'Safety',
+                    description: 'Emergency controls',
+                    icon: 'ri-shield-check-line',
+                    tab: 'safety',
+                  },
+                ],
+              },
+
+              {
+                title: 'MANAGEMENT',
+                items: [
+                  {
+                    label: 'Vehicles',
+                    description: 'Manage vehicles',
+                    icon: 'ri-car-line',
+                    path: '/admin/vehicles',
+                  },
+                  {
+                    label: 'Verification',
+                    description: 'Driver verification',
+                    icon: 'ri-checkbox-circle-line',
+                    tab: 'drivers',
+                  },
+                  {
+                    label: 'Live Operations',
+                    description: 'Monitor active rides',
+                    icon: 'ri-radar-line',
+                    tab: 'live-operations',
+                  },
+                  {
+                    label: 'Finance',
+                    description: 'Financial overview',
+                    icon: 'ri-money-rupee-circle-line',
+                    tab: 'finance',
+                  },
+                  {
+                    label: 'Payments',
+                    description: 'Review payment history',
+                    icon: 'ri-bank-card-line',
+                    tab: 'payments',
+                  },
+                  {
+                    label: 'Services',
+                    description: 'Manage service offerings',
+                    icon: 'ri-tools-line',
+                    path: '/admin/services',
+                  },
+                ],
+              },
+
+              {
+                title: 'ADMINISTRATION',
+                items: [
+                  {
+                    label: 'Support',
+                    description: 'Customer support',
+                    icon: 'ri-customer-service-2-line',
+                    tab: 'complaints',
+                  },
+                  {
+                    label: 'Reports',
+                    description: 'View reports',
+                    icon: 'ri-bar-chart-line',
+                    tab: 'reports',
+                  },
+                  {
+                    label: 'Roles & Permissions',
+                    description: 'Admin access control',
+                    icon: 'ri-shield-user-line',
+                    tab: 'roles',
+                  },
+                  {
+                    label: 'Notifications',
+                    description: 'View notifications',
+                    icon: 'ri-notification-3-line',
+                    path: '/admin/notifications',
+                  },
+                ],
+              },
+
+              {
+                title: 'OTHER',
+                items: [
+                  {
+                    label: 'Terms & Conditions',
+                    description: 'Review platform terms',
+                    icon: 'ri-file-text-line',
+                    path: '/admin/terms',
+                  },
+                  {
+                    label: 'Privacy Policy',
+                    description: 'Review privacy policy',
+                    icon: 'ri-shield-line',
+                    path: '/admin/privacy',
+                  },
+                  {
+                    label: 'About App',
+                    description: 'RideEasy administrator console',
+                    icon: 'ri-information-line',
+                    path: '/admin/about',
+                  },
+                ],
+              },
             ].map((group) => (
               <section key={group.title}>
-                <h3 className="mb-2 px-1 text-[10px] font-bold uppercase tracking-[0.16em] text-[#718096]">{group.title}</h3>
+                <h3 className="mb-2 px-1 text-[10px] font-bold uppercase tracking-[0.16em] text-[#718096]">
+                  {group.title}
+                </h3>
+
                 <div className="overflow-hidden rounded-2xl border border-[#E5E7EB] bg-white shadow-sm">
                   {group.items.map((item) => (
-                    <button key={item.label} type="button" onClick={() => item.tab ? setTab(item.tab) : navigate(item.path)} className="flex w-full items-center gap-4 border-b border-[#E6EBF2] px-5 py-4 text-left last:border-b-0 hover:bg-[#F7F9FC]">
-                      <span className="grid h-11 w-11 place-items-center rounded-xl bg-[#F7F9FC] text-lg text-[#071A2B]"><i className={item.icon} /></span>
-                      <span className="min-w-0 flex-1"><span className="block font-semibold text-[#152238]">{item.label}</span><span className="mt-0.5 block text-xs text-[#718096]">{item.description}</span></span>
+                    <button
+                      key={item.label}
+                      type="button"
+                      onClick={() => {
+                        if (item.tab) {
+                          setTab(item.tab)
+                          return
+                        }
+
+                        if (item.path) {
+                          navigate(item.path)
+                        }
+                      }}
+                      className="flex w-full items-center gap-4 border-b border-[#E6EBF2] px-5 py-4 text-left last:border-b-0 hover:bg-[#F7F9FC]"
+                    >
+                      <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-[#F7F9FC] text-lg text-[#071A2B]">
+                        <i className={item.icon} />
+                      </span>
+
+                      <span className="min-w-0 flex-1">
+                        <span className="block font-semibold text-[#152238]">
+                          {item.label}
+                        </span>
+
+                        <span className="mt-0.5 block text-xs text-[#718096]">
+                          {item.description}
+                        </span>
+                      </span>
+
                       <i className="ri-arrow-right-s-line text-xl text-[#718096]" />
                     </button>
                   ))}
@@ -574,6 +709,7 @@ const [d, usersResult, driversResult, ridesResult, paymentsResult, alertsResult]
           </div>
         )}
 
+        {/* DASHBOARD */}
         {tab === 'analytics' && (
           <OverviewTab
             analytics={analytics}
@@ -588,6 +724,7 @@ const [d, usersResult, driversResult, ridesResult, paymentsResult, alertsResult]
           />
         )}
 
+        {/* USERS */}
         {tab === 'users' && (
           <UsersTab
             usersLoading={usersLoading}
@@ -606,6 +743,7 @@ const [d, usersResult, driversResult, ridesResult, paymentsResult, alertsResult]
           />
         )}
 
+        {/* DRIVERS / VERIFICATION */}
         {tab === 'drivers' && (
           <DriversTab
             driversLoading={driversLoading}
@@ -626,6 +764,7 @@ const [d, usersResult, driversResult, ridesResult, paymentsResult, alertsResult]
           />
         )}
 
+        {/* RIDES */}
         {tab === 'rides' && (
           <RidesTab
             ridesLoading={ridesLoading}
@@ -645,6 +784,17 @@ const [d, usersResult, driversResult, ridesResult, paymentsResult, alertsResult]
           />
         )}
 
+        {/* LIVE OPERATIONS */}
+        {tab === 'live-operations' && (
+          <AdminLiveOperations />
+        )}
+
+        {/* FINANCE */}
+        {tab === 'finance' && (
+          <AdminFinance />
+        )}
+
+        {/* PAYMENTS */}
         {tab === 'payments' && (
           <PaymentsTab
             paymentsLoading={paymentsLoading}
@@ -662,6 +812,7 @@ const [d, usersResult, driversResult, ridesResult, paymentsResult, alertsResult]
           />
         )}
 
+        {/* SERVICES */}
         {tab === 'services' && (
           <ServicesTab
             services={services}
@@ -672,6 +823,7 @@ const [d, usersResult, driversResult, ridesResult, paymentsResult, alertsResult]
           />
         )}
 
+        {/* PRICING */}
         {tab === 'pricing' && (
           <PricingTab
             pricingJson={pricingJson}
@@ -681,6 +833,7 @@ const [d, usersResult, driversResult, ridesResult, paymentsResult, alertsResult]
           />
         )}
 
+        {/* SETTINGS */}
         {tab === 'settings' && (
           <SettingsTab
             setTab={setTab}
@@ -689,10 +842,17 @@ const [d, usersResult, driversResult, ridesResult, paymentsResult, alertsResult]
           />
         )}
 
-        {tab === 'complaints' && <ComplaintsTab />}
+        {/* SUPPORT */}
+        {tab === 'complaints' && (
+          <ComplaintsTab />
+        )}
 
-        {tab === 'reports' && <ReportsTab />}
+        {/* REPORTS */}
+        {tab === 'reports' && (
+          <ReportsTab />
+        )}
 
+        {/* SOS / SAFETY */}
         {tab === 'safety' && (
           <SafetyTab
             alerts={emergencyAlerts}
@@ -702,6 +862,12 @@ const [d, usersResult, driversResult, ridesResult, paymentsResult, alertsResult]
             highlightedAlertId={highlightedEmergencyAlertId}
           />
         )}
+
+        {/* ROLES & PERMISSIONS */}
+        {tab === 'roles' && (
+          <AdminRoles />
+        )}
+
       </div>
     </AdminLayout>
   )
