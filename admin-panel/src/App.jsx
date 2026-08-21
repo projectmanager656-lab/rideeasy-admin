@@ -7,6 +7,7 @@ const AdminDashboard = lazy(() => import('./pages/AdminDashboard'))
 const AdminInfoPage = lazy(() => import('./pages/AdminInfoPage'))
 const AdminNotifications = lazy(() => import('./pages/AdminNotifications'))
 const AdminVehicles = lazy(() => import('./pages/AdminVehicles'))
+const AdminVerification = lazy(() => import('./pages/AdminVerification'))
 const AdminProtectWrapper = lazy(() => import('./pages/AdminProtectWrapper'))
 
 const AdminFinance = lazy(() => import('./pages/AdminFinance'))
@@ -65,44 +66,52 @@ const App = () => {
             element={<ProtectedDashboard tab="drivers" />}
           />
 
-          {/* VEHICLES */}
-          <Route
-            path="/admin/vehicles"
-            element={
-              <AdminProtectWrapper>
-                <AdminVehicles />
-              </AdminProtectWrapper>
-            }
-          />
-          <Route
-            path="/vehicles"
-            element={
-              <AdminProtectWrapper>
-                <AdminVehicles />
-              </AdminProtectWrapper>
-            }
-          />
+             {/* RIDES */}
+<Route
+  path="/admin/rides"
+  element={<ProtectedDashboard tab="rides" />}
+/>
+<Route
+  path="/rides"
+  element={<ProtectedDashboard tab="rides" />}
+/>
+             {/* VEHICLES */}
+<Route
+  path="/admin/vehicles"
+  element={
+    <AdminProtectWrapper>
+      <AdminVehicles />
+    </AdminProtectWrapper>
+  }
+/>
 
-          {/* VERIFICATION */}
-          <Route
-            path="/admin/verification"
-            element={<ProtectedDashboard tab="drivers" />}
-          />
-          <Route
-            path="/verification"
-            element={<ProtectedDashboard tab="drivers" />}
-          />
+<Route
+  path="/vehicles"
+  element={
+    <AdminProtectWrapper>
+      <AdminVehicles />
+    </AdminProtectWrapper>
+  }
+/>
 
-          {/* RIDES */}
-          <Route
-            path="/admin/rides"
-            element={<ProtectedDashboard tab="rides" />}
-          />
-          <Route
-            path="/rides"
-            element={<ProtectedDashboard tab="rides" />}
-          />
+{/* VERIFICATION */}
+<Route
+  path="/admin/verification"
+  element={
+    <AdminProtectWrapper>
+      <AdminVerification />
+    </AdminProtectWrapper>
+  }
+/>
 
+<Route
+  path="/verification"
+  element={
+    <AdminProtectWrapper>
+      <AdminVerification />
+    </AdminProtectWrapper>
+  }
+/>
           {/* LIVE OPERATIONS */}
           <Route
             path="/admin/live-operations"

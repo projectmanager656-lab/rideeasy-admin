@@ -3,76 +3,21 @@ import { useNavigate } from 'react-router-dom'
 import rideEasyAdminLogo from '../assets/rideeasy-admin-logo-reference.png'
 
 const TAB_CONFIG = [
-  {
-    id: 'analytics',
-    label: 'Dashboard',
-    icon: 'ri-dashboard-line',
-  },
-  {
-    id: 'users',
-    label: 'Users',
-    icon: 'ri-user-3-line',
-  },
-  {
-    id: 'drivers',
-    label: 'Drivers',
-    icon: 'ri-steering-2-line',
-  },
-  {
-    id: 'vehicles',
-    label: 'Vehicles',
-    icon: 'ri-car-line',
-  },
-  {
-    id: 'verification',
-    label: 'Verification',
-    icon: 'ri-checkbox-circle-line',
-  },
-  {
-    id: 'rides',
-    label: 'Rides',
-    icon: 'ri-calendar-line',
-  },
-  {
-    id: 'live-operations',
-    label: 'Live Operations',
-    icon: 'ri-radar-line',
-  },
-  {
-    id: 'finance',
-    label: 'Finance',
-    icon: 'ri-money-rupee-circle-line',
-  },
-  {
-    id: 'payments',
-    label: 'Payments',
-    icon: 'ri-bank-card-line',
-  },
-  {
-    id: 'sos',
-    label: 'SOS',
-    icon: 'ri-alarm-warning-line',
-  },
-  {
-    id: 'support',
-    label: 'Support',
-    icon: 'ri-customer-service-2-line',
-  },
-  {
-    id: 'reports',
-    label: 'Reports',
-    icon: 'ri-bar-chart-line',
-  },
-  {
-    id: 'roles',
-    label: 'Roles & Permissions',
-    icon: 'ri-shield-user-line',
-  },
-  {
-    id: 'settings',
-    label: 'Settings',
-    icon: 'ri-settings-3-line',
-  },
+  { id: 'analytics', label: 'Dashboard', icon: 'ri-dashboard-line' },
+  { id: 'users', label: 'Users', icon: 'ri-user-3-line' },
+  { id: 'drivers', label: 'Drivers', icon: 'ri-steering-2-line' },
+  { id: 'vehicles', label: 'Vehicles', icon: 'ri-car-line' },
+  { id: 'verification', label: 'Verification', icon: 'ri-checkbox-circle-line' },
+  { id: 'rides', label: 'Rides', icon: 'ri-calendar-line' },
+  { id: 'live-operations', label: 'Live Operations', icon: 'ri-radar-line' },
+  { id: 'finance', label: 'Finance', icon: 'ri-money-rupee-circle-line' },
+  { id: 'payments', label: 'Payments', icon: 'ri-bank-card-line' },
+  { id: 'sos', label: 'SOS', icon: 'ri-alarm-warning-line' },
+  { id: 'support', label: 'Support', icon: 'ri-customer-service-2-line' },
+  { id: 'reports', label: 'Reports', icon: 'ri-bar-chart-line' },
+  { id: 'notifications', label: 'Notifications', icon: 'ri-notification-3-line' },
+  { id: 'roles', label: 'Roles & Permissions', icon: 'ri-shield-user-line' },
+  { id: 'settings', label: 'Settings', icon: 'ri-settings-3-line' },
 ]
 
 const ROUTES = {
@@ -88,6 +33,7 @@ const ROUTES = {
   sos: '/sos',
   support: '/support',
   reports: '/reports',
+  notifications: '/notifications',
   roles: '/roles',
   settings: '/settings',
 }
