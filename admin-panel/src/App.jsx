@@ -115,39 +115,22 @@ const App = () => {
           {/* LIVE OPERATIONS */}
           <Route
             path="/admin/live-operations"
-            element={
-              <AdminProtectWrapper>
-                <AdminLiveOperations />
-              </AdminProtectWrapper>
-            }
+            element={<ProtectedDashboard tab="live-operations" />}
           />
           <Route
             path="/live-operations"
-            element={
-              <AdminProtectWrapper>
-                <AdminLiveOperations />
-              </AdminProtectWrapper>
-            }
+            element={<ProtectedDashboard tab="live-operations" />}
           />
-
           {/* FINANCE */}
-          <Route
-            path="/admin/finance"
-            element={
-              <AdminProtectWrapper>
-                <AdminFinance />
-              </AdminProtectWrapper>
-            }
-          />
-          <Route
-            path="/finance"
-            element={
-              <AdminProtectWrapper>
-                <AdminFinance />
-              </AdminProtectWrapper>
-            }
-          />
+<Route
+  path="/admin/finance"
+  element={<ProtectedDashboard tab="finance" />}
+/>
 
+<Route
+  path="/finance"
+  element={<ProtectedDashboard tab="finance" />}
+/>
           {/* PAYMENTS */}
           <Route
             path="/admin/payments"

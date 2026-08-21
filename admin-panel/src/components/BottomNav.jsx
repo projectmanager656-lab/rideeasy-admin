@@ -22,7 +22,7 @@ const items = [
   },
   {
     id: 'rides',
-    label: 'Booking',
+     label: 'Rides',
     icon: 'ri-calendar-check-line',
     route: '/rides',
   },

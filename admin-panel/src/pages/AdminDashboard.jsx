@@ -69,12 +69,18 @@ const AdminDashboard = ({ initialTab = null }) => {
   }, [])
 
   useEffect(() => {
+    if (initialTab) {
+      setTab(initialTab)
+    } else if (location.state?.tab) {
+      setTab(location.state.tab)
+    }
+  }, [initialTab, location.state?.tab])
+
+  useEffect(() => {
     setSelectedIds([])
     setTableSearch('')
   }, [tab])
-
   const fmtErr = (e) => e?.response?.data?.message || e?.message || 'Request failed'
-
   /** Overview only — `statsNonce` bumps on "Refresh stats" without re-fetching rides/users/etc. */
   useEffect(() => {
     if (tab !== 'analytics') return
