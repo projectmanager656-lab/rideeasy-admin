@@ -3,85 +3,108 @@ import { useNavigate } from 'react-router-dom'
 import rideEasyAdminLogo from '../assets/rideeasy-admin-logo-reference.png'
 
 const TAB_CONFIG = [
-  { id: 'analytics', label: 'Dashboard', icon: 'ri-dashboard-line' },
-  { id: 'users', label: 'Users', icon: 'ri-user-3-line' },
-  { id: 'drivers', label: 'Drivers', icon: 'ri-steering-2-line' },
-  { id: 'vehicles', label: 'Vehicles', icon: 'ri-car-line' },
-  { id: 'verification', label: 'Verification', icon: 'ri-checkbox-circle-line' },
-  { id: 'rides', label: 'Rides', icon: 'ri-calendar-line' },
-{ id: 'live-operations', label: 'Live Operations', icon: 'ri-radar-line' },
-  { id: 'finance', label: 'Finance', icon: 'ri-money-rupee-circle-line' },
-  { id: 'payments', label: 'Payments', icon: 'ri-bank-card-line' },
-  { id: 'sos', label: 'SOS', icon: 'ri-alarm-warning-line' },
-  { id: 'support', label: 'Support', icon: 'ri-customer-service-2-line' },
-  { id: 'reports', label: 'Reports', icon: 'ri-bar-chart-line' },
-  { id: 'notifications', label: 'Notifications', icon: 'ri-notification-3-line' },
-  { id: 'roles', label: 'Roles & Permissions', icon: 'ri-shield-user-line' },
-  { id: 'settings', label: 'Settings', icon: 'ri-settings-3-line' },
+  {
+    id: 'analytics',
+    label: 'Dashboard',
+    icon: 'ri-dashboard-line',
+  },
+  {
+    id: 'users',
+    label: 'Users',
+    icon: 'ri-user-3-line',
+  },
+  {
+    id: 'drivers',
+    label: 'Drivers',
+    icon: 'ri-steering-2-line',
+  },
+  {
+    id: 'vehicles',
+    label: 'Vehicles',
+    icon: 'ri-car-line',
+  },
+  {
+    id: 'verification',
+    label: 'Verification',
+    icon: 'ri-checkbox-circle-line',
+  },
+  {
+    id: 'rides',
+    label: 'Rides',
+    icon: 'ri-calendar-line',
+  },
+  {
+    id: 'live-operations',
+    label: 'Live Operations',
+    icon: 'ri-radar-line',
+  },
+  {
+    id: 'finance',
+    label: 'Finance',
+    icon: 'ri-money-rupee-circle-line',
+  },
+  {
+    id: 'payments',
+    label: 'Payments',
+    icon: 'ri-bank-card-line',
+  },
+  {
+    id: 'sos',
+    label: 'SOS',
+    icon: 'ri-alarm-warning-line',
+  },
+  {
+    id: 'support',
+    label: 'Support',
+    icon: 'ri-customer-service-2-line',
+  },
+  {
+    id: 'reports',
+    label: 'Reports',
+    icon: 'ri-bar-chart-line',
+  },
+  {
+    id: 'roles',
+    label: 'Roles & Permissions',
+    icon: 'ri-shield-user-line',
+  },
+  {
+    id: 'settings',
+    label: 'Settings',
+    icon: 'ri-settings-3-line',
+  },
 ]
+
+const ROUTES = {
+  analytics: '/dashboard',
+  users: '/users',
+  drivers: '/drivers',
+  vehicles: '/vehicles',
+  verification: '/verification',
+  rides: '/rides',
+  'live-operations': '/live-operations',
+  finance: '/finance',
+  payments: '/payments',
+  sos: '/sos',
+  support: '/support',
+  reports: '/reports',
+  roles: '/roles',
+  settings: '/settings',
+}
 
 const AdminSidebar = ({ tab, setTab }) => {
   const navigate = useNavigate()
 
   const handleTabClick = (tabId) => {
-  if (tabId === 'vehicles') {
-    navigate('/admin/vehicles')
-    return
-  }
+    const route = ROUTES[tabId]
 
-  if (tabId === 'verification') {
-    setTab('drivers')
-    navigate('/admin/dashboard', { state: { tab: 'drivers' } })
-    return
-  }
+    if (route) {
+      navigate(route)
+      return
+    }
 
-  if (tabId === 'sos') {
-    setTab('safety')
-    navigate('/admin/dashboard', { state: { tab: 'safety' } })
-    return
+    setTab(tabId)
   }
-
-  if (tabId === 'support') {
-    setTab('complaints')
-    navigate('/admin/dashboard', { state: { tab: 'complaints' } })
-    return
-  }
-
-  if (tabId === 'reports') {
-    setTab('reports')
-    navigate('/admin/dashboard', { state: { tab: 'reports' } })
-    return
-  }
-  if (tabId === 'notifications') {
-  navigate('/admin/notifications')
-  return
-}
-
-  if (tabId === 'payments') {
-    setTab('payments')
-    navigate('/admin/dashboard', { state: { tab: 'payments' } })
-    return
-  }
-
-  if (tabId === 'settings') {
-    setTab('settings')
-    navigate('/admin/dashboard', { state: { tab: 'settings' } })
-    return
-  }
-
-  if (tabId === 'rides') {
-    setTab('rides')
-    navigate('/admin/dashboard', { state: { tab: 'rides' } })
-    return
-  }
-
-  if (tabId === 'finance') {
-    setTab('finance')
-    return
-  }
-
-  setTab(tabId)
-}
 
   const renderItems = () =>
     TAB_CONFIG.map((item) => {
@@ -111,13 +134,20 @@ const AdminSidebar = ({ tab, setTab }) => {
 
   return (
     <aside className="hidden h-screen w-[260px] flex-col bg-[#0B1B2B] text-white shadow-2xl md:flex">
+      {/* LOGO */}
       <div className="border-b border-white/10 px-5 py-6">
         <div className="flex items-center gap-3">
-          <img src={rideEasyAdminLogo} alt="RideEasy Admin" className="h-11 w-11 rounded-2xl object-contain bg-white/5" />
+          <img
+            src={rideEasyAdminLogo}
+            alt="RideEasy Admin"
+            className="h-11 w-11 rounded-2xl bg-white/5 object-contain"
+          />
+
           <div>
             <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-400">
               RideEasy
             </p>
+
             <h2 className="mt-1 text-xl font-bold text-white">
               Admin
             </h2>
@@ -125,10 +155,14 @@ const AdminSidebar = ({ tab, setTab }) => {
         </div>
       </div>
 
+      {/* NAVIGATION */}
       <nav className="flex-1 overflow-y-auto px-3 py-5">
-        <div className="space-y-1.5">{renderItems()}</div>
+        <div className="space-y-1.5">
+          {renderItems()}
+        </div>
       </nav>
 
+      {/* LOGOUT */}
       <div className="border-t border-white/10 px-3 py-4">
         <button
           type="button"

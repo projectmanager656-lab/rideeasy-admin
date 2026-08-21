@@ -6,31 +6,30 @@ const items = [
     id: 'analytics',
     label: 'Dashboard',
     icon: 'ri-dashboard-3-line',
-    tab: 'analytics',
+    route: '/dashboard',
   },
   {
     id: 'users',
     label: 'Users',
     icon: 'ri-user-3-line',
-    tab: 'users',
+    route: '/users',
   },
   {
     id: 'drivers',
     label: 'Drivers',
     icon: 'ri-taxi-line',
-    tab: 'drivers',
+    route: '/drivers',
   },
   {
     id: 'rides',
     label: 'Booking',
     icon: 'ri-calendar-check-line',
-    tab: 'rides',
+    route: '/rides',
   },
   {
     id: 'more',
     label: 'More',
     icon: 'ri-more-2-fill',
-    tab: 'more',
   },
 ]
 
@@ -40,56 +39,56 @@ const moreItems = [
     label: 'Vehicles',
     description: 'Manage vehicles',
     icon: 'ri-car-line',
-    route: '/admin/vehicles',
+    route: '/vehicles',
   },
   {
     id: 'verification',
     label: 'Verification',
     description: 'Driver verification',
     icon: 'ri-checkbox-circle-line',
-    tab: 'drivers',
+    route: '/verification',
   },
   {
     id: 'live-operations',
     label: 'Live Operations',
     description: 'Monitor active rides',
     icon: 'ri-radar-line',
-    tab: 'live-operations',
+    route: '/live-operations',
   },
   {
     id: 'finance',
     label: 'Finance',
     description: 'Financial overview',
     icon: 'ri-money-rupee-circle-line',
-    tab: 'finance',
+    route: '/finance',
   },
   {
     id: 'payments',
     label: 'Payments',
     description: 'Payment history',
     icon: 'ri-bank-card-line',
-    tab: 'payments',
+    route: '/payments',
   },
   {
     id: 'sos',
     label: 'SOS',
     description: 'Emergency controls',
     icon: 'ri-alarm-warning-line',
-    tab: 'safety',
+    route: '/sos',
   },
   {
     id: 'support',
     label: 'Support',
     description: 'Customer support',
     icon: 'ri-customer-service-2-line',
-    tab: 'complaints',
+    route: '/support',
   },
   {
     id: 'reports',
     label: 'Reports',
     description: 'View reports',
     icon: 'ri-bar-chart-line',
-    tab: 'reports',
+    route: '/reports',
   },
   {
     id: 'notifications',
@@ -103,56 +102,39 @@ const moreItems = [
     label: 'Roles & Permissions',
     description: 'Admin access control',
     icon: 'ri-shield-user-line',
-    tab: 'roles',
+    route: '/roles',
   },
   {
     id: 'settings',
     label: 'Settings',
     description: 'Admin preferences',
     icon: 'ri-settings-3-line',
-    tab: 'settings',
+    route: '/settings',
   },
 ]
 
-export default function BottomNav({ tab, setTab }) {
+export default function BottomNav() {
   const navigate = useNavigate()
   const [moreOpen, setMoreOpen] = useState(false)
 
-  const openTab = (tabName) => {
-    setMoreOpen(false)
-
-    // Change the dashboard tab directly.
-    setTab(tabName)
-  }
-
-  const openRoute = (route) => {
-    setMoreOpen(false)
-    navigate(route)
-  }
-
   const handleMainClick = (item) => {
-    if (item.tab === 'more') {
-      setMoreOpen((current) => !current)
+    if (item.id === 'more') {
+      setMoreOpen((value) => !value)
       return
     }
 
-    openTab(item.tab)
+    setMoreOpen(false)
+    navigate(item.route)
   }
 
   const handleMoreItem = (item) => {
-    if (item.route) {
-      openRoute(item.route)
-      return
-    }
-
-    if (item.tab) {
-      openTab(item.tab)
-    }
+    setMoreOpen(false)
+    navigate(item.route)
   }
 
   return (
     <>
-      {/* Overlay */}
+      {/* BACKDROP */}
       {moreOpen && (
         <button
           type="button"
@@ -162,7 +144,7 @@ export default function BottomNav({ tab, setTab }) {
         />
       )}
 
-      {/* More Menu */}
+      {/* MORE MENU */}
       {moreOpen && (
         <div className="fixed bottom-[92px] left-3 right-3 z-[1001] max-h-[70vh] overflow-y-auto rounded-2xl border border-[#E5E7EB] bg-white p-3 shadow-2xl md:hidden">
           <div className="mb-3 flex items-center justify-between px-2">
@@ -180,7 +162,7 @@ export default function BottomNav({ tab, setTab }) {
               type="button"
               onClick={() => setMoreOpen(false)}
               className="grid h-9 w-9 place-items-center rounded-xl bg-[#F7F9FC] text-[#718096]"
-              aria-label="Close More"
+              aria-label="Close More menu"
             >
               <i className="ri-close-line text-lg" />
             </button>
@@ -211,17 +193,14 @@ export default function BottomNav({ tab, setTab }) {
         </div>
       )}
 
-      {/* Bottom Navigation */}
+      {/* BOTTOM NAVIGATION */}
       <nav
         aria-label="Admin navigation"
         className="admin-mobile-nav md:hidden"
       >
         <div className="admin-mobile-nav__track">
           {items.map((item) => {
-            const active =
-              item.tab === 'more'
-                ? moreOpen
-                : tab === item.tab
+            const active = item.id === 'more' ? moreOpen : false
 
             return (
               <button
@@ -233,12 +212,11 @@ export default function BottomNav({ tab, setTab }) {
                     ? 'admin-mobile-nav__item--active'
                     : ''
                 }`}
-                aria-current={active ? 'page' : undefined}
               >
                 <span className="admin-mobile-nav__icon">
                   <i
                     className={
-                      moreOpen && item.tab === 'more'
+                      moreOpen && item.id === 'more'
                         ? 'ri-close-line'
                         : item.icon
                     }
