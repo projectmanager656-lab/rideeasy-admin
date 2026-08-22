@@ -171,24 +171,15 @@ const App = () => {
             element={<ProtectedDashboard tab="reports" />}
           />
 
-          {/* ROLES & PERMISSIONS */}
-          <Route
-            path="/admin/roles"
-            element={
-              <AdminProtectWrapper>
-                <AdminRoles />
-              </AdminProtectWrapper>
-            }
-          />
-          <Route
-            path="/roles"
-            element={
-              <AdminProtectWrapper>
-                <AdminRoles />
-              </AdminProtectWrapper>
-            }
-          />
-
+           {/* ROLES & PERMISSIONS */}
+<Route
+  path="/admin/roles"
+  element={<ProtectedDashboard tab="roles" />}
+/>
+<Route
+  path="/roles"
+  element={<ProtectedDashboard tab="roles" />}
+/>
           {/* SERVICES */}
           <Route
             path="/admin/services"

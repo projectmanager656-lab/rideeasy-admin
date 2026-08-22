@@ -33,7 +33,7 @@ const ROUTES = {
   sos: '/sos',
   support: '/support',
   reports: '/reports',
-  notifications: '/notifications',
+  notifications: '/admin/notifications',
   roles: '/roles',
   settings: '/settings',
 }
