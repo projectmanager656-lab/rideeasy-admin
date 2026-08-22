@@ -1,5 +1,7 @@
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import rideEasyAdminLogo from '../assets/rideeasy-admin-logo-reference.png'
+import { Modal } from './AdminUIComponents'
 
 const AdminHeader = ({
   onRefresh,
@@ -7,6 +9,7 @@ const AdminHeader = ({
   tab,
   emergencyAlerts = [],
 }) => {
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
   const navigate = useNavigate()
 
   const isSecondaryPage = [
@@ -25,10 +28,15 @@ const AdminHeader = ({
       )
   )
 
-  const handleLogout = () => {
-    onLogout()
-    navigate('/admin')
-  }
+ const handleLogout = () => {
+  setShowLogoutConfirm(true)
+}
+
+const confirmLogout = () => {
+  setShowLogoutConfirm(false)
+  onLogout()
+  navigate('/admin')
+}
 
   const goBackToDashboard = () => {
     navigate('/admin/dashboard', {
@@ -174,7 +182,7 @@ const AdminHeader = ({
           <button
             type="button"
             onClick={handleLogout}
-            className="hidden items-center justify-center gap-2 rounded-xl border border-white/15 bg-white px-3 py-2.5 text-sm font-medium text-[#6B7280] transition-colors hover:border-[#EF4444]/30 hover:bg-red-50 hover:text-[#EF4444] sm:inline-flex"
+                       className="hidden items-center justify-center gap-2 rounded-xl border border-white/15 bg-white px-3 py-2.5 text-sm font-medium text-[#6B7280] transition-colors hover:border-[#EF4444]/30 hover:bg-red-50 hover:text-[#EF4444] sm:inline-flex"
             title="Sign out"
           >
             <i className="ri-logout-box-line" />
@@ -183,6 +191,44 @@ const AdminHeader = ({
               Logout
             </span>
           </button>
+          <Modal
+            open={showLogoutConfirm}
+            onClose={() => setShowLogoutConfirm(false)}
+            title="Confirm Logout"
+            footer={
+              <div className="flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowLogoutConfirm(false)}
+                  className="rounded-xl border border-[#D9DEE7] px-4 py-2.5 text-sm font-semibold text-[#152238] hover:bg-[#F8FAFC]"
+                >
+                  Cancel
+                </button>
+
+                <button
+                  type="button"
+                  onClick={confirmLogout}
+                  className="rounded-xl bg-[#EF4444] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#DC2626]"
+                >
+                  Logout
+                </button>
+              </div>
+            }
+          >
+            <div className="py-2">
+              <div className="mx-auto mb-4 grid h-12 w-12 place-items-center rounded-full bg-red-50">
+                <i className="ri-logout-box-line text-xl text-[#EF4444]" />
+              </div>
+
+              <p className="text-center text-sm text-[#6B7280]">
+                Are you sure you want to logout?
+              </p>
+
+              <p className="mt-1 text-center text-xs text-[#9CA3AF]">
+                Your current admin session will be ended.
+              </p>
+            </div>
+          </Modal>
         </div>
       </div>
     </header>

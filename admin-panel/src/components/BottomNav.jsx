@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { Modal } from './AdminUIComponents'
 
 const items = [
   {
@@ -22,7 +23,7 @@ const items = [
   },
   {
     id: 'rides',
-     label: 'Rides',
+    label: 'Rides',
     icon: 'ri-calendar-check-line',
     route: '/rides',
   },
@@ -113,9 +114,11 @@ const moreItems = [
   },
 ]
 
-export default function BottomNav() {
+export default function BottomNav({ onLogout }) {
   const navigate = useNavigate()
+
   const [moreOpen, setMoreOpen] = useState(false)
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
 
   const handleMainClick = (item) => {
     if (item.id === 'more') {
@@ -129,7 +132,24 @@ export default function BottomNav() {
 
   const handleMoreItem = (item) => {
     setMoreOpen(false)
+
+    if (item.action === 'logout') {
+      setShowLogoutConfirm(true)
+      return
+    }
+
     navigate(item.route)
+  }
+
+  const handleLogoutConfirm = () => {
+    setShowLogoutConfirm(false)
+
+    if (onLogout) {
+      onLogout()
+    } else {
+      localStorage.removeItem('adminToken')
+      navigate('/admin')
+    }
   }
 
   return (
@@ -147,6 +167,7 @@ export default function BottomNav() {
       {/* MORE MENU */}
       {moreOpen && (
         <div className="fixed bottom-[92px] left-3 right-3 z-[1001] max-h-[70vh] overflow-y-auto rounded-2xl border border-[#E5E7EB] bg-white p-3 shadow-2xl md:hidden">
+          {/* MORE HEADER */}
           <div className="mb-3 flex items-center justify-between px-2">
             <div>
               <h2 className="text-base font-bold text-[#152238]">
@@ -168,6 +189,7 @@ export default function BottomNav() {
             </button>
           </div>
 
+          {/* MODULES */}
           <div className="grid grid-cols-2 gap-2">
             {moreItems.map((item) => (
               <button
@@ -190,8 +212,76 @@ export default function BottomNav() {
               </button>
             ))}
           </div>
+
+          {/* LOGOUT */}
+          <div className="mt-3 border-t border-[#E5E7EB] pt-3">
+            <button
+              type="button"
+              onClick={() =>
+                handleMoreItem({
+                  id: 'logout',
+                  action: 'logout',
+                })
+              }
+              className="flex min-h-[56px] w-full items-center gap-3 rounded-xl border border-red-200 bg-red-50 px-4 text-left transition-colors hover:bg-red-100"
+            >
+              <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-red-100 text-red-600">
+                <i className="ri-logout-box-line text-lg" />
+              </span>
+
+              <span>
+                <span className="block text-sm font-semibold text-red-600">
+                  Logout
+                </span>
+
+                <span className="block text-[10px] text-red-500">
+                  Sign out of admin
+                </span>
+              </span>
+            </button>
+          </div>
         </div>
       )}
+
+      {/* LOGOUT CONFIRMATION MODAL */}
+      <Modal
+        open={showLogoutConfirm}
+        onClose={() => setShowLogoutConfirm(false)}
+        title="Confirm Logout"
+        footer={
+          <div className="flex justify-end gap-2">
+            <button
+              type="button"
+              onClick={() => setShowLogoutConfirm(false)}
+              className="rounded-lg border border-[#E5E7EB] bg-white px-4 py-2.5 text-sm font-semibold text-[#152238] transition-colors hover:bg-[#F7F9FC]"
+            >
+              Cancel
+            </button>
+
+            <button
+              type="button"
+              onClick={handleLogoutConfirm}
+              className="rounded-lg bg-[#EF4444] px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#DC2626]"
+            >
+              Logout
+            </button>
+          </div>
+        }
+      >
+        <div className="py-2">
+          <div className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-red-50 text-red-500">
+            <i className="ri-logout-box-r-line text-2xl" />
+          </div>
+
+          <h3 className="mt-4 text-center text-base font-semibold text-[#152238]">
+            Are you sure you want to logout?
+          </h3>
+
+          <p className="mt-2 text-center text-sm text-[#718096]">
+            You will need to login again to access the admin panel.
+          </p>
+        </div>
+      </Modal>
 
       {/* BOTTOM NAVIGATION */}
       <nav
@@ -200,7 +290,10 @@ export default function BottomNav() {
       >
         <div className="admin-mobile-nav__track">
           {items.map((item) => {
-            const active = item.id === 'more' ? moreOpen : false
+            const active =
+              item.id === 'more'
+                ? moreOpen
+                : false
 
             return (
               <button
