@@ -38,3 +38,6 @@ android/capacitor/build
 frontend/test-results/
 frontend/playwright-report/
 frontend/playwright/.cache/
+
+Backend/src/models/auditLog.model.js
+docs/DAY3_ADMIN_API_MAPPING.backup.md
