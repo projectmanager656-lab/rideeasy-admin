@@ -152,15 +152,18 @@ const AdminHeader = ({
   }
 
   const confirmLogout = () => {
-    setShowLogoutConfirm(false)
-    setShowProfileMenu(false)
+  setShowLogoutConfirm(false)
+  setShowProfileMenu(false)
 
-    onLogout()
+  onLogout()
 
-    navigate('/admin', {
-      replace: true,
-    })
-  }
+  navigate('/admin', {
+    replace: true,
+    state: {
+      logoutSuccess: true,
+    },
+  })
+}
 
   const goBackToDashboard = () => {
     navigate('/admin/dashboard', {

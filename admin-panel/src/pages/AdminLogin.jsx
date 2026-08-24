@@ -1,68 +1,78 @@
-import React, { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import React, { useEffect, useState } from 'react'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { apiClient } from '../services/http'
 import { formatApiError } from '../utils/apiError'
 import { isAdminRoleToken } from '../utils/jwtPayload'
 import rideEasyAdminLogo from '../assets/rideeasy-admin-logo-reference.png'
 
 const AdminLogin = () => {
+  const navigate = useNavigate()
+  const location = useLocation()
+
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
-  const navigate = useNavigate()
+  const [logoutSuccess, setLogoutSuccess] = useState(
+    Boolean(location.state?.logoutSuccess)
+  )
+
+  useEffect(() => {
+    if (!location.state?.logoutSuccess) {
+      return
+    }
+
+    const timer = window.setTimeout(() => {
+      setLogoutSuccess(false)
+
+      navigate('/admin', {
+        replace: true,
+        state: {},
+      })
+    }, 3000)
+
+    return () => {
+      window.clearTimeout(timer)
+    }
+  }, [location.state?.logoutSuccess, navigate])
 
   const submitHandler = async (e) => {
     e.preventDefault()
 
-    if (loading) {
-      return
-    }
-
     setError('')
-
-    const normalizedEmail = String(email || '')
-      .trim()
-      .toLowerCase()
-
-    const normalizedPassword = String(password || '').trim()
-
-    if (!normalizedEmail || !normalizedPassword) {
-      setError('Please enter your email and password.')
-      return
-    }
+    setLogoutSuccess(false)
 
     try {
       setLoading(true)
 
       const payload = {
-        email: normalizedEmail,
-        password: normalizedPassword,
+        email: String(email || '').trim().toLowerCase(),
+        password: String(password || '').trim(),
       }
 
-      const { data } = await apiClient.post('/admin/login', payload)
+      const { data } = await apiClient.post(
+        '/admin/login',
+        payload
+      )
 
       const token = data?.token
 
       if (!token) {
-        setError('Invalid response from server.')
+        setError('Invalid response from server')
         return
       }
 
       if (!isAdminRoleToken(token)) {
-        setError('Access denied — admin role required.')
+        setError('Access denied — admin role required')
         return
       }
 
-      // Store the authenticated admin session.
       localStorage.setItem('adminToken', token)
 
-      // Clear any old OTP demo/session information.
-      sessionStorage.removeItem('adminOtpEmail')
-
-      // Existing working admin flow.
-      navigate('/admin/dashboard')
+      navigate('/admin/dashboard', {
+        replace: true,
+      })
     } catch (err) {
       setError(formatApiError(err))
     } finally {
@@ -72,10 +82,12 @@ const AdminLogin = () => {
 
   return (
     <div className="flex min-h-dvh min-h-screen items-center justify-center bg-[#020914] px-6 py-8 text-white sm:px-8">
+
       <main className="w-full max-w-[420px] rounded-[24px] border border-[#1D3042] bg-[#06111D] px-6 py-8 shadow-[0_24px_70px_rgba(0,0,0,0.42)] sm:px-9 sm:py-10">
 
-        {/* LOGO */}
+        {/* LOGO + TITLE */}
         <div className="flex flex-col items-center text-center">
+
           <Link
             to="/"
             aria-label="RideEasy home"
@@ -92,10 +104,32 @@ const AdminLogin = () => {
             RideEasy Admin
           </h1>
 
-          <p className="mt-2 text-sm text-[#94A3B8]">
+          <p className="mt-1 text-sm text-[#94A3B8]">
             Secure administrator access
           </p>
+
         </div>
+
+        {/* LOGOUT SUCCESS MESSAGE */}
+        {logoutSuccess && (
+          <div
+            role="status"
+            aria-live="polite"
+            className="mt-6 flex items-start gap-3 rounded-xl border border-[#BBF7D0] bg-[#F0FDF4] px-4 py-3 text-sm text-[#15803D]"
+          >
+            <i className="ri-checkbox-circle-fill mt-0.5 text-lg" />
+
+            <div>
+              <p className="font-bold">
+                Successfully logged out
+              </p>
+
+              <p className="mt-0.5 text-xs text-[#166534]">
+                Your admin session has been ended.
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* LOGIN FORM */}
         <form
@@ -118,15 +152,11 @@ const AdminLogin = () => {
               type="email"
               name="rideeasy-admin-email"
               value={email}
-              onChange={(e) => {
-                setEmail(e.target.value)
-                setError('')
-              }}
+              onChange={(e) => setEmail(e.target.value)}
               placeholder="admin@rideeasyride.com"
               autoComplete="off"
-              disabled={loading}
+              className="h-12 w-full rounded-xl border border-[#294057] bg-[#102235] px-4 text-base text-white outline-none placeholder:text-[#94A3B8] transition focus:border-[#FFA726] focus:ring-2 focus:ring-[#FFA726]/20"
               required
-              className="h-12 w-full rounded-xl border border-[#294057] bg-[#102235] px-4 text-base text-white outline-none placeholder:text-[#94A3B8] transition focus:border-[#FFA726] focus:ring-2 focus:ring-[#FFA726]/20 disabled:cursor-not-allowed disabled:opacity-60"
             />
           </div>
 
@@ -144,14 +174,10 @@ const AdminLogin = () => {
               type="password"
               name="rideeasy-admin-password"
               value={password}
-              onChange={(e) => {
-                setPassword(e.target.value)
-                setError('')
-              }}
+              onChange={(e) => setPassword(e.target.value)}
               autoComplete="off"
-              disabled={loading}
+              className="h-12 w-full rounded-xl border border-[#294057] bg-[#102235] px-4 text-base text-white outline-none transition focus:border-[#FFA726] focus:ring-2 focus:ring-[#FFA726]/20"
               required
-              className="h-12 w-full rounded-xl border border-[#294057] bg-[#102235] px-4 text-base text-white outline-none placeholder:text-[#94A3B8] transition focus:border-[#FFA726] focus:ring-2 focus:ring-[#FFA726]/20 disabled:cursor-not-allowed disabled:opacity-60"
             />
           </div>
 
@@ -161,8 +187,11 @@ const AdminLogin = () => {
               role="alert"
               className="flex items-start gap-2 rounded-xl border border-[#EF4444]/40 bg-[#EF4444]/10 px-3 py-2.5 text-sm leading-5 text-[#FCA5A5]"
             >
-              <i className="ri-error-warning-line mt-0.5 shrink-0" />
-              <span>{error}</span>
+              <i className="ri-error-warning-line mt-0.5 text-base" />
+
+              <span>
+                {error}
+              </span>
             </div>
           )}
 
@@ -176,23 +205,30 @@ const AdminLogin = () => {
               <i className="ri-loader-4-line animate-spin text-lg" />
             )}
 
-            {loading ? 'Checking credentials...' : 'Login'}
+            {loading
+              ? 'Logging in...'
+              : 'Login'}
           </button>
+
         </form>
 
         {/* SECURITY */}
         <div className="mt-7 flex items-center justify-center gap-2 text-sm text-[#94A3B8]">
           <i className="ri-shield-check-line text-base text-[#FFA726]" />
-          <span>Secure admin access</span>
+
+          <span>
+            Secure admin access
+          </span>
         </div>
 
         {/* BACK */}
         <Link
           to="/"
-          className="mt-6 block text-center text-xs text-[#64748B] hover:text-[#CBD5E1]"
+          className="mt-6 block text-center text-xs text-[#64748B] transition hover:text-[#CBD5E1]"
         >
           Back to home
         </Link>
+
       </main>
     </div>
   )
