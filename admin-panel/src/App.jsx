@@ -3,6 +3,8 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import 'remixicon/fonts/remixicon.css'
 
 const AdminLogin = lazy(() => import('./pages/AdminLogin'))
+const AdminOtp = lazy(() => import('./pages/AdminOtp'))
+
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard'))
 const AdminInfoPage = lazy(() => import('./pages/AdminInfoPage'))
 const AdminNotifications = lazy(() => import('./pages/AdminNotifications'))
@@ -34,7 +36,12 @@ const App = () => {
           {/* LOGIN */}
           <Route path="/" element={<Navigate to="/admin" replace />} />
           <Route path="/login" element={<Navigate to="/admin" replace />} />
+
+          {/* Existing Admin Login */}
           <Route path="/admin" element={<AdminLogin />} />
+
+          {/* Frontend OTP Screen */}
+          <Route path="/admin/otp" element={<AdminOtp />} />
 
           {/* DASHBOARD */}
           <Route
@@ -66,76 +73,82 @@ const App = () => {
             element={<ProtectedDashboard tab="drivers" />}
           />
 
-             {/* RIDES */}
-<Route
-  path="/admin/rides"
-  element={<ProtectedDashboard tab="rides" />}
-/>
-<Route
-  path="/rides"
-  element={<ProtectedDashboard tab="rides" />}
-/>
-             {/* VEHICLES */}
-<Route
-  path="/admin/vehicles"
-  element={
-    <AdminProtectWrapper>
-      <AdminVehicles />
-    </AdminProtectWrapper>
-  }
-/>
+          {/* RIDES */}
+          <Route
+            path="/admin/rides"
+            element={<ProtectedDashboard tab="rides" />}
+          />
+          <Route
+            path="/rides"
+            element={<ProtectedDashboard tab="rides" />}
+          />
 
-<Route
-  path="/vehicles"
-  element={
-    <AdminProtectWrapper>
-      <AdminVehicles />
-    </AdminProtectWrapper>
-  }
-/>
+          {/* VEHICLES */}
+          <Route
+            path="/admin/vehicles"
+            element={
+              <AdminProtectWrapper>
+                <AdminVehicles />
+              </AdminProtectWrapper>
+            }
+          />
 
-{/* VERIFICATION */}
-<Route
-  path="/admin/verification"
-  element={
-    <AdminProtectWrapper>
-      <AdminVerification />
-    </AdminProtectWrapper>
-  }
-/>
+          <Route
+            path="/vehicles"
+            element={
+              <AdminProtectWrapper>
+                <AdminVehicles />
+              </AdminProtectWrapper>
+            }
+          />
 
-<Route
-  path="/verification"
-  element={
-    <AdminProtectWrapper>
-      <AdminVerification />
-    </AdminProtectWrapper>
-  }
-/>
+          {/* VERIFICATION */}
+          <Route
+            path="/admin/verification"
+            element={
+              <AdminProtectWrapper>
+                <AdminVerification />
+              </AdminProtectWrapper>
+            }
+          />
+
+          <Route
+            path="/verification"
+            element={
+              <AdminProtectWrapper>
+                <AdminVerification />
+              </AdminProtectWrapper>
+            }
+          />
+
           {/* LIVE OPERATIONS */}
           <Route
             path="/admin/live-operations"
             element={<ProtectedDashboard tab="live-operations" />}
           />
+
           <Route
             path="/live-operations"
             element={<ProtectedDashboard tab="live-operations" />}
           />
-          {/* FINANCE */}
-<Route
-  path="/admin/finance"
-  element={<ProtectedDashboard tab="finance" />}
-/>
 
-<Route
-  path="/finance"
-  element={<ProtectedDashboard tab="finance" />}
-/>
+          {/* FINANCE */}
+          <Route
+            path="/admin/finance"
+            element={<ProtectedDashboard tab="finance" />}
+          />
+
+          <Route
+            path="/finance"
+            element={<ProtectedDashboard tab="finance" />}
+          />
+
           {/* PAYMENTS */}
           <Route
             path="/admin/payments"
             element={<ProtectedDashboard tab="payments" />}
           />
+
           <Route
             path="/payments"
             element={<ProtectedDashboard tab="payments" />}
@@ -146,6 +159,7 @@ const App = () => {
             path="/admin/sos"
             element={<ProtectedDashboard tab="safety" />}
           />
+
           <Route
             path="/sos"
             element={<ProtectedDashboard tab="safety" />}
@@ -156,6 +170,7 @@ const App = () => {
             path="/admin/support"
             element={<ProtectedDashboard tab="complaints" />}
           />
+
           <Route
             path="/support"
             element={<ProtectedDashboard tab="complaints" />}
@@ -166,27 +181,30 @@ const App = () => {
             path="/admin/reports"
             element={<ProtectedDashboard tab="reports" />}
           />
+
           <Route
             path="/reports"
             element={<ProtectedDashboard tab="reports" />}
           />
 
-           {/* ROLES & PERMISSIONS */}
-<Route
-  path="/admin/roles"
-  element={<ProtectedDashboard tab="roles" />}
-/>
-<Route
-  path="/roles"
-  element={<ProtectedDashboard tab="roles" />}
-/>
+          {/* ROLES & PERMISSIONS */}
+          <Route
+            path="/admin/roles"
+            element={<ProtectedDashboard tab="roles" />}
+          />
+
+          <Route
+            path="/roles"
+            element={<ProtectedDashboard tab="roles" />}
+          />
+
           {/* SERVICES */}
           <Route
             path="/admin/services"
             element={<ProtectedDashboard tab="services" />}
           />
 
-          {/* PRICING / FINANCE SUPPORT */}
+          {/* PRICING */}
           <Route
             path="/admin/pricing"
             element={<ProtectedDashboard tab="pricing" />}
@@ -197,6 +215,7 @@ const App = () => {
             path="/admin/settings"
             element={<ProtectedDashboard tab="settings" />}
           />
+
           <Route
             path="/settings"
             element={<ProtectedDashboard tab="settings" />}
@@ -218,7 +237,7 @@ const App = () => {
             element={<ProtectedDashboard tab="safety" />}
           />
 
-          {/* INFO PAGES */}
+          {/* INFO */}
           <Route
             path="/admin/help"
             element={
