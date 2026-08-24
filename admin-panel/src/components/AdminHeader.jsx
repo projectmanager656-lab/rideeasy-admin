@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import rideEasyAdminLogo from '../assets/rideeasy-admin-logo-reference.png'
 import { Modal } from './AdminUIComponents'
@@ -57,7 +57,10 @@ const AdminHeader = ({
   emergencyAlerts = [],
 }) => {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
+  const [showProfileMenu, setShowProfileMenu] = useState(false)
   const [adminRole, setAdminRole] = useState(getStoredAdminRole)
+
+  const profileMenuRef = useRef(null)
   const navigate = useNavigate()
 
   const isSecondaryPage = [
@@ -76,6 +79,7 @@ const AdminHeader = ({
       )
   )
 
+  // Keep admin role synchronized with localStorage.
   useEffect(() => {
     const syncAdminRole = () => {
       setAdminRole(getStoredAdminRole())
@@ -90,6 +94,7 @@ const AdminHeader = ({
     }
   }, [])
 
+  // Detect role changes made inside the same browser tab.
   useEffect(() => {
     const interval = window.setInterval(() => {
       const currentRole = getStoredAdminRole()
@@ -108,20 +113,74 @@ const AdminHeader = ({
     }
   }, [])
 
+  // Close profile dropdown when clicking outside it.
+  useEffect(() => {
+    const handleOutsideClick = (event) => {
+      if (
+        profileMenuRef.current &&
+        !profileMenuRef.current.contains(event.target)
+      ) {
+        setShowProfileMenu(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleOutsideClick)
+
+    return () => {
+      document.removeEventListener('mousedown', handleOutsideClick)
+    }
+  }, [])
+
+  // Close profile dropdown when pressing Escape.
+  useEffect(() => {
+    const handleEscape = (event) => {
+      if (event.key === 'Escape') {
+        setShowProfileMenu(false)
+      }
+    }
+
+    document.addEventListener('keydown', handleEscape)
+
+    return () => {
+      document.removeEventListener('keydown', handleEscape)
+    }
+  }, [])
+
   const handleLogout = () => {
+    setShowProfileMenu(false)
     setShowLogoutConfirm(true)
   }
 
   const confirmLogout = () => {
     setShowLogoutConfirm(false)
+    setShowProfileMenu(false)
+
     onLogout()
-    navigate('/admin')
+
+    navigate('/admin', {
+      replace: true,
+    })
   }
 
   const goBackToDashboard = () => {
     navigate('/admin/dashboard', {
       state: { tab: 'analytics' },
     })
+  }
+
+  const openProfile = () => {
+    setShowProfileMenu(false)
+    navigate('/admin/profile')
+  }
+
+  const openRoles = () => {
+    setShowProfileMenu(false)
+    navigate('/roles')
+  }
+
+  const openSettings = () => {
+    setShowProfileMenu(false)
+    navigate('/settings')
   }
 
   const roleSubtitle = getRoleSubtitle(adminRole)
@@ -131,7 +190,9 @@ const AdminHeader = ({
     <header className="sticky top-0 z-20 border-b border-white/10 bg-[#0B1B2B] text-white shadow-sm">
       <div className="flex min-h-[64px] items-center gap-3 px-3 sm:px-6 lg:min-h-[72px] lg:px-8">
 
-        {/* LEFT SIDE */}
+        {/* =====================================================
+            LEFT SIDE
+        ====================================================== */}
         <div className="flex min-w-0 flex-1 items-center gap-3">
 
           {/* BACK BUTTON */}
@@ -151,7 +212,7 @@ const AdminHeader = ({
             <img
               src={rideEasyAdminLogo}
               alt="RideEasy Admin"
-              className="h-10 w-10 shrink-0 rounded-xl object-contain bg-white/5"
+              className="h-10 w-10 shrink-0 rounded-xl bg-white/5 object-contain"
             />
 
             <div className="min-w-0">
@@ -170,7 +231,7 @@ const AdminHeader = ({
             <img
               src={rideEasyAdminLogo}
               alt="RideEasy Admin"
-              className="h-10 w-10 shrink-0 rounded-xl object-contain bg-white/5"
+              className="h-10 w-10 shrink-0 rounded-xl bg-white/5 object-contain"
             />
 
             <div className="min-w-0">
@@ -197,7 +258,9 @@ const AdminHeader = ({
           </div>
         </div>
 
-        {/* RIGHT SIDE */}
+        {/* =====================================================
+            RIGHT SIDE
+        ====================================================== */}
         <div className="flex shrink-0 items-center gap-2 sm:gap-2.5">
 
           {/* REFRESH */}
@@ -217,9 +280,11 @@ const AdminHeader = ({
           {/* MOBILE PROFILE */}
           <button
             type="button"
-            onClick={() => {}}
+            onClick={() => setShowProfileMenu((previous) => !previous)}
             className="grid h-10 w-10 place-items-center rounded-xl border border-white/15 bg-white/5 text-white transition-colors hover:bg-white/10 sm:hidden"
             aria-label="Admin profile"
+            aria-expanded={showProfileMenu}
+            aria-haspopup="menu"
           >
             <i className="ri-user-3-line text-lg" />
           </button>
@@ -242,26 +307,126 @@ const AdminHeader = ({
             )}
           </button>
 
-          {/* ADMIN PROFILE */}
-          <div className="hidden items-center gap-2 rounded-xl border border-white/15 bg-white px-3 py-2 shadow-sm sm:flex">
-            <div className="grid h-9 w-9 place-items-center rounded-full bg-[#0B1B2B] text-xs font-bold text-white">
-              {roleInitials}
-            </div>
+          {/* ===================================================
+              ADMIN PROFILE DROPDOWN
+          ==================================================== */}
+          <div
+            ref={profileMenuRef}
+            className="relative hidden sm:block"
+          >
+            <button
+              type="button"
+              onClick={() =>
+                setShowProfileMenu((previous) => !previous)
+              }
+              className="flex items-center gap-2 rounded-xl border border-white/15 bg-white px-3 py-2 shadow-sm transition hover:border-[#FFB21C]"
+              aria-expanded={showProfileMenu}
+              aria-haspopup="menu"
+            >
+              {/* INITIALS */}
+              <div className="grid h-9 w-9 place-items-center rounded-full bg-[#0B1B2B] text-xs font-bold text-white">
+                {roleInitials}
+              </div>
 
-            <div className="text-left">
-              <p className="text-sm font-semibold text-[#111827]">
-                {adminRole}
-              </p>
+              {/* ROLE */}
+              <div className="text-left">
+                <p className="text-sm font-semibold text-[#111827]">
+                  {adminRole}
+                </p>
 
-              <p className="text-xs text-[#6B7280]">
-                {roleSubtitle}
-              </p>
-            </div>
+                <p className="text-xs text-[#6B7280]">
+                  {roleSubtitle}
+                </p>
+              </div>
 
-            <i className="ri-arrow-down-s-line text-[#6B7280]" />
+              {/* ARROW */}
+              <i
+                className={`ri-arrow-down-s-line text-[#6B7280] transition-transform ${
+                  showProfileMenu ? 'rotate-180' : ''
+                }`}
+              />
+            </button>
+
+            {/* PROFILE MENU */}
+            {showProfileMenu && (
+              <div
+                className="absolute right-0 top-[calc(100%+8px)] z-50 w-64 overflow-hidden rounded-2xl border border-[#E5E7EB] bg-white shadow-xl"
+                role="menu"
+              >
+                {/* PROFILE HEADER */}
+                <div className="border-b border-[#E5E7EB] px-4 py-3">
+                  <div className="flex items-center gap-3">
+                    <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#0B1B2B] text-xs font-bold text-white">
+                      {roleInitials}
+                    </div>
+
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-bold text-[#111827]">
+                        {adminRole}
+                      </p>
+
+                      <p className="text-xs text-[#6B7280]">
+                        {roleSubtitle}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* MENU ITEMS */}
+                <div className="p-2">
+
+                  {/* MY PROFILE */}
+                  <button
+                    type="button"
+                    onClick={openProfile}
+                    className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium text-[#334155] transition hover:bg-[#F7F9FC]"
+                    role="menuitem"
+                  >
+                    <i className="ri-user-line text-base text-[#64748B]" />
+                    <span>My Profile</span>
+                  </button>
+
+                  {/* ROLES */}
+                  <button
+                    type="button"
+                    onClick={openRoles}
+                    className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium text-[#334155] transition hover:bg-[#F7F9FC]"
+                    role="menuitem"
+                  >
+                    <i className="ri-shield-user-line text-base text-[#64748B]" />
+                    <span>Roles & Permissions</span>
+                  </button>
+
+                  {/* SETTINGS */}
+                  <button
+                    type="button"
+                    onClick={openSettings}
+                    className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium text-[#334155] transition hover:bg-[#F7F9FC]"
+                    role="menuitem"
+                  >
+                    <i className="ri-settings-3-line text-base text-[#64748B]" />
+                    <span>Settings</span>
+                  </button>
+
+                </div>
+
+                {/* LOGOUT */}
+                <div className="border-t border-[#E5E7EB] p-2">
+                  <button
+                    type="button"
+                    onClick={handleLogout}
+                    className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-semibold text-[#DC2626] transition hover:bg-red-50"
+                    role="menuitem"
+                  >
+                    <i className="ri-logout-box-line text-base" />
+                    <span>Logout</span>
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
 
-          {/* LOGOUT */}
+          {/* LOGOUT BUTTON */}
           <button
             type="button"
             onClick={handleLogout}
@@ -275,7 +440,9 @@ const AdminHeader = ({
             </span>
           </button>
 
-          {/* LOGOUT CONFIRMATION */}
+          {/* ===================================================
+              LOGOUT CONFIRMATION
+          ==================================================== */}
           <Modal
             open={showLogoutConfirm}
             onClose={() => setShowLogoutConfirm(false)}
@@ -316,6 +483,79 @@ const AdminHeader = ({
           </Modal>
         </div>
       </div>
+
+      {/* =====================================================
+          MOBILE PROFILE DROPDOWN
+      ====================================================== */}
+      {showProfileMenu && (
+        <div
+          className="fixed right-3 top-[72px] z-50 w-64 overflow-hidden rounded-2xl border border-[#E5E7EB] bg-white shadow-xl sm:hidden"
+          role="menu"
+        >
+          {/* PROFILE HEADER */}
+          <div className="border-b border-[#E5E7EB] px-4 py-3">
+            <div className="flex items-center gap-3">
+              <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#0B1B2B] text-xs font-bold text-white">
+                {roleInitials}
+              </div>
+
+              <div className="min-w-0">
+                <p className="truncate text-sm font-bold text-[#111827]">
+                  {adminRole}
+                </p>
+
+                <p className="text-xs text-[#6B7280]">
+                  {roleSubtitle}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* MOBILE MENU */}
+          <div className="p-2">
+
+            <button
+              type="button"
+              onClick={openProfile}
+              className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium text-[#334155] hover:bg-[#F7F9FC]"
+            >
+              <i className="ri-user-line text-base text-[#64748B]" />
+              <span>My Profile</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={openRoles}
+              className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium text-[#334155] hover:bg-[#F7F9FC]"
+            >
+              <i className="ri-shield-user-line text-base text-[#64748B]" />
+              <span>Roles & Permissions</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={openSettings}
+              className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium text-[#334155] hover:bg-[#F7F9FC]"
+            >
+              <i className="ri-settings-3-line text-base text-[#64748B]" />
+              <span>Settings</span>
+            </button>
+
+          </div>
+
+          {/* MOBILE LOGOUT */}
+          <div className="border-t border-[#E5E7EB] p-2">
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-semibold text-[#DC2626] hover:bg-red-50"
+            >
+              <i className="ri-logout-box-line text-base" />
+              <span>Logout</span>
+            </button>
+          </div>
+        </div>
+      )}
     </header>
   )
 }
