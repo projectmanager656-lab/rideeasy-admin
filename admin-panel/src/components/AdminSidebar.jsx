@@ -130,8 +130,6 @@ function getFrontendAdminRole() {
     return storedRole
   }
 
-  // Current backend only establishes a generic admin role.
-  // Super Admin is the safe current frontend default.
   return ADMIN_ROLES.SUPER_ADMIN
 }
 
@@ -157,27 +155,6 @@ const AdminSidebar = ({ tab, setTab }) => {
     setTab(tabId)
   }
 
-  const renderItems = () =>
-    allowedItems.map((item) => {
-      const active = tab === item.id
-
-      return (
-        <button
-          key={item.id}
-          type="button"
-          onClick={() => handleTabClick(item.id)}
-          className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-medium transition-all ${
-            active
-              ? 'bg-[#FFB21C] text-[#0B1B2B] shadow-md shadow-[#FFB21C]/20'
-              : 'text-slate-400 hover:bg-white/10 hover:text-white'
-          }`}
-        >
-          <i className={`${item.icon} text-base`} />
-          <span>{item.label}</span>
-        </button>
-      )
-    })
-
   const logout = () => {
     setShowLogoutConfirm(true)
   }
@@ -191,9 +168,26 @@ const AdminSidebar = ({ tab, setTab }) => {
 
   return (
     <>
-      <aside className="hidden h-screen w-[260px] flex-col bg-[#0B1B2B] text-white shadow-2xl md:flex">
+      {/* FIXED SIDEBAR */}
+      <aside
+        className="
+          fixed
+          left-0
+          top-0
+          z-40
+          hidden
+          h-screen
+          w-[260px]
+          flex-col
+          overflow-hidden
+          bg-[#0B1B2B]
+          text-white
+          shadow-2xl
+          md:flex
+        "
+      >
         {/* LOGO */}
-        <div className="border-b border-white/10 px-5 py-6">
+        <div className="shrink-0 border-b border-white/10 px-5 py-6">
           <div className="flex items-center gap-3">
             <img
               src={rideEasyAdminLogo}
@@ -213,19 +207,63 @@ const AdminSidebar = ({ tab, setTab }) => {
           </div>
         </div>
 
-        {/* NAVIGATION */}
-        <nav className="flex-1 overflow-y-auto px-3 py-5">
+        {/* SCROLLABLE NAVIGATION ONLY */}
+        <nav
+          className="
+            min-h-0
+            flex-1
+            overflow-y-auto
+            overflow-x-hidden
+            px-3
+            py-5
+          "
+        >
           <div className="space-y-1.5">
-            {renderItems()}
+            {allowedItems.map((item) => {
+              const active = tab === item.id
+
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => handleTabClick(item.id)}
+                  className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-medium transition-all ${
+                    active
+                      ? 'bg-[#FFB21C] text-[#0B1B2B] shadow-md shadow-[#FFB21C]/20'
+                      : 'text-slate-400 hover:bg-white/10 hover:text-white'
+                  }`}
+                >
+                  <i className={`${item.icon} text-base`} />
+                  <span>{item.label}</span>
+                </button>
+              )
+            })}
           </div>
         </nav>
 
-        {/* LOGOUT */}
-        <div className="border-t border-white/10 px-3 py-4">
+        {/* LOGOUT - ALWAYS AT BOTTOM */}
+        <div className="shrink-0 border-t border-white/10 bg-[#0B1B2B] px-3 py-4">
           <button
             type="button"
             onClick={logout}
-            className="flex w-full items-center gap-2 rounded-lg border border-red-400/30 bg-white/5 px-3 py-2.5 text-sm font-medium text-[#FCA5A5] transition-colors hover:bg-red-500/10 hover:text-[#FEE2E2]"
+            className="
+              flex
+              w-full
+              items-center
+              gap-2
+              rounded-lg
+              border
+              border-red-400/30
+              bg-white/5
+              px-3
+              py-2.5
+              text-sm
+              font-medium
+              text-[#FCA5A5]
+              transition-colors
+              hover:bg-red-500/10
+              hover:text-[#FEE2E2]
+            "
           >
             <i className="ri-logout-box-r-line text-base" />
             <span>Log out</span>

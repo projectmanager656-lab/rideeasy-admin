@@ -12,7 +12,8 @@ const AdminLayout = ({
   children,
 }) => {
   return (
-    <div className="admin-shell flex min-h-dvh min-h-screen w-full bg-[#F7F9FC] text-[#152238]">
+    <div className="admin-shell min-h-dvh min-h-screen w-full bg-[#F7F9FC] text-[#152238]">
+
       {/* Desktop Sidebar */}
       <AdminSidebar
         tab={tab}
@@ -20,7 +21,9 @@ const AdminLayout = ({
       />
 
       {/* Main Area */}
-      <div className="admin-main-panel flex min-h-screen min-w-0 flex-1 flex-col">
+      <div className="admin-main-panel flex min-h-screen min-w-0 flex-col md:ml-[260px]">
+
+        {/* Header */}
         <AdminHeader
           onRefresh={onRefresh}
           onLogout={onLogout}
@@ -28,9 +31,18 @@ const AdminLayout = ({
           emergencyAlerts={emergencyAlerts}
         />
 
+        {/* Main Content */}
         <main
           id="admin-main-content"
-          className="admin-main-content min-w-0 flex-1 overflow-y-auto bg-[#F7F9FC] pb-[96px] md:pb-0"
+          className="
+            admin-main-content
+            min-w-0
+            flex-1
+            overflow-y-auto
+            bg-[#F7F9FC]
+            pb-[96px]
+            md:pb-0
+          "
         >
           <div className="mx-auto w-full max-w-[1600px] px-4 py-5 sm:px-6 sm:py-6 lg:px-8 lg:py-7">
             {children}
