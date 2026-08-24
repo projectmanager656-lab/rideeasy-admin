@@ -1,6 +1,7 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import rideEasyAdminLogo from '../assets/rideeasy-admin-logo-reference.png'
+import ConfirmationDialog from './ui/ConfirmationDialog'
 
 const TAB_CONFIG = [
   { id: 'analytics', label: 'Dashboard', icon: 'ri-dashboard-line' },
@@ -40,6 +41,7 @@ const ROUTES = {
 
 const AdminSidebar = ({ tab, setTab }) => {
   const navigate = useNavigate()
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
 
   const handleTabClick = (tabId) => {
     const route = ROUTES[tabId]
@@ -74,52 +76,67 @@ const AdminSidebar = ({ tab, setTab }) => {
     })
 
   const logout = () => {
+    setShowLogoutConfirm(true)
+  }
+
+  const confirmLogout = () => {
     localStorage.removeItem('adminToken')
-    navigate('/admin')
+    setShowLogoutConfirm(false)
+    navigate('/admin', { replace: true })
   }
 
   return (
-    <aside className="hidden h-screen w-[260px] flex-col bg-[#0B1B2B] text-white shadow-2xl md:flex">
-      {/* LOGO */}
-      <div className="border-b border-white/10 px-5 py-6">
-        <div className="flex items-center gap-3">
-          <img
-            src={rideEasyAdminLogo}
-            alt="RideEasy Admin"
-            className="h-11 w-11 rounded-2xl bg-white/5 object-contain"
-          />
+    <>
+      <aside className="hidden h-screen w-[260px] flex-col bg-[#0B1B2B] text-white shadow-2xl md:flex">
+        <div className="border-b border-white/10 px-5 py-6">
+          <div className="flex items-center gap-3">
+            <img
+              src={rideEasyAdminLogo}
+              alt="RideEasy Admin"
+              className="h-11 w-11 rounded-2xl bg-white/5 object-contain"
+            />
 
-          <div>
-            <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-400">
-              RideEasy
-            </p>
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-400">
+                RideEasy
+              </p>
 
-            <h2 className="mt-1 text-xl font-bold text-white">
-              Admin
-            </h2>
+              <h2 className="mt-1 text-xl font-bold text-white">
+                Admin
+              </h2>
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* NAVIGATION */}
-      <nav className="flex-1 overflow-y-auto px-3 py-5">
-        <div className="space-y-1.5">
-          {renderItems()}
+        <nav className="flex-1 overflow-y-auto px-3 py-5">
+          <div className="space-y-1.5">
+            {renderItems()}
+          </div>
+        </nav>
+
+        <div className="border-t border-white/10 px-3 py-4">
+          <button
+            type="button"
+            onClick={logout}
+            className="flex w-full items-center gap-2 rounded-lg border border-red-400/30 bg-white/5 px-3 py-2.5 text-sm font-medium text-[#FCA5A5] transition-colors hover:bg-red-500/10 hover:text-[#FEE2E2]"
+          >
+            <i className="ri-logout-box-r-line text-base" />
+            <span>Log out</span>
+          </button>
         </div>
-      </nav>
+      </aside>
 
-      {/* LOGOUT */}
-      <div className="border-t border-white/10 px-3 py-4">
-        <button
-          type="button"
-          onClick={logout}
-          className="flex w-full items-center gap-2 rounded-lg border border-red-400/30 bg-white/5 px-3 py-2.5 text-sm font-medium text-[#FCA5A5] transition-colors hover:bg-red-500/10 hover:text-[#FEE2E2]"
-        >
-          <i className="ri-logout-box-r-line text-base" />
-          <span>Log out</span>
-        </button>
-      </div>
-    </aside>
+      <ConfirmationDialog
+        open={showLogoutConfirm}
+        onClose={() => setShowLogoutConfirm(false)}
+        onConfirm={confirmLogout}
+        title="Confirm Logout"
+        message="Are you sure you want to logout from the RideEasy Admin Panel?"
+        confirmLabel="Logout"
+        cancelLabel="Cancel"
+        variant="danger"
+      />
+    </>
   )
 }
 

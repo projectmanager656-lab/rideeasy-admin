@@ -29,3 +29,10 @@ test('admin login page loads', async ({ page }) => {
     await page.goto('/admin');
     await expect(page.locator('body')).toBeVisible();
 });
+
+test('admin dashboard redirects to login when unauthenticated', async ({ page }) => {
+    await page.goto('/admin/dashboard');
+
+    await expect(page).toHaveURL(/\/admin$/);
+    await expect(page.locator('body')).toBeVisible();
+});
