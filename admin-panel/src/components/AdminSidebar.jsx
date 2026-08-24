@@ -1,24 +1,104 @@
-import React, { useState } from 'react'
+import React, { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import rideEasyAdminLogo from '../assets/rideeasy-admin-logo-reference.png'
 import ConfirmationDialog from './ui/ConfirmationDialog'
+import {
+  ADMIN_ROLES,
+  ADMIN_PERMISSIONS,
+  getAllowedAdminNavigation,
+} from '../utils/adminPermissions'
 
 const TAB_CONFIG = [
-  { id: 'analytics', label: 'Dashboard', icon: 'ri-dashboard-line' },
-  { id: 'users', label: 'Users', icon: 'ri-user-3-line' },
-  { id: 'drivers', label: 'Drivers', icon: 'ri-steering-2-line' },
-  { id: 'vehicles', label: 'Vehicles', icon: 'ri-car-line' },
-  { id: 'verification', label: 'Verification', icon: 'ri-checkbox-circle-line' },
-  { id: 'rides', label: 'Rides', icon: 'ri-calendar-line' },
-  { id: 'live-operations', label: 'Live Operations', icon: 'ri-radar-line' },
-  { id: 'finance', label: 'Finance', icon: 'ri-money-rupee-circle-line' },
-  { id: 'payments', label: 'Payments', icon: 'ri-bank-card-line' },
-  { id: 'sos', label: 'SOS', icon: 'ri-alarm-warning-line' },
-  { id: 'support', label: 'Support', icon: 'ri-customer-service-2-line' },
-  { id: 'reports', label: 'Reports', icon: 'ri-bar-chart-line' },
-  { id: 'notifications', label: 'Notifications', icon: 'ri-notification-3-line' },
-  { id: 'roles', label: 'Roles & Permissions', icon: 'ri-shield-user-line' },
-  { id: 'settings', label: 'Settings', icon: 'ri-settings-3-line' },
+  {
+    id: 'analytics',
+    label: 'Dashboard',
+    icon: 'ri-dashboard-line',
+    permission: ADMIN_PERMISSIONS.DASHBOARD,
+  },
+  {
+    id: 'users',
+    label: 'Users',
+    icon: 'ri-user-3-line',
+    permission: ADMIN_PERMISSIONS.USERS,
+  },
+  {
+    id: 'drivers',
+    label: 'Drivers',
+    icon: 'ri-steering-2-line',
+    permission: ADMIN_PERMISSIONS.DRIVERS,
+  },
+  {
+    id: 'vehicles',
+    label: 'Vehicles',
+    icon: 'ri-car-line',
+    permission: ADMIN_PERMISSIONS.VEHICLES,
+  },
+  {
+    id: 'verification',
+    label: 'Verification',
+    icon: 'ri-checkbox-circle-line',
+    permission: ADMIN_PERMISSIONS.VERIFICATION,
+  },
+  {
+    id: 'rides',
+    label: 'Rides',
+    icon: 'ri-calendar-line',
+    permission: ADMIN_PERMISSIONS.RIDES,
+  },
+  {
+    id: 'live-operations',
+    label: 'Live Operations',
+    icon: 'ri-radar-line',
+    permission: ADMIN_PERMISSIONS.LIVE_OPERATIONS,
+  },
+  {
+    id: 'finance',
+    label: 'Finance',
+    icon: 'ri-money-rupee-circle-line',
+    permission: ADMIN_PERMISSIONS.FINANCE,
+  },
+  {
+    id: 'payments',
+    label: 'Payments',
+    icon: 'ri-bank-card-line',
+    permission: ADMIN_PERMISSIONS.PAYMENTS,
+  },
+  {
+    id: 'sos',
+    label: 'SOS',
+    icon: 'ri-alarm-warning-line',
+    permission: ADMIN_PERMISSIONS.SOS,
+  },
+  {
+    id: 'support',
+    label: 'Support',
+    icon: 'ri-customer-service-2-line',
+    permission: ADMIN_PERMISSIONS.SUPPORT,
+  },
+  {
+    id: 'reports',
+    label: 'Reports',
+    icon: 'ri-bar-chart-line',
+    permission: ADMIN_PERMISSIONS.REPORTS,
+  },
+  {
+    id: 'notifications',
+    label: 'Notifications',
+    icon: 'ri-notification-3-line',
+    permission: ADMIN_PERMISSIONS.NOTIFICATIONS,
+  },
+  {
+    id: 'roles',
+    label: 'Roles & Permissions',
+    icon: 'ri-shield-user-line',
+    permission: ADMIN_PERMISSIONS.ROLES,
+  },
+  {
+    id: 'settings',
+    label: 'Settings',
+    icon: 'ri-settings-3-line',
+    permission: ADMIN_PERMISSIONS.SETTINGS,
+  },
 ]
 
 const ROUTES = {
@@ -39,9 +119,32 @@ const ROUTES = {
   settings: '/settings',
 }
 
+function getFrontendAdminRole() {
+  const storedRole = localStorage.getItem('adminRole')
+
+  if (
+    storedRole === ADMIN_ROLES.SUPER_ADMIN ||
+    storedRole === ADMIN_ROLES.OPERATIONS ||
+    storedRole === ADMIN_ROLES.SUPPORT
+  ) {
+    return storedRole
+  }
+
+  // Current backend only establishes a generic admin role.
+  // Super Admin is the safe current frontend default.
+  return ADMIN_ROLES.SUPER_ADMIN
+}
+
 const AdminSidebar = ({ tab, setTab }) => {
   const navigate = useNavigate()
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
+
+  const adminRole = getFrontendAdminRole()
+
+  const allowedItems = useMemo(
+    () => getAllowedAdminNavigation(adminRole, TAB_CONFIG),
+    [adminRole]
+  )
 
   const handleTabClick = (tabId) => {
     const route = ROUTES[tabId]
@@ -55,7 +158,7 @@ const AdminSidebar = ({ tab, setTab }) => {
   }
 
   const renderItems = () =>
-    TAB_CONFIG.map((item) => {
+    allowedItems.map((item) => {
       const active = tab === item.id
 
       return (
@@ -81,6 +184,7 @@ const AdminSidebar = ({ tab, setTab }) => {
 
   const confirmLogout = () => {
     localStorage.removeItem('adminToken')
+    localStorage.removeItem('adminRole')
     setShowLogoutConfirm(false)
     navigate('/admin', { replace: true })
   }
@@ -88,6 +192,7 @@ const AdminSidebar = ({ tab, setTab }) => {
   return (
     <>
       <aside className="hidden h-screen w-[260px] flex-col bg-[#0B1B2B] text-white shadow-2xl md:flex">
+        {/* LOGO */}
         <div className="border-b border-white/10 px-5 py-6">
           <div className="flex items-center gap-3">
             <img
@@ -108,12 +213,14 @@ const AdminSidebar = ({ tab, setTab }) => {
           </div>
         </div>
 
+        {/* NAVIGATION */}
         <nav className="flex-1 overflow-y-auto px-3 py-5">
           <div className="space-y-1.5">
             {renderItems()}
           </div>
         </nav>
 
+        {/* LOGOUT */}
         <div className="border-t border-white/10 px-3 py-4">
           <button
             type="button"
@@ -126,6 +233,7 @@ const AdminSidebar = ({ tab, setTab }) => {
         </div>
       </aside>
 
+      {/* LOGOUT CONFIRMATION */}
       <ConfirmationDialog
         open={showLogoutConfirm}
         onClose={() => setShowLogoutConfirm(false)}

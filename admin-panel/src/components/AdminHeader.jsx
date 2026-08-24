@@ -1,7 +1,54 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import rideEasyAdminLogo from '../assets/rideeasy-admin-logo-reference.png'
 import { Modal } from './AdminUIComponents'
+import { ADMIN_ROLES } from '../utils/adminPermissions'
+
+const getStoredAdminRole = () => {
+  const storedRole = localStorage.getItem('adminRole')
+
+  if (
+    storedRole === ADMIN_ROLES.SUPER_ADMIN ||
+    storedRole === ADMIN_ROLES.OPERATIONS ||
+    storedRole === ADMIN_ROLES.SUPPORT
+  ) {
+    return storedRole
+  }
+
+  return ADMIN_ROLES.SUPER_ADMIN
+}
+
+const getRoleSubtitle = (role) => {
+  if (role === ADMIN_ROLES.SUPER_ADMIN) {
+    return 'Administration'
+  }
+
+  if (role === ADMIN_ROLES.OPERATIONS) {
+    return 'Operations'
+  }
+
+  if (role === ADMIN_ROLES.SUPPORT) {
+    return 'Support'
+  }
+
+  return 'Administration'
+}
+
+const getRoleInitials = (role) => {
+  if (role === ADMIN_ROLES.SUPER_ADMIN) {
+    return 'SA'
+  }
+
+  if (role === ADMIN_ROLES.OPERATIONS) {
+    return 'OP'
+  }
+
+  if (role === ADMIN_ROLES.SUPPORT) {
+    return 'SU'
+  }
+
+  return 'AD'
+}
 
 const AdminHeader = ({
   onRefresh,
@@ -10,6 +57,7 @@ const AdminHeader = ({
   emergencyAlerts = [],
 }) => {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
+  const [adminRole, setAdminRole] = useState(getStoredAdminRole)
   const navigate = useNavigate()
 
   const isSecondaryPage = [
@@ -28,21 +76,56 @@ const AdminHeader = ({
       )
   )
 
- const handleLogout = () => {
-  setShowLogoutConfirm(true)
-}
+  useEffect(() => {
+    const syncAdminRole = () => {
+      setAdminRole(getStoredAdminRole())
+    }
 
-const confirmLogout = () => {
-  setShowLogoutConfirm(false)
-  onLogout()
-  navigate('/admin')
-}
+    syncAdminRole()
+
+    window.addEventListener('storage', syncAdminRole)
+
+    return () => {
+      window.removeEventListener('storage', syncAdminRole)
+    }
+  }, [])
+
+  useEffect(() => {
+    const interval = window.setInterval(() => {
+      const currentRole = getStoredAdminRole()
+
+      setAdminRole((previousRole) => {
+        if (previousRole === currentRole) {
+          return previousRole
+        }
+
+        return currentRole
+      })
+    }, 500)
+
+    return () => {
+      window.clearInterval(interval)
+    }
+  }, [])
+
+  const handleLogout = () => {
+    setShowLogoutConfirm(true)
+  }
+
+  const confirmLogout = () => {
+    setShowLogoutConfirm(false)
+    onLogout()
+    navigate('/admin')
+  }
 
   const goBackToDashboard = () => {
     navigate('/admin/dashboard', {
       state: { tab: 'analytics' },
     })
   }
+
+  const roleSubtitle = getRoleSubtitle(adminRole)
+  const roleInitials = getRoleInitials(adminRole)
 
   return (
     <header className="sticky top-0 z-20 border-b border-white/10 bg-[#0B1B2B] text-white shadow-sm">
@@ -162,16 +245,16 @@ const confirmLogout = () => {
           {/* ADMIN PROFILE */}
           <div className="hidden items-center gap-2 rounded-xl border border-white/15 bg-white px-3 py-2 shadow-sm sm:flex">
             <div className="grid h-9 w-9 place-items-center rounded-full bg-[#0B1B2B] text-xs font-bold text-white">
-              SA
+              {roleInitials}
             </div>
 
             <div className="text-left">
               <p className="text-sm font-semibold text-[#111827]">
-                Super Admin
+                {adminRole}
               </p>
 
               <p className="text-xs text-[#6B7280]">
-                Operations
+                {roleSubtitle}
               </p>
             </div>
 
@@ -182,7 +265,7 @@ const confirmLogout = () => {
           <button
             type="button"
             onClick={handleLogout}
-                       className="hidden items-center justify-center gap-2 rounded-xl border border-white/15 bg-white px-3 py-2.5 text-sm font-medium text-[#6B7280] transition-colors hover:border-[#EF4444]/30 hover:bg-red-50 hover:text-[#EF4444] sm:inline-flex"
+            className="hidden items-center justify-center gap-2 rounded-xl border border-white/15 bg-white px-3 py-2.5 text-sm font-medium text-[#6B7280] transition-colors hover:border-[#EF4444]/30 hover:bg-red-50 hover:text-[#EF4444] sm:inline-flex"
             title="Sign out"
           >
             <i className="ri-logout-box-line" />
@@ -191,6 +274,8 @@ const confirmLogout = () => {
               Logout
             </span>
           </button>
+
+          {/* LOGOUT CONFIRMATION */}
           <Modal
             open={showLogoutConfirm}
             onClose={() => setShowLogoutConfirm(false)}
