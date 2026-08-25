@@ -849,18 +849,17 @@ const [d, usersResult, driversResult, ridesResult, paymentsResult, alertsResult]
         )}
 
         {/* SUPPORT */}
-        {tab === 'complaints' && (
-          <ComplaintsTab />
-        )}
-
+{(tab === 'support' || tab === 'complaints') && (
+  <ComplaintsTab />
+)}
         {/* REPORTS */}
         {tab === 'reports' && (
           <ReportsTab />
         )}
 
-        {/* SOS / SAFETY */}
-        {tab === 'safety' && (
-          <SafetyTab
+            {/* SOS / SAFETY */}
+{(tab === 'sos' || tab === 'safety') && (
+  <SafetyTab      
             alerts={emergencyAlerts}
             stations={policeStations}
             onAcknowledge={acknowledgeEmergencyAlert}

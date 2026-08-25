@@ -17,11 +17,10 @@ const AdminLiveOperations = lazy(() => import('./pages/AdminLiveOperations'))
 const AdminRoles = lazy(() => import('./pages/AdminRoles'))
 
 const ProtectedDashboard = ({ tab }) => (
-  <AdminProtectWrapper>
+  <AdminProtectWrapper tab={tab}>
     <AdminDashboard initialTab={tab} />
   </AdminProtectWrapper>
 )
-
 const ProtectedInfoPage = ({ tab, title }) => (
   <AdminProtectWrapper>
     <AdminInfoPage tab={tab} title={title} />
@@ -144,28 +143,28 @@ const App = () => {
           {/* =====================================================
               LIVE OPERATIONS
           ====================================================== */}
-          <Route
-            path="/admin/live-operations"
-            element={<AdminLiveOperations />}
-          />
+         <Route
+  path="/admin/live-operations"
+  element={<ProtectedDashboard tab="live-operations" />}
+/>
 
-          <Route
-            path="/live-operations"
-            element={<AdminLiveOperations />}
-          />
+<Route
+  path="/live-operations"
+  element={<ProtectedDashboard tab="live-operations" />}
+/>          
 
           {/* =====================================================
               FINANCE
           ====================================================== */}
-          <Route
-            path="/admin/finance"
-            element={<AdminFinance />}
-          />
+         <Route
+  path="/admin/finance"
+  element={<ProtectedDashboard tab="finance" />}
+/>
 
-          <Route
-            path="/finance"
-            element={<AdminFinance />}
-          />
+<Route
+  path="/finance"
+  element={<ProtectedDashboard tab="finance" />}
+/>
 
           {/* =====================================================
               PAYMENTS
