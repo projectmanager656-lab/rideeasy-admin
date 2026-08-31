@@ -1,7 +1,8 @@
-import React from 'react'
+import React, { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import AdminSidebar from './AdminSidebar'
 import AdminHeader from './AdminHeader'
-import BottomNav from './BottomNav'
+import ConfirmationDialog from './ui/ConfirmationDialog'
 
 const AdminLayout = ({
   tab,
@@ -11,52 +12,87 @@ const AdminLayout = ({
   emergencyAlerts,
   children,
 }) => {
+  const navigate = useNavigate()
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
+
+  const requestLogout = () => {
+    console.log('LOGOUT CONFIRMATION OPEN')
+
+    setShowLogoutConfirm(true)
+  }
+
+  const confirmLogout = () => {
+    console.log('LOGOUT CONFIRMED')
+
+    setShowLogoutConfirm(false)
+
+    // Clear admin session
+    localStorage.removeItem('adminToken')
+    localStorage.removeItem('adminRole')
+
+    // Clear parent state if supplied
+    if (typeof onLogout === 'function') {
+      onLogout()
+    }
+
+    // Go to login page
+    navigate('/admin', {
+      replace: true,
+      state: {
+        logoutSuccess: true,
+      },
+    })
+  }
+
   return (
-    <div className="admin-shell min-h-dvh min-h-screen w-full bg-[#F7F9FC] text-[#152238]">
+    <>
+      <div className="admin-shell min-h-dvh min-h-screen w-full bg-[#F7F9FC] text-[#111827]">
 
-      {/* Desktop Sidebar */}
-      <AdminSidebar
-        tab={tab}
-        setTab={setTab}
-      />
-
-      {/* Main Area */}
-      <div className="admin-main-panel flex min-h-screen min-w-0 flex-col md:ml-[260px]">
-
-        {/* Header */}
-        <AdminHeader
-          onRefresh={onRefresh}
-          onLogout={onLogout}
-          tab={tab}
-          emergencyAlerts={emergencyAlerts}
-        />
-
-        {/* Main Content */}
-        <main
-          id="admin-main-content"
-          className="
-            admin-main-content
-            min-w-0
-            flex-1
-            overflow-y-auto
-            bg-[#F7F9FC]
-            pb-[96px]
-            md:pb-0
-          "
-        >
-          <div className="mx-auto w-full max-w-[1600px] px-4 py-5 sm:px-6 sm:py-6 lg:px-8 lg:py-7">
-            {children}
-          </div>
-        </main>
-
-        {/* Mobile Bottom Navigation */}
-        <BottomNav
+        {/* SIDEBAR */}
+        <AdminSidebar
           tab={tab}
           setTab={setTab}
-          onLogout={onLogout}
+          onLogout={requestLogout}
         />
+
+        {/* MAIN PANEL */}
+        <div className="admin-main-panel flex min-h-dvh min-h-screen flex-1 flex-col md:ml-[260px]">
+
+          {/* HEADER */}
+          <AdminHeader
+            onRefresh={onRefresh}
+            onLogout={requestLogout}
+            emergencyAlerts={emergencyAlerts}
+          />
+
+          {/* PAGE CONTENT */}
+          <main
+            id="admin-main-content"
+            className="
+              flex-1
+              overflow-y-auto
+              bg-[#F7F9FC]
+            "
+          >
+            <div className="mx-auto w-full max-w-[1600px] px-4 py-4 sm:px-6 sm:py-6 lg:px-8">
+              {children}
+            </div>
+          </main>
+        </div>
       </div>
-    </div>
+
+      {/* ONE LOGOUT CONFIRMATION */}
+      <ConfirmationDialog
+        open={showLogoutConfirm}
+        onClose={() => setShowLogoutConfirm(false)}
+        onConfirm={confirmLogout}
+        title="Confirm Logout"
+        message="Are you sure you want to logout from the RideEasy Admin Panel?"
+        confirmLabel="Logout"
+        cancelLabel="Cancel"
+        variant="danger"
+      />
+    </>
   )
 }
 

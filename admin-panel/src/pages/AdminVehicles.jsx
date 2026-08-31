@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import AdminLayout from '../components/AdminLayout'
 import { adminApi } from '../services/adminApi'
 import { displayName } from '../admin/adminUtils'
 import MobileRecordCard, { MobileField } from '../components/MobileRecordCard'
@@ -14,6 +13,7 @@ import {
   ErrorState,
 } from '../components/AdminUIComponents'
 
+import Table from '../components/ui/Table'
 const vehicleStatus = (driver) => {
   if (driver.blocked) {
     return {
@@ -76,33 +76,30 @@ export default function AdminVehicles() {
   const [statusFilter, setStatusFilter] = useState('all')
 
   const loadVehicles = useCallback(async (signal) => {
-    setLoading(true)
-    setError('')
+  setLoading(true)
+  setError('')
 
-    try {
-      const [driverList, alertResponse] = await Promise.all([
-        adminApi.getDrivers(signal),
-        adminApi.getEmergencyAlerts(signal),
-      ])
+  try {
+    const driverList = await adminApi.getDrivers(signal)
 
-      if (signal?.aborted) return
+    if (signal?.aborted) return
 
-      setDrivers(Array.isArray(driverList) ? driverList : [])
-      setAlerts(alertResponse?.alerts || [])
-    } catch (loadError) {
-      if (signal?.aborted) return
+    setDrivers(Array.isArray(driverList) ? driverList : [])
+    setAlerts([])
+  } catch (loadError) {
+    if (signal?.aborted) return
 
-      setError(
-        loadError?.response?.data?.message ||
-        loadError?.message ||
-        'Unable to load vehicles'
-      )
-    } finally {
-      if (!signal?.aborted) {
-        setLoading(false)
-      }
+    setError(
+      loadError?.response?.data?.message ||
+      loadError?.message ||
+      'Unable to load vehicles'
+    )
+  } finally {
+    if (!signal?.aborted) {
+      setLoading(false)
     }
-  }, [])
+  }
+}, [])
 
   useEffect(() => {
     const controller = new AbortController()
@@ -278,21 +275,7 @@ export default function AdminVehicles() {
   ]
 
   return (
-    <AdminLayout
-      tab="vehicles"
-      setTab={(nextTab) =>
-        navigate('/admin/dashboard', {
-          state: { tab: nextTab },
-        })
-      }
-      onRefresh={() => loadVehicles()}
-      onLogout={() => {
-        localStorage.removeItem('adminToken')
-        navigate('/admin')
-      }}
-      emergencyAlerts={alerts}
-    >
-      <div className="space-y-5 pb-5 sm:space-y-6">
+    <div className="space-y-5 pb-5 sm:space-y-6">
 
         {/* Page Header */}
         <div className="flex items-start justify-between gap-3">
@@ -558,6 +541,6 @@ export default function AdminVehicles() {
         )}
 
       </div>
-    </AdminLayout>
+
   )
 }

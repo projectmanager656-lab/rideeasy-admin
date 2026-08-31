@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import AdminLayout from '../components/AdminLayout'
 import { AlertCard, Card } from '../components/AdminUIComponents'
 import { adminApi } from '../services/adminApi'
 import { getReadAlertIds, isAlertUnread, markAlertRead, markAlertsRead } from '../admin/notificationReadState'
@@ -89,7 +88,8 @@ export default function AdminNotifications () {
     navigate('/admin/dashboard', { state: { tab: 'safety', alertId: alert._id } })
   }
 
-  return <AdminLayout tab="notifications" setTab={(nextTab) => navigate('/admin/dashboard', { state: { tab: nextTab } })} onRefresh={loadAlerts} onLogout={() => { localStorage.removeItem('adminToken'); navigate('/admin') }} emergencyAlerts={alerts}>
+  return (
+    <>
     <div className="space-y-6">
       <div className="flex flex-col gap-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:flex-row sm:items-end sm:justify-between sm:p-6">
         <div><h1 className="text-2xl font-bold text-[#111827]">Notifications</h1><p className="mt-1 text-sm text-[#6B7280]">Stay updated about important RideEasy activity.</p></div>
@@ -106,7 +106,8 @@ export default function AdminNotifications () {
       {error && <AlertCard type="error" title="Unable to load notifications" message="Unable to load notifications" />}
       {loading ? <Card><div className="py-12 text-center text-sm text-[#6B7280]"><i className="ri-loader-4-line mr-2 inline-block animate-spin text-xl text-[#FFA726]" />Loading notifications…</div></Card> : !error && (visibleAlerts.length ? <div className="space-y-3">{visibleAlerts.map((alert) => <EmergencyNotification key={alert._id} alert={alert} unread={isAlertUnread(alert, getReadAlertIds())} working={workingId === alert._id} onRead={markRead} onView={viewEmergency} onAcknowledge={acknowledge} onResolve={resolve} />)}</div> : <EmptyState filter={filter} />)}
     </div>
-  </AdminLayout>
+    </>
+  )
 }
 
 function EmergencyNotification ({ alert, unread, working, onRead, onView, onAcknowledge, onResolve }) {

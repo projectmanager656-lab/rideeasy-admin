@@ -1,6 +1,5 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import AdminLayout from '../components/AdminLayout'
 
 const INITIAL_ROLES = [
   {
@@ -215,13 +214,6 @@ export default function AdminRoles() {
   }
 
   return (
-    <AdminLayout
-      tab="roles"
-      setTab={handleTabChange}
-      onRefresh={() => {}}
-      onLogout={handleLogout}
-      emergencyAlerts={[]}
-    >
       <div className="space-y-5 pb-6 sm:space-y-6">
 
         {/* PAGE HEADER */}
@@ -537,6 +529,6 @@ export default function AdminRoles() {
           </div>
         )}
       </div>
-    </AdminLayout>
+
   )
 }

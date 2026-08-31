@@ -38,7 +38,14 @@ const AdminDashboard = ({ initialTab = null }) => {
   const [pricingJson, setPricingJson] = useState('')
   const [emergencyAlerts, setEmergencyAlerts] = useState([])
   const [policeStations, setPoliceStations] = useState([])
-  const [tab, setTab] = useState(() => initialTab || location.state?.tab || 'analytics')
+  const [tab, setTab] = useState(
+  () => initialTab || location.state?.tab || 'analytics'
+  )
+  useEffect(() => {
+  if (initialTab) {
+    setTab(initialTab)
+  }
+}, [initialTab])
   const [highlightedEmergencyAlertId] = useState(() => location.state?.alertId || '')
   const [tabError, setTabError] = useState('')
   const [rideStatusFilter, setRideStatusFilter] = useState('all')
@@ -520,10 +527,8 @@ const [d, usersResult, driversResult, ridesResult, paymentsResult, alertsResult]
   }
 
   const logout = () => {
-    dataLoadedRef.current.clear()
-    localStorage.removeItem('adminToken')
-    navigate('/admin')
-  }
+  dataLoadedRef.current.clear()
+}
 
   return (
     <AdminLayout
@@ -858,7 +863,7 @@ const [d, usersResult, driversResult, ridesResult, paymentsResult, alertsResult]
         )}
 
             {/* SOS / SAFETY */}
-{(tab === 'sos' || tab === 'safety') && (
+ {(tab === 'safety' || tab === 'sos') && (
   <SafetyTab      
             alerts={emergencyAlerts}
             stations={policeStations}

@@ -1,5 +1,5 @@
 import React, { Suspense, lazy } from 'react'
-import { Navigate, Route, Routes } from 'react-router-dom'
+import { Navigate, Route, Routes, useNavigate } from 'react-router-dom'
 import 'remixicon/fonts/remixicon.css'
 
 const AdminLogin = lazy(() => import('./pages/AdminLogin'))
@@ -16,16 +16,40 @@ const AdminFinance = lazy(() => import('./pages/AdminFinance'))
 const AdminLiveOperations = lazy(() => import('./pages/AdminLiveOperations'))
 const AdminRoles = lazy(() => import('./pages/AdminRoles'))
 
+import AdminLayout from './components/AdminLayout'
+
 const ProtectedDashboard = ({ tab }) => (
-  <AdminProtectWrapper tab={tab}>
+  <AdminProtectWrapper>
     <AdminDashboard initialTab={tab} />
   </AdminProtectWrapper>
 )
-const ProtectedInfoPage = ({ tab, title }) => (
-  <AdminProtectWrapper>
-    <AdminInfoPage tab={tab} title={title} />
-  </AdminProtectWrapper>
-)
+
+/*
+ * Standalone admin pages must also have AdminLayout.
+ * Otherwise the page opens without sidebar/bottom navigation.
+ */
+const StandaloneAdminPage = ({ tab, children }) => {
+  const navigate = useNavigate()
+
+  const logout = () => {
+    localStorage.removeItem('adminToken')
+    navigate('/admin', { replace: true })
+  }
+
+  return (
+    <AdminProtectWrapper>
+      <AdminLayout
+        tab={tab}
+        setTab={() => {}}
+        onRefresh={() => window.location.reload()}
+        onLogout={logout}
+        emergencyAlerts={[]}
+      >
+        {children}
+      </AdminLayout>
+    </AdminProtectWrapper>
+  )
+}
 
 const App = () => {
   return (
@@ -42,6 +66,7 @@ const App = () => {
           {/* =====================================================
               LOGIN
           ====================================================== */}
+
           <Route
             path="/"
             element={<Navigate to="/admin" replace />}
@@ -65,6 +90,7 @@ const App = () => {
           {/* =====================================================
               DASHBOARD
           ====================================================== */}
+
           <Route
             path="/admin/dashboard"
             element={<ProtectedDashboard tab="analytics" />}
@@ -78,6 +104,7 @@ const App = () => {
           {/* =====================================================
               USERS
           ====================================================== */}
+
           <Route
             path="/admin/users"
             element={<ProtectedDashboard tab="users" />}
@@ -91,6 +118,7 @@ const App = () => {
           {/* =====================================================
               DRIVERS
           ====================================================== */}
+
           <Route
             path="/admin/drivers"
             element={<ProtectedDashboard tab="drivers" />}
@@ -104,6 +132,7 @@ const App = () => {
           {/* =====================================================
               RIDES
           ====================================================== */}
+
           <Route
             path="/admin/rides"
             element={<ProtectedDashboard tab="rides" />}
@@ -117,159 +146,234 @@ const App = () => {
           {/* =====================================================
               VEHICLES
           ====================================================== */}
+
           <Route
             path="/admin/vehicles"
-            element={<AdminVehicles />}
+            element={
+              <StandaloneAdminPage tab="vehicles">
+                <AdminVehicles />
+              </StandaloneAdminPage>
+            }
           />
 
           <Route
             path="/vehicles"
-            element={<AdminVehicles />}
+            element={
+              <StandaloneAdminPage tab="vehicles">
+                <AdminVehicles />
+              </StandaloneAdminPage>
+            }
           />
 
           {/* =====================================================
               VERIFICATION
           ====================================================== */}
+
           <Route
             path="/admin/verification"
-            element={<AdminVerification />}
+            element={
+              <StandaloneAdminPage tab="verification">
+                <AdminVerification />
+              </StandaloneAdminPage>
+            }
           />
 
           <Route
             path="/verification"
-            element={<AdminVerification />}
+            element={
+              <StandaloneAdminPage tab="verification">
+                <AdminVerification />
+              </StandaloneAdminPage>
+            }
           />
 
           {/* =====================================================
               LIVE OPERATIONS
           ====================================================== */}
-         <Route
-  path="/admin/live-operations"
-  element={<ProtectedDashboard tab="live-operations" />}
-/>
 
-<Route
-  path="/live-operations"
-  element={<ProtectedDashboard tab="live-operations" />}
-/>          
-
-          {/* =====================================================
-              FINANCE
-          ====================================================== */}
-         <Route
-  path="/admin/finance"
-  element={<ProtectedDashboard tab="finance" />}
-/>
-
-<Route
-  path="/finance"
-  element={<ProtectedDashboard tab="finance" />}
-/>
-
-          {/* =====================================================
-              PAYMENTS
-          ====================================================== */}
           <Route
-            path="/admin/payments"
+            path="/admin/live-operations"
             element={
-              <ProtectedDashboard tab="payments" />
+              <StandaloneAdminPage tab="live-operations">
+                <AdminLiveOperations />
+              </StandaloneAdminPage>
             }
           />
 
           <Route
-            path="/payments"
+            path="/live-operations"
             element={
-              <ProtectedDashboard tab="payments" />
+              <StandaloneAdminPage tab="live-operations">
+                <AdminLiveOperations />
+              </StandaloneAdminPage>
             }
+          />
+
+          {/* =====================================================
+              FINANCE
+          ====================================================== */}
+
+          <Route
+            path="/admin/finance"
+            element={
+              <StandaloneAdminPage tab="finance">
+                <AdminFinance />
+              </StandaloneAdminPage>
+            }
+          />
+
+          <Route
+            path="/finance"
+            element={
+              <StandaloneAdminPage tab="finance">
+                <AdminFinance />
+              </StandaloneAdminPage>
+            }
+          />
+
+          {/* =====================================================
+              PAYMENTS
+          ====================================================== */}
+
+          <Route
+            path="/admin/payments"
+            element={<ProtectedDashboard tab="payments" />}
+          />
+
+          <Route
+            path="/payments"
+            element={<ProtectedDashboard tab="payments" />}
           />
 
           {/* =====================================================
               SOS
           ====================================================== */}
-          <Route
-            path="/admin/sos"
-            element={
-              <ProtectedDashboard tab="sos" />
-            }
-          />
 
           <Route
-            path="/sos"
-            element={
-              <ProtectedDashboard tab="sos" />
-            }
-          />
+  path="/admin/sos"
+  element={<ProtectedDashboard tab="sos" />}
+/>
+
+<Route
+  path="/sos"
+  element={<ProtectedDashboard tab="sos" />}
+/>
 
           {/* =====================================================
               SUPPORT
           ====================================================== */}
-          <Route
-            path="/admin/support"
-            element={
-              <ProtectedDashboard tab="support" />
-            }
-          />
 
           <Route
-            path="/support"
-            element={
-              <ProtectedDashboard tab="support" />
-            }
-          />
+  path="/admin/support"
+  element={<ProtectedDashboard tab="support" />}
+/>
 
+<Route
+  path="/support"
+  element={<ProtectedDashboard tab="support" />}
+/>
           {/* =====================================================
               REPORTS
           ====================================================== */}
+
           <Route
             path="/admin/reports"
-            element={
-              <ProtectedDashboard tab="reports" />
-            }
+            element={<ProtectedDashboard tab="reports" />}
           />
 
           <Route
             path="/reports"
-            element={
-              <ProtectedDashboard tab="reports" />
-            }
+            element={<ProtectedDashboard tab="reports" />}
           />
 
           {/* =====================================================
-              ROLES & PERMISSIONS
+              NOTIFICATIONS
           ====================================================== */}
+
+<Route
+  path="/admin/notifications"
+  element={
+    <StandaloneAdminPage tab="notifications">
+      <AdminNotifications />
+    </StandaloneAdminPage>
+  }
+/>
+<Route
+  path="/notifications"
+  element={
+    <StandaloneAdminPage tab="notifications">
+      <AdminNotifications />
+    </StandaloneAdminPage>
+  }
+/>
+          {/* =====================================================
+              ROLES
+          ====================================================== */}
+
           <Route
             path="/admin/roles"
-            element={<AdminRoles />}
+            element={
+              <StandaloneAdminPage tab="roles">
+                <AdminRoles />
+              </StandaloneAdminPage>
+            }
           />
 
           <Route
             path="/roles"
-            element={<AdminRoles />}
+            element={
+              <StandaloneAdminPage tab="roles">
+                <AdminRoles />
+              </StandaloneAdminPage>
+            }
           />
 
           {/* =====================================================
               SERVICES
           ====================================================== */}
+
           <Route
             path="/admin/services"
-            element={
-              <ProtectedDashboard tab="services" />
-            }
+            element={<ProtectedDashboard tab="services" />}
+          />
+
+          <Route
+            path="/services"
+            element={<ProtectedDashboard tab="services" />}
           />
 
           {/* =====================================================
               PRICING
           ====================================================== */}
+
           <Route
             path="/admin/pricing"
-            element={
-              <ProtectedDashboard tab="pricing" />
-            }
+            element={<ProtectedDashboard tab="pricing" />}
+          />
+
+          <Route
+            path="/pricing"
+            element={<ProtectedDashboard tab="pricing" />}
+          />
+
+          {/* =====================================================
+              SETTINGS
+          ====================================================== */}
+
+          <Route
+            path="/admin/settings"
+            element={<ProtectedDashboard tab="settings" />}
+          />
+
+          <Route
+            path="/settings"
+            element={<ProtectedDashboard tab="settings" />}
           />
 
           {/* =====================================================
               PROFILE
           ====================================================== */}
+
           <Route
             path="/admin/profile"
             element={
@@ -279,108 +383,13 @@ const App = () => {
             }
           />
 
-          <Route
-            path="/profile"
-            element={
-              <AdminProtectWrapper>
-                <AdminProfile />
-              </AdminProtectWrapper>
-            }
-          />
-
-          {/* =====================================================
-              SETTINGS
-          ====================================================== */}
-          <Route
-            path="/admin/settings"
-            element={
-              <ProtectedDashboard tab="settings" />
-            }
-          />
-
-          <Route
-            path="/settings"
-            element={
-              <ProtectedDashboard tab="settings" />
-            }
-          />
-
-          {/* =====================================================
-              NOTIFICATIONS
-          ====================================================== */}
-          <Route
-            path="/admin/notifications"
-            element={<AdminNotifications />}
-          />
-
-          {/* =====================================================
-              SAFETY
-          ====================================================== */}
-          <Route
-            path="/admin/safety"
-            element={
-              <ProtectedDashboard tab="safety" />
-            }
-          />
-
-          {/* =====================================================
-              HELP
-          ====================================================== */}
-          <Route
-            path="/admin/help"
-            element={
-              <ProtectedInfoPage
-                tab="help"
-                title="Help & Support"
-              />
-            }
-          />
-
-          {/* =====================================================
-              TERMS
-          ====================================================== */}
-          <Route
-            path="/admin/terms"
-            element={
-              <ProtectedInfoPage
-                tab="terms"
-                title="Terms & Conditions"
-              />
-            }
-          />
-
-          {/* =====================================================
-              PRIVACY
-          ====================================================== */}
-          <Route
-            path="/admin/privacy"
-            element={
-              <ProtectedInfoPage
-                tab="privacy"
-                title="Privacy Policy"
-              />
-            }
-          />
-
-          {/* =====================================================
-              ABOUT
-          ====================================================== */}
-          <Route
-            path="/admin/about"
-            element={
-              <ProtectedInfoPage
-                tab="about"
-                title="About RideEasy"
-              />
-            }
-          />
-
           {/* =====================================================
               FALLBACK
           ====================================================== */}
+
           <Route
             path="*"
-            element={<Navigate to="/admin" replace />}
+            element={<Navigate to="/admin/dashboard" replace />}
           />
 
         </Routes>
