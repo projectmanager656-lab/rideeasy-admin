@@ -117,12 +117,11 @@ export const adminApi = {
       .then((r) => unwrap(r.data))
   },
 
-  rejectDriver(id) {
-    return client
-      .put(`/admin/drivers/${id}/reject`, {})
-      .then((r) => unwrap(r.data))
-  },
-
+  rejectDriver(id, payload = {}) {
+  return client
+    .put(`/admin/drivers/${id}/reject`, payload)
+    .then((r) => unwrap(r.data))
+},
   patchDriverBlock(id, blocked) {
     return client
       .patch(`/admin/drivers/${id}/block`, { blocked })
