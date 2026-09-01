@@ -8,9 +8,9 @@ const STATUS_FILTERS = [
   'UNDER_REVIEW',
   'APPROVED',
   'REJECTED',
-  'RE-UPLOAD_REQUIRED',
+  'EXPIRED',
+  'RE_UPLOAD_REQUIRED',
 ]
-
 const PAGE_SIZE = 10
 
 const normalizeStatus = (value) => {
@@ -34,7 +34,17 @@ const getDriverName = (driver) => {
     'Not available'
   )
 }
-
+const getDriverIdentifier = (driver) => {
+  return (
+    driver?.identifier ||
+    driver?.driverId ||
+    driver?.driverCode ||
+    driver?.user?.identifier ||
+    driver?._id ||
+    driver?.id ||
+    'Not available'
+  )
+}
 const getDriverEmail = (driver) => {
   return (
     driver?.email ||
@@ -108,14 +118,44 @@ const getSubmittedDate = (driver) => {
 }
 
 const getDriverStatus = (driver) => {
-  return normalizeStatus(
-    driver?.verificationStatus ||
-      driver?.approvalStatus ||
-      driver?.status ||
-      driver?.verification?.status
-  )
-}
+  if (!driver) return 'PENDING'
 
+  const rawStatus = normalizeStatus(
+    driver?.verificationStatus ||
+      driver?.verification?.status ||
+      driver?.status
+  )
+
+  if (rawStatus === 'EXPIRED') {
+    return 'EXPIRED'
+  }
+
+  if (
+    rawStatus === 'REJECTED' ||
+    driver?.rejected === true
+  ) {
+    return 'REJECTED'
+  }
+
+  if (
+    rawStatus === 'UNDER_REVIEW'
+  ) {
+    return 'UNDER_REVIEW'
+  }
+
+  if (
+    rawStatus === 'RE_UPLOAD_REQUIRED' ||
+    rawStatus === 'REUPLOAD_REQUIRED'
+  ) {
+    return 'RE_UPLOAD_REQUIRED'
+  }
+
+  if (driver.approved === true || rawStatus === 'APPROVED') {
+    return 'APPROVED'
+  }
+
+  return 'PENDING'
+}
 const getPendingDocumentCount = (driver) => {
   const documents =
     driver?.documents ||
@@ -288,6 +328,165 @@ const getDocumentList = (driver) => {
   return []
 }
 
+const getDocumentExpiryDate = (document) => {
+  if (!document) return null
+
+  return (
+    document?.expiryDate ||
+    document?.expirationDate ||
+    document?.expiresAt ||
+    document?.expiry ||
+    document?.validUntil ||
+    document?.validTill ||
+    document?.validityDate ||
+    null
+  )
+}
+
+const getDriverExpiryDate = (driver) => {
+  if (!driver) return null
+
+  const directExpiry =
+    driver?.expiryDate ||
+    driver?.expirationDate ||
+    driver?.expiresAt ||
+    driver?.validUntil ||
+    driver?.validTill ||
+    driver?.licenseExpiryDate ||
+    driver?.licenceExpiryDate ||
+    driver?.drivingLicenseExpiryDate ||
+    driver?.drivingLicenceExpiryDate ||
+    driver?.license?.expiryDate ||
+    driver?.licence?.expiryDate ||
+    driver?.verification?.expiryDate
+
+  if (directExpiry) {
+    return directExpiry
+  }
+
+  const rawDocuments =
+    driver?.documents ||
+    driver?.verification?.documents ||
+    []
+
+  const documents = Array.isArray(rawDocuments)
+    ? rawDocuments
+    : Object.values(rawDocuments || {})
+
+  // Prefer driving licence documents.
+  const licenceDocument = documents.find((document) => {
+    const name = String(
+      document?.title ||
+        document?.name ||
+        document?.type ||
+        document?.documentType ||
+        ''
+    ).toLowerCase()
+
+    return (
+      name.includes('license') ||
+      name.includes('licence') ||
+      name.includes('driving')
+    )
+  })
+
+  if (licenceDocument) {
+    const expiry = getDocumentExpiryDate(licenceDocument)
+
+    if (expiry) {
+      return expiry
+    }
+  }
+
+  // Fallback: check every document.
+  for (const document of documents) {
+    const expiry = getDocumentExpiryDate(document)
+
+    if (expiry) {
+      return expiry
+    }
+  }
+
+  return null
+}
+
+const getExpiryState = (value) => {
+  if (!value) {
+    return {
+      state: 'MISSING',
+      label: 'Not available',
+    }
+  }
+
+  const date = new Date(value)
+
+  if (Number.isNaN(date.getTime())) {
+    return {
+      state: 'MISSING',
+      label: 'Not available',
+    }
+  }
+
+  const now = new Date()
+  const differenceMs =
+    date.getTime() - now.getTime()
+
+  const differenceDays =
+    differenceMs / (1000 * 60 * 60 * 24)
+
+  if (differenceMs < 0) {
+    return {
+      state: 'EXPIRED',
+      label: 'Expired',
+    }
+  }
+
+  if (differenceDays <= 30) {
+    return {
+      state: 'EXPIRING_SOON',
+      label: 'Expiring soon',
+    }
+  }
+
+  return {
+    state: 'VALID',
+    label: 'Valid',
+  }
+}
+
+const formatExpiryDate = (value) => {
+  if (!value) return 'Not available'
+
+  const date = new Date(value)
+
+  if (Number.isNaN(date.getTime())) {
+    return 'Not available'
+  }
+
+  return date.toLocaleDateString('en-IN', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  })
+}
+
+const expiryClasses = (value) => {
+  const state = getExpiryState(value).state
+
+  if (state === 'EXPIRED') {
+    return 'bg-[#FEE2E2] text-[#DC2626]'
+  }
+
+  if (state === 'EXPIRING_SOON') {
+    return 'bg-[#FFF7E6] text-[#B77900]'
+  }
+
+  if (state === 'VALID') {
+    return 'bg-[#EAFBF2] text-[#16803C]'
+  }
+
+  return 'bg-[#F1F5F9] text-[#64748B]'
+}
 const humanizeDocumentName = (value) => {
   return String(value || 'Document')
     .replaceAll('_', ' ')
@@ -790,32 +989,28 @@ const AdminVerification = () => {
                   <thead className="bg-[#F7F9FC]">
                     <tr>
                       <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-[#718096]">
-                        Driver
-                      </th>
+  Driver
+</th>
 
-                      <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-[#718096]">
-                        City
-                      </th>
+<th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-[#718096]">
+  Document Status
+</th>
 
-                      <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-[#718096]">
-                        Vehicle
-                      </th>
+<th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-[#718096]">
+  Verification
+</th>
 
-                      <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-[#718096]">
-                        Submitted
-                      </th>
+<th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-[#718096]">
+  Expiry
+</th>
 
-                      <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-[#718096]">
-                        Pending Docs
-                      </th>
+<th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-[#718096]">
+  Last Updated
+</th>
 
-                      <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-[#718096]">
-                        Status
-                      </th>
-
-                      <th className="px-5 py-3 text-right text-xs font-semibold uppercase tracking-wide text-[#718096]">
-                        Action
-                      </th>
+<th className="px-5 py-3 text-right text-xs font-semibold uppercase tracking-wide text-[#718096]">
+  Action
+</th>
                     </tr>
                   </thead>
 
@@ -938,53 +1133,82 @@ function DriverTableRow ({
   onOpen,
 }) {
   const status = getDriverStatus(driver)
+  const documents = getDocumentList(driver)
+
+  const documentStatus =
+    documents.length > 0
+      ? normalizeStatus(
+          documents[0]?.status || 'PENDING'
+        )
+      : 'PENDING'
+
+  const expiryDate = getDriverExpiryDate(driver)
+  const expiryState = getExpiryState(expiryDate)
+
+  const lastUpdated =
+    driver?.updatedAt ||
+    driver?.verification?.updatedAt ||
+    driver?.verificationUpdatedAt ||
+    driver?.lastUpdatedAt ||
+    driver?.submittedAt ||
+    driver?.createdAt ||
+    null
 
   return (
-    <tr className="border-t border-[#E5E7EB]">
+    <tr className="border-t border-[#E5E7EB] transition hover:bg-[#FCFDFE]">
+
+      {/* DRIVER */}
       <td className="px-5 py-4">
         <div>
           <p className="font-semibold text-[#152238]">
             {getDriverName(driver)}
           </p>
 
-          <p className="mt-0.5 text-xs text-[#718096]">
-            {getDriverEmail(driver)}
+          <p className="mt-1 text-xs text-[#718096]">
+            ID: {getDriverIdentifier(driver)}
           </p>
 
-          <p className="mt-0.5 text-xs text-[#718096]">
+          <p className="mt-1 text-xs text-[#718096]">
             {getDriverPhone(driver)}
           </p>
         </div>
       </td>
 
-      <td className="px-5 py-4 text-sm text-[#718096]">
-        {getCity(driver)}
-      </td>
-
+      {/* DOCUMENT STATUS */}
       <td className="px-5 py-4">
-        <p className="text-sm font-medium text-[#152238]">
-          {getVehicleType(driver)}
-        </p>
-
-        <p className="mt-0.5 text-xs text-[#718096]">
-          {getVehicleNumber(driver)}
-        </p>
+        <StatusBadge status={documentStatus} />
       </td>
 
-      <td className="px-5 py-4 text-sm text-[#718096]">
-        {getSubmittedDate(driver)}
-      </td>
-
-      <td className="px-5 py-4">
-        <span className="inline-flex rounded-full bg-[#FFF7E6] px-2.5 py-1 text-xs font-semibold text-[#B77900]">
-          {getPendingDocumentCount(driver)}
-        </span>
-      </td>
-
+      {/* VERIFICATION STATUS */}
       <td className="px-5 py-4">
         <StatusBadge status={status} />
       </td>
 
+      {/* EXPIRY */}
+      <td className="px-5 py-4">
+        <div>
+          <p className="text-sm font-medium text-[#152238]">
+            {formatExpiryDate(expiryDate)}
+          </p>
+
+          {expiryDate && (
+            <span
+              className={`mt-1 inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${expiryClasses(
+                expiryDate
+              )}`}
+            >
+              {expiryState.label}
+            </span>
+          )}
+        </div>
+      </td>
+
+      {/* LAST UPDATED */}
+      <td className="px-5 py-4 text-sm text-[#718096]">
+        {formatDate(lastUpdated)}
+      </td>
+
+      {/* ACTION */}
       <td className="px-5 py-4 text-right">
         <button
           type="button"
@@ -994,52 +1218,95 @@ function DriverTableRow ({
           View Documents
         </button>
       </td>
+
     </tr>
   )
 }
-
 function DriverMobileCard ({
   driver,
   onOpen,
 }) {
   const status = getDriverStatus(driver)
+  const documents = getDocumentList(driver)
+
+  const documentStatus =
+    documents.length > 0
+      ? normalizeStatus(
+          documents[0]?.status || 'PENDING'
+        )
+      : 'PENDING'
+
+  const expiryDate = getDriverExpiryDate(driver)
+  const expiryState = getExpiryState(expiryDate)
+
+  const lastUpdated =
+    driver?.updatedAt ||
+    driver?.verification?.updatedAt ||
+    driver?.verificationUpdatedAt ||
+    driver?.lastUpdatedAt ||
+    driver?.submittedAt ||
+    driver?.createdAt ||
+    null
 
   return (
     <div className="rounded-2xl border border-[#E5E7EB] bg-white p-4">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <h3 className="truncate font-bold text-[#152238]">
+          <h3 className="font-bold text-[#152238]">
             {getDriverName(driver)}
           </h3>
 
-          <p className="mt-1 truncate text-xs text-[#718096]">
-            {getDriverEmail(driver)}
+          <p className="mt-1 text-xs text-[#718096]">
+            ID: {getDriverIdentifier(driver)}
           </p>
 
           <p className="mt-1 text-xs text-[#718096]">
             {getDriverPhone(driver)}
-          </p>
-
-          <p className="mt-2 text-xs text-[#718096]">
-            {getVehicleType(driver)} · {getVehicleNumber(driver)}
-          </p>
-
-          <p className="mt-1 text-xs text-[#718096]">
-            {getCity(driver)} · {getSubmittedDate(driver)}
           </p>
         </div>
 
         <StatusBadge status={status} />
       </div>
 
-      <div className="mt-3 flex items-center justify-between rounded-xl bg-[#F7F9FC] px-3 py-2">
-        <span className="text-xs text-[#718096]">
-          Pending documents
-        </span>
+      <div className="mt-4 grid grid-cols-2 gap-3">
+        <div className="rounded-xl bg-[#F7F9FC] p-3">
+          <p className="text-[11px] font-semibold uppercase text-[#94A3B8]">
+            Document
+          </p>
+          <p className="mt-1 text-sm font-semibold text-[#152238]">
+            <StatusBadge status={documentStatus} />
+          </p>
+        </div>
 
-        <span className="text-sm font-bold text-[#152238]">
-          {getPendingDocumentCount(driver)}
-        </span>
+        <div className="rounded-xl bg-[#F7F9FC] p-3">
+          <p className="text-[11px] font-semibold uppercase text-[#94A3B8]">
+            Expiry
+          </p>
+
+          <p className="mt-1 text-sm font-semibold text-[#152238]">
+            {formatExpiryDate(expiryDate)}
+          </p>
+
+          {expiryDate && (
+            <span
+              className={`mt-1 inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold ${expiryClasses(
+                expiryDate
+              )}`}
+            >
+              {expiryState.label}
+            </span>
+          )}
+        </div>
+      </div>
+
+      <div className="mt-3 border-t border-[#F0F2F5] pt-3">
+        <p className="text-xs text-[#94A3B8]">
+          Last updated
+        </p>
+
+        <p className="mt-1 text-xs font-medium text-[#718096]">
+          {formatDate(lastUpdated)}
+        </p>
       </div>
 
       <button
@@ -1052,7 +1319,6 @@ function DriverMobileCard ({
     </div>
   )
 }
-
 function StatusBadge ({ status }) {
   const normalized = normalizeStatus(status)
 
@@ -1066,6 +1332,8 @@ function StatusBadge ({ status }) {
     classes = 'bg-[#EFF6FF] text-[#2563EB]'
   } else if (normalized === 'RE_UPLOAD_REQUIRED') {
     classes = 'bg-[#FFF3E0] text-[#B86B00]'
+  } else if (normalized === 'EXPIRED') {
+    classes = 'bg-[#FEE2E2] text-[#DC2626]'
   }
 
   return (
@@ -1090,19 +1358,40 @@ function DriverDocumentsModal ({
   const documents = getDocumentList(driver)
   const status = getDriverStatus(driver)
 
+  const licence =
+    driver?.license ||
+    driver?.licence ||
+    'Not available'
+
+  const vehicleNumber =
+    getVehicleNumber(driver)
+
+  const vehicleType =
+    getVehicleType(driver)
+
+  const rejectionReason =
+    driver?.rejectionReason ||
+    driver?.rejectedReason ||
+    driver?.verification?.rejectionReason ||
+    driver?.verification?.rejectedReason ||
+    ''
+
+  const subscriptionExpiry =
+    driver?.subscriptionExpiresAt || null
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-3 py-4 sm:px-4 sm:py-6">
-      <div className="flex max-h-[90vh] w-full max-w-[560px] flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
+      <div className="flex max-h-[90vh] w-full max-w-[760px] flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
 
         {/* HEADER */}
-        <div className="flex shrink-0 items-center justify-between border-b border-[#E5E7EB] px-4 py-3.5 sm:px-5 sm:py-4">
-          <div className="min-w-0">
-            <h2 className="truncate font-bold text-[#152238]">
+        <div className="flex items-center justify-between border-b border-[#E5E7EB] px-5 py-4">
+          <div>
+            <h2 className="text-lg font-bold text-[#152238]">
               Verification Documents
             </h2>
 
-            <p className="mt-1 truncate text-xs text-[#718096]">
-              {getDriverName(driver)}
+            <p className="mt-0.5 text-xs text-[#718096]">
+              Review driver verification information
             </p>
           </div>
 
@@ -1110,16 +1399,18 @@ function DriverDocumentsModal ({
             type="button"
             onClick={onClose}
             disabled={actionLoading}
-            className="ml-3 grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[#F7F9FC] text-[#718096] transition hover:bg-[#E5E7EB] disabled:opacity-50"
+            className="grid h-9 w-9 place-items-center rounded-lg text-[#64748B] transition hover:bg-[#F1F5F9] disabled:cursor-not-allowed disabled:opacity-50"
             aria-label="Close"
           >
-            <i className="ri-close-line text-lg" />
+            <i className="ri-close-line text-xl" />
           </button>
         </div>
 
         {/* DRIVER SUMMARY */}
         <div className="border-b border-[#E5E7EB] bg-[#F7F9FC] p-4 sm:p-5">
+
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+
             <InfoBox
               label="Driver"
               value={getDriverName(driver)}
@@ -1131,29 +1422,91 @@ function DriverDocumentsModal ({
             />
 
             <InfoBox
+              label="Email"
+              value={getDriverEmail(driver)}
+            />
+
+            <InfoBox
               label="City"
               value={getCity(driver)}
             />
 
             <InfoBox
-              label="Vehicle Number"
-              value={getVehicleNumber(driver)}
+              label="Vehicle Type"
+              value={vehicleType}
             />
+
+            <InfoBox
+              label="Vehicle Number"
+              value={vehicleNumber}
+            />
+
+            <InfoBox
+              label="Licence"
+              value={licence}
+            />
+
+            <InfoBox
+              label="Last Updated"
+              value={getSubmittedDate(driver)}
+            />
+
           </div>
 
-          <div className="mt-3 flex items-center justify-between">
+          {/* VERIFICATION STATUS */}
+          <div className="mt-4 flex items-center justify-between rounded-xl border border-[#E5E7EB] bg-white px-4 py-3">
             <span className="text-xs font-semibold uppercase tracking-wide text-[#718096]">
-              Overall status
+              Overall Status
             </span>
 
             <StatusBadge status={status} />
           </div>
+
+          {/* SUBSCRIPTION EXPIRY */}
+          {subscriptionExpiry && (
+            <div className="mt-3 rounded-xl border border-[#E5E7EB] bg-white px-4 py-3">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-[#718096]">
+                    Subscription Expiry
+                  </p>
+
+                  <p className="mt-1 text-sm font-semibold text-[#152238]">
+                    {formatExpiryDate(subscriptionExpiry)}
+                  </p>
+                </div>
+
+                <span
+                  className={`rounded-full px-2.5 py-1 text-xs font-semibold ${expiryClasses(
+                    subscriptionExpiry
+                  )}`}
+                >
+                  {getExpiryState(subscriptionExpiry).label}
+                </span>
+              </div>
+            </div>
+          )}
+
+          {/* REJECTION REASON */}
+          {status === 'REJECTED' && rejectionReason && (
+            <div className="mt-3 rounded-xl border border-[#FECACA] bg-[#FEF2F2] px-4 py-3">
+              <p className="text-xs font-semibold uppercase tracking-wide text-[#B91C1C]">
+                Rejection Reason
+              </p>
+
+              <p className="mt-1 text-sm leading-5 text-[#7F1D1D]">
+                {rejectionReason}
+              </p>
+            </div>
+          )}
         </div>
 
         {/* DOCUMENT LIST */}
         <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-5">
+
           {documents.length === 0 ? (
             <div className="flex min-h-[220px] flex-col items-center justify-center rounded-2xl border border-dashed border-[#CBD5E1] bg-[#F8FAFC] px-5 text-center">
+
               <div className="grid h-12 w-12 place-items-center rounded-xl bg-white text-xl text-[#94A3B8] shadow-sm">
                 <i className="ri-file-search-line" />
               </div>
@@ -1165,18 +1518,20 @@ function DriverDocumentsModal ({
               <p className="mt-1 max-w-sm text-xs leading-5 text-[#94A3B8]">
                 The driver API did not return document records for this driver.
               </p>
+
             </div>
           ) : (
-            <div className="space-y-2.5">
+            <div className="space-y-3">
               {documents.map((document) => (
                 <button
                   key={document.id}
                   type="button"
                   onClick={() => onOpenDocument(document)}
-                  className="flex w-full items-center justify-between gap-3 rounded-xl border border-[#E5E7EB] px-3.5 py-3.5 text-left transition hover:border-[#FFB21C] hover:bg-[#FFF9ED]"
+                  className="flex w-full items-center justify-between gap-4 rounded-xl border border-[#E5E7EB] bg-white p-4 text-left transition hover:border-[#CBD5E1] hover:bg-[#F8FAFC]"
                 >
                   <div className="flex min-w-0 items-center gap-3">
-                    <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[#FFF7E6] text-[#B77900]">
+
+                    <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[#FFF7E6] text-[#B77900]">
                       <i className={`${document.icon} text-lg`} />
                     </div>
 
@@ -1185,64 +1540,73 @@ function DriverDocumentsModal ({
                         {document.title}
                       </p>
 
-                      <p className="mt-0.5 text-xs text-[#718096]">
+                      <p className="mt-1 text-xs text-[#94A3B8]">
                         Version {document.version}
-                        {' · '}
-                        {formatDate(document.uploadedAt)}
                       </p>
                     </div>
                   </div>
 
-                  <div className="flex shrink-0 items-center gap-2">
-                    <span
-                      className={`hidden rounded-full px-2.5 py-1 text-[11px] font-semibold sm:inline-flex ${documentStatusClasses(document.status)}`}
-                    >
-                      {formatDocumentStatus(document.status)}
-                    </span>
-
-                    <i className="ri-arrow-right-s-line text-lg text-[#718096]" />
-                  </div>
+                  <span
+                    className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold ${documentStatusClasses(
+                      document.status
+                    )}`}
+                  >
+                    {formatDocumentStatus(document.status)}
+                  </span>
                 </button>
               ))}
             </div>
           )}
+
         </div>
 
         {/* ACTIONS */}
-        <div className="flex shrink-0 items-center justify-end gap-2 border-t border-[#E5E7EB] bg-[#F7F9FC] p-3 sm:p-4">
-          <button
-            type="button"
-            onClick={onReject}
-            disabled={
-              actionLoading ||
-              normalizeStatus(status) === 'REJECTED' ||
-              normalizeStatus(status) === 'APPROVED'
-            }
-            className="rounded-xl border border-[#FCA5A5] bg-white px-3.5 py-2 text-sm font-semibold text-[#DC2626] transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {actionLoading && actionTypeText(actionLoading, 'reject')
-              ? 'Rejecting...'
-              : 'Reject'}
-          </button>
+        <div className="border-t border-[#E5E7EB] bg-white px-4 py-4 sm:px-5">
 
-          <button
-            type="button"
-            onClick={onApprove}
-            disabled={
-              actionLoading ||
-              normalizeStatus(status) === 'REJECTED' ||
-              normalizeStatus(status) === 'APPROVED'
-            }
-            className="rounded-xl bg-[#16A34A] px-3.5 py-2 text-sm font-semibold text-white transition hover:bg-[#15803D] disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {actionLoading ? 'Processing...' : 'Approve'}
-          </button>
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={actionLoading}
+              className="rounded-xl border border-[#E5E7EB] bg-white px-4 py-2.5 text-sm font-semibold text-[#475569] transition hover:bg-[#F8FAFC] disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Close
+            </button>
+
+            {status !== 'APPROVED' && (
+              <button
+                type="button"
+                onClick={onApprove}
+                disabled={actionLoading}
+                className="rounded-xl bg-[#16A34A] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#15803D] disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {actionLoading
+                  ? 'Processing...'
+                  : 'Approve'}
+              </button>
+            )}
+
+            {status !== 'REJECTED' && (
+              <button
+                type="button"
+                onClick={onReject}
+                disabled={actionLoading}
+                className="rounded-xl bg-[#DC2626] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#B91C1C] disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {actionLoading
+                  ? 'Processing...'
+                  : 'Reject'}
+              </button>
+            )}
+
+          </div>
+
         </div>
       </div>
     </div>
   )
 }
-
 function DocumentDetailsModal ({
   driver,
   document,

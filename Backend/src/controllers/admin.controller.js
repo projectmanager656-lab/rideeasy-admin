@@ -313,8 +313,19 @@ module.exports.getDrivers = async (req, res) => {
 module.exports.approveDriver = async (req, res) => {
     try {
         const { id } = req.params;
-        const driver = await Captain.findByIdAndUpdate(id, { approved: true }, { new: true })
-            .select('name email phone city vehicleType vehicleNumber approved blocked subscriptionStatus');
+        const driver = await Captain.findByIdAndUpdate(
+            id,
+            {
+                approved: true,
+                verificationStatus: 'APPROVED',
+                rejected: false,
+                rejectionReason: '',
+                rejectionCategory: '',
+            },
+            { new: true }
+        ).select(
+            'name email phone city vehicleType vehicleNumber approved blocked subscriptionStatus verificationStatus rejected rejectionReason rejectionCategory updatedAt'
+        );
         if (!driver) return fail(res, req, 404, 'Driver not found');
         return ok(res, req, 200, 'Driver approved', { driver });
     } catch (err) {
@@ -325,10 +336,30 @@ module.exports.approveDriver = async (req, res) => {
 module.exports.rejectDriver = async (req, res) => {
     try {
         const { id } = req.params;
-        const driver = await Captain.findByIdAndUpdate(id, { approved: false }, { new: true })
-            .select('name email phone city vehicleType vehicleNumber approved blocked subscriptionStatus');
-        if (!driver) return fail(res, req, 404, 'Driver not found');
-        return ok(res, req, 200, 'Driver approval removed', { driver });
+        const reason = String(req.body?.reason || '').trim();
+        const category = String(req.body?.category || '').trim();
+
+        const update = {
+            approved: false,
+            verificationStatus: 'REJECTED',
+            rejected: true,
+            ...(reason ? { rejectionReason: reason } : {}),
+            ...(category ? { rejectionCategory: category } : {}),
+        };
+
+        const driver = await Captain.findByIdAndUpdate(
+            id,
+            update,
+            { new: true }
+        ).select(
+            'name email phone city vehicleType vehicleNumber approved blocked subscriptionStatus verificationStatus rejected rejectionReason rejectionCategory updatedAt'
+        );
+
+        if (!driver) {
+            return fail(res, req, 404, 'Driver not found');
+        }
+
+        return ok(res, req, 200, 'Driver verification rejected', { driver });
     } catch (err) {
         return fail(res, req, 500, err.message || 'Reject failed');
     }

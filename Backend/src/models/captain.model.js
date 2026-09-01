@@ -30,6 +30,52 @@ const captainSchema = new mongoose.Schema({
     isOnline: { type: Boolean, default: false },
     status: { type: String, enum: [ 'active', 'inactive' ], default: 'inactive' }, // online/offline
     approved: { type: Boolean, default: false },
+
+    // Driver verification
+    verificationStatus: {
+        type: String,
+        enum: [ 'PENDING', 'UNDER_REVIEW', 'APPROVED', 'REJECTED', 'EXPIRED', 'RE_UPLOAD_REQUIRED' ],
+        default: 'PENDING',
+    },
+    rejected: { type: Boolean, default: false },
+    rejectionReason: { type: String, default: '' },
+    rejectionCategory: { type: String, default: '' },
+
+    // Verification evidence
+    driverPhotoUrl: { type: String, default: '' },
+
+    documents: [{
+        documentType: {
+            type: String,
+            enum: [
+                'DRIVING_LICENSE',
+                'VEHICLE_RC',
+                'VEHICLE_INSURANCE',
+                'DRIVER_PHOTO',
+                'OTHER'
+            ],
+            default: 'OTHER',
+        },
+        title: { type: String, default: '' },
+        documentUrl: { type: String, default: '' },
+        status: {
+            type: String,
+            enum: [
+                'PENDING',
+                'UNDER_REVIEW',
+                'APPROVED',
+                'REJECTED',
+                'EXPIRED',
+                'RE_UPLOAD_REQUIRED'
+            ],
+            default: 'PENDING',
+        },
+        expiryDate: { type: Date, default: null },
+        rejectionReason: { type: String, default: '' },
+        uploadedAt: { type: Date, default: null },
+        updatedAt: { type: Date, default: null },
+    }],
+
     blocked: { type: Boolean, default: false },
     subscriptionStatus: { type: String, enum: [ 'active', 'expired', 'none' ], default: 'none' },
     /** weekly | monthly | yearly — last purchased plan */
