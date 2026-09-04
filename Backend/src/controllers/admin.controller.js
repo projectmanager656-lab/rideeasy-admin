@@ -6,8 +6,11 @@ const User = require('../models/user.model');
 const Captain = require('../models/captain.model');
 const Ride = require('../models/rideCore.model');
 const Service = require('../models/service.model');
+const FareConfiguration = require('../models/fareConfiguration.model');
 const pricingService = require('../services/pricing.service');
 const { POLICE_STATIONS, getNearestPoliceStation, fetchNearbyPoliceStations } = require('../utils/rideAllocationRules');
+
+const FARE_CONFIG_ALLOWED_ROLES = ['SUPER_ADMIN'];
 
 /** Match ride.controller payRide / COMMISSION_PERCENT default (15%). */
 function commissionPct() {
@@ -25,7 +28,11 @@ async function ensureDefaultAdmin() {
     let admin = await Admin.findOne({ email: DEFAULT_ADMIN_EMAIL }).select('+password');
     if (!admin) {
         const hashed = await Admin.hashPassword(DEFAULT_ADMIN_PASSWORD);
-        admin = await Admin.create({ email: DEFAULT_ADMIN_EMAIL, password: hashed });
+        admin = await Admin.create({
+            email: DEFAULT_ADMIN_EMAIL,
+            password: hashed,
+            role: 'SUPER_ADMIN',
+        });
     }
     return admin;
 }
@@ -183,16 +190,13 @@ module.exports.getUsers = async (req, res) => {
 module.exports.getDrivers = async (req, res) => {
     try {
         const pct = commissionPct();
-        /** Must match Mongoose actual collection names (Atlas: `rides`, `drivers`). */
         const ridesColl = Ride.collection.collectionName;
 
-        /**
-         * Join drivers → rides by captain _id so ObjectId matching matches Atlas Browser.
-         * Fallback: if no completed rides, show `totalEarnings` from driver document (ledger in MongoDB).
-         */
         const enriched = await Captain.aggregate([
             { $sort: { createdAt: -1 } },
             { $limit: 500 },
+
+            // Completed rides / earnings
             {
                 $lookup: {
                     from: ridesColl,
@@ -224,7 +228,12 @@ module.exports.getDrivers = async (req, res) => {
                                     $cond: [
                                         { $gt: [ { $ifNull: [ '$platformFee', 0 ] }, 0 ] },
                                         '$platformFee',
-                                        { $multiply: [ { $ifNull: [ '$price', 0 ] }, pct ] },
+                                        {
+                                            $multiply: [
+                                                { $ifNull: [ '$price', 0 ] },
+                                                pct,
+                                            ],
+                                        },
                                     ],
                                 },
                             },
@@ -235,7 +244,12 @@ module.exports.getDrivers = async (req, res) => {
                                     $cond: [
                                         { $ne: [ '$captainNetEarning', null ] },
                                         '$captainNetEarning',
-                                        { $subtract: [ { $ifNull: [ '$price', 0 ] }, '$effPlatformFee' ] },
+                                        {
+                                            $subtract: [
+                                                { $ifNull: [ '$price', 0 ] },
+                                                '$effPlatformFee',
+                                            ],
+                                        },
                                     ],
                                 },
                             },
@@ -252,6 +266,38 @@ module.exports.getDrivers = async (req, res) => {
                     as: 'agg',
                 },
             },
+
+            // Active rides -> BUSY
+            {
+                $lookup: {
+                    from: ridesColl,
+                    let: { driverId: '$_id' },
+                    pipeline: [
+                        {
+                            $match: {
+                                status: {
+                                    $in: [ 'accepted', 'arrived', 'started' ],
+                                },
+                                $expr: {
+                                    $or: [
+                                        { $eq: [ '$captain', '$$driverId' ] },
+                                        {
+                                            $eq: [
+                                                { $toString: '$captain' },
+                                                { $toString: '$$driverId' },
+                                            ],
+                                        },
+                                    ],
+                                },
+                            },
+                        },
+                        { $limit: 1 },
+                    ],
+                    as: 'activeRides',
+                },
+            },
+
+            // Completed ride statistics
             {
                 $addFields: {
                     st: { $arrayElemAt: [ '$agg', 0 ] },
@@ -259,9 +305,21 @@ module.exports.getDrivers = async (req, res) => {
             },
             {
                 $addFields: {
-                    completedRides: { $ifNull: [ '$st.completedRides', 0 ] },
-                    _incomeFromRides: { $round: [ { $ifNull: [ '$st.driverIncome', 0 ] }, 0 ] },
-                    platformShare: { $round: [ { $ifNull: [ '$st.platformFromDriver', 0 ] }, 0 ] },
+                    completedRides: {
+                        $ifNull: [ '$st.completedRides', 0 ],
+                    },
+                    _incomeFromRides: {
+                        $round: [
+                            { $ifNull: [ '$st.driverIncome', 0 ] },
+                            0,
+                        ],
+                    },
+                    platformShare: {
+                        $round: [
+                            { $ifNull: [ '$st.platformFromDriver', 0 ] },
+                            0,
+                        ],
+                    },
                 },
             },
             {
@@ -275,6 +333,8 @@ module.exports.getDrivers = async (req, res) => {
                     },
                 },
             },
+
+            // Subscription status
             {
                 $addFields: {
                     effectiveSubscriptionStatus: {
@@ -292,6 +352,37 @@ module.exports.getDrivers = async (req, res) => {
                     },
                 },
             },
+
+            // Live status
+            {
+                $addFields: {
+                    isBusy: {
+                        $gt: [
+                            { $size: '$activeRides' },
+                            0,
+                        ],
+                    },
+                },
+            },
+            {
+                $addFields: {
+                    liveStatus: {
+                        $cond: [
+                            '$isBusy',
+                            'BUSY',
+                            {
+                                $cond: [
+                                    { $eq: [ '$isOnline', true ] },
+                                    'ONLINE',
+                                    'OFFLINE',
+                                ],
+                            },
+                        ],
+                    },
+                },
+            },
+
+            // Remove sensitive/internal fields
             {
                 $project: {
                     password: 0,
@@ -299,14 +390,22 @@ module.exports.getDrivers = async (req, res) => {
                     loginOtpExpiresAt: 0,
                     agg: 0,
                     st: 0,
+                    activeRides: 0,
                     _incomeFromRides: 0,
                 },
             },
         ]);
 
-        return ok(res, req, 200, 'Drivers', { drivers: enriched });
+        return ok(res, req, 200, 'Drivers', {
+            drivers: enriched,
+        });
     } catch (err) {
-        return fail(res, req, 500, err.message || 'Drivers failed');
+        return fail(
+            res,
+            req,
+            500,
+            err.message || 'Drivers failed'
+        );
     }
 };
 
@@ -376,7 +475,7 @@ module.exports.getRides = async (req, res) => {
             filter.status = status;
         }
         const rides = await Ride.find(filter)
-            .select('city pickupLocation dropLocation price status createdAt completedAt paymentMethod paymentStatus user captain')
+            .select('city pickup drop pickupLocation dropLocation price status createdAt completedAt paymentMethod paymentStatus user captain')
             .populate('user', 'name phone')
             .populate('captain', 'name phone vehicleNumber')
             .sort({ createdAt: -1 })
@@ -720,5 +819,474 @@ module.exports.resolveEmergencyAlert = async (req, res) => {
         return ok(res, req, 200, 'Emergency alert resolved', { alert, nearestPolice: nearest, source: live.length ? 'live' : 'fallback' });
     } catch (err) {
         return fail(res, req, 500, err.message || 'Resolve emergency failed');
+    }
+};
+module.exports.getFareConfigurations = async (req, res) => {
+    try {
+        const configurations = await FareConfiguration.find()
+            .sort({
+                rideType: 1,
+                cityZone: 1,
+                version: -1,
+            })
+            .populate('changedBy', 'email')
+            .lean();
+
+        return ok(res, req, 200, 'Fare configurations', {
+            configurations,
+        });
+    } catch (err) {
+        return fail(
+            res,
+            req,
+            500,
+            err.message || 'Failed to load fare configurations'
+        );
+    }
+};
+module.exports.createFareConfiguration = async (req, res) => {
+    if (!FARE_CONFIG_ALLOWED_ROLES.includes(req.admin?.role)) {
+        return fail(res, req, 403, 'Forbidden: insufficient permissions');
+    }
+    try {
+        const {
+            rideType,
+            cityZone,
+            baseFare,
+            distanceRate,
+            timeRate,
+            minimumFare,
+            fees,
+            tax,
+            effectiveFrom,
+            effectiveTo,
+        } = req.body;
+
+        const values = {
+            baseFare,
+            distanceRate,
+            timeRate,
+            minimumFare,
+            fees,
+            tax,
+        };
+
+        for (const [field, value] of Object.entries(values)) {
+            if (value === undefined || value === null || value === '') {
+                return fail(res, req, 400, `${field} is required`);
+            }
+
+            const number = Number(value);
+
+            if (!Number.isFinite(number)) {
+                return fail(res, req, 400, `${field} must be a valid number`);
+            }
+
+            if (number < 0) {
+                return fail(res, req, 400, `${field} cannot be negative`);
+            }
+        }
+
+        if (!rideType || !['BIKE', 'AUTO', 'CAR'].includes(String(rideType).toUpperCase())) {
+            return fail(res, req, 400, 'Valid ride type is required');
+        }
+
+        if (!cityZone || !String(cityZone).trim()) {
+            return fail(res, req, 400, 'City/zone is required');
+        }
+
+        const from = new Date(effectiveFrom);
+
+        if (!effectiveFrom || Number.isNaN(from.getTime())) {
+            return fail(res, req, 400, 'Valid effective-from date is required');
+        }
+
+        let to = null;
+
+        if (effectiveTo) {
+            to = new Date(effectiveTo);
+
+            if (Number.isNaN(to.getTime())) {
+                return fail(res, req, 400, 'Invalid effective-to date');
+            }
+
+            if (to <= from) {
+                return fail(
+                    res,
+                    req,
+                    400,
+                    'Effective-to must be after effective-from'
+                );
+            }
+        }
+
+        const normalizedRideType = String(rideType).toUpperCase();
+        const normalizedCityZone = String(cityZone).trim();
+
+        const overlapping = await FareConfiguration.findOne({
+            rideType: normalizedRideType,
+            cityZone: normalizedCityZone,
+            status: 'ACTIVE',
+            effectiveFrom: { $lt: to || new Date('9999-12-31') },
+            $or: [
+                { effectiveTo: null },
+                { effectiveTo: { $gt: from } },
+            ],
+        }).lean();
+
+        if (overlapping) {
+            return fail(
+                res,
+                req,
+                409,
+                'Effective period overlaps an active fare configuration'
+            );
+        }
+
+        const latest = await FareConfiguration.findOne({
+            rideType: normalizedRideType,
+            cityZone: normalizedCityZone,
+        })
+            .sort({ version: -1 })
+            .select('version')
+            .lean();
+
+        const version = latest ? Number(latest.version) + 1 : 1;
+
+        const configuration = await FareConfiguration.create({
+            rideType: normalizedRideType,
+            cityZone: normalizedCityZone,
+            version,
+            baseFare: Number(baseFare),
+            distanceRate: Number(distanceRate),
+            timeRate: Number(timeRate),
+            minimumFare: Number(minimumFare),
+            fees: Number(fees),
+            tax: Number(tax),
+            effectiveFrom: from,
+            effectiveTo: to,
+            status: 'DRAFT',
+            changedBy: req.admin._id,
+        });
+
+        return ok(
+            res,
+            req,
+            201,
+            'Fare configuration created',
+            { configuration }
+        );
+    } catch (err) {
+        return fail(
+            res,
+            req,
+            500,
+            err.message || 'Failed to create fare configuration'
+        );
+    }
+};
+module.exports.updateFareConfiguration = async (req, res) => {
+    try {
+        const existing = await FareConfiguration.findById(req.params.id);
+
+        if (!existing) {
+            return fail(res, req, 404, 'Fare configuration not found');
+        }
+
+        // Historical versions must remain auditable.
+        if (existing.status !== 'DRAFT') {
+            return fail(
+                res,
+                req,
+                409,
+                'Only draft fare configurations can be edited'
+            );
+        }
+
+        const allowedFields = [
+            'rideType',
+            'cityZone',
+            'baseFare',
+            'distanceRate',
+            'timeRate',
+            'minimumFare',
+            'fees',
+            'tax',
+            'effectiveFrom',
+            'effectiveTo',
+        ];
+
+        const updates = {};
+
+        for (const field of allowedFields) {
+            if (req.body[field] !== undefined) {
+                updates[field] = req.body[field];
+            }
+        }
+
+        const numericFields = [
+            'baseFare',
+            'distanceRate',
+            'timeRate',
+            'minimumFare',
+            'fees',
+            'tax',
+        ];
+
+        for (const field of numericFields) {
+            if (updates[field] === undefined) continue;
+
+            const value = Number(updates[field]);
+
+            if (!Number.isFinite(value)) {
+                return fail(res, req, 400, `${field} must be a valid number`);
+            }
+
+            if (value < 0) {
+                return fail(res, req, 400, `${field} cannot be negative`);
+            }
+
+            updates[field] = value;
+        }
+
+        if (updates.rideType !== undefined) {
+            updates.rideType = String(updates.rideType).toUpperCase();
+
+            if (!['BIKE', 'AUTO', 'CAR'].includes(updates.rideType)) {
+                return fail(res, req, 400, 'Invalid ride type');
+            }
+        }
+
+        if (updates.cityZone !== undefined) {
+            updates.cityZone = String(updates.cityZone).trim();
+
+            if (!updates.cityZone) {
+                return fail(res, req, 400, 'City/zone is required');
+            }
+        }
+
+        if (updates.effectiveFrom !== undefined) {
+            updates.effectiveFrom = new Date(updates.effectiveFrom);
+
+            if (Number.isNaN(updates.effectiveFrom.getTime())) {
+                return fail(res, req, 400, 'Invalid effective-from date');
+            }
+        }
+
+        if (updates.effectiveTo !== undefined && updates.effectiveTo !== null && updates.effectiveTo !== '') {
+            updates.effectiveTo = new Date(updates.effectiveTo);
+
+            if (Number.isNaN(updates.effectiveTo.getTime())) {
+                return fail(res, req, 400, 'Invalid effective-to date');
+            }
+        } else if (updates.effectiveTo !== undefined) {
+            updates.effectiveTo = null;
+        }
+
+        const effectiveFrom =
+            updates.effectiveFrom || existing.effectiveFrom;
+
+        const effectiveTo =
+            updates.effectiveTo !== undefined
+                ? updates.effectiveTo
+                : existing.effectiveTo;
+
+        if (effectiveTo && effectiveTo <= effectiveFrom) {
+            return fail(
+                res,
+                req,
+                400,
+                'Effective-to must be after effective-from'
+            );
+        }
+
+        const configuration = await FareConfiguration.findByIdAndUpdate(
+            req.params.id,
+            {
+                $set: updates,
+            },
+            {
+                new: true,
+                runValidators: true,
+            }
+        );
+
+        return ok(
+            res,
+            req,
+            200,
+            'Fare configuration updated',
+            { configuration }
+        );
+    } catch (err) {
+        return fail(
+            res,
+            req,
+            500,
+            err.message || 'Failed to update fare configuration'
+        );
+    }
+};
+module.exports.updateFareConfigurationStatus = async (req, res) => {
+    if (!FARE_CONFIG_ALLOWED_ROLES.includes(req.admin?.role)) {
+        return fail(res, req, 403, 'Forbidden: insufficient permissions');
+    }
+    try {
+        const { status } = req.body;
+
+        if (!['ACTIVE', 'INACTIVE'].includes(status)) {
+            return fail(res, req, 400, 'Status must be ACTIVE or INACTIVE');
+        }
+
+        const configuration = await FareConfiguration.findById(req.params.id);
+
+        if (!configuration) {
+            return fail(res, req, 404, 'Fare configuration not found');
+        }
+
+        if (status === 'ACTIVE') {
+            const overlapping = await FareConfiguration.findOne({
+                _id: { $ne: configuration._id },
+                rideType: configuration.rideType,
+                cityZone: configuration.cityZone,
+                status: 'ACTIVE',
+                effectiveFrom: {
+                    $lt: configuration.effectiveTo || new Date('9999-12-31'),
+                },
+                $or: [
+                    { effectiveTo: null },
+                    { effectiveTo: { $gt: configuration.effectiveFrom } },
+                ],
+            }).lean();
+
+            if (overlapping) {
+                return fail(
+                    res,
+                    req,
+                    409,
+                    'Cannot activate: effective period overlaps another active configuration'
+                );
+            }
+        }
+
+        configuration.status = status;
+        configuration.changedBy = req.admin._id;
+
+        await configuration.save();
+
+        return ok(
+            res,
+            req,
+            200,
+            `Fare configuration ${status.toLowerCase()}`,
+            { configuration }
+        );
+    } catch (err) {
+        return fail(
+            res,
+            req,
+            500,
+            err.message || 'Failed to update fare configuration status'
+        );
+    }
+};
+module.exports.getFareConfigurationHistory = async (req, res) => {
+    try {
+        const configuration = await FareConfiguration.findById(req.params.id)
+            .select('rideType cityZone')
+            .lean();
+
+        if (!configuration) {
+            return fail(res, req, 404, 'Fare configuration not found');
+        }
+
+        const history = await FareConfiguration.find({
+            rideType: configuration.rideType,
+            cityZone: configuration.cityZone,
+        })
+            .sort({ version: -1 })
+            .populate('changedBy', 'email')
+            .lean();
+
+        return ok(res, req, 200, 'Fare configuration history', {
+            history,
+        });
+    } catch (err) {
+        return fail(
+            res,
+            req,
+            500,
+            err.message || 'Failed to load fare configuration history'
+        );
+    }
+};
+module.exports.previewFareConfiguration = async (req, res) => {
+    try {
+        const {
+            baseFare,
+            distanceRate,
+            timeRate,
+            minimumFare,
+            fees,
+            tax,
+            distance,
+            time,
+        } = req.body;
+
+        const values = {
+            baseFare,
+            distanceRate,
+            timeRate,
+            minimumFare,
+            fees,
+            tax,
+            distance,
+            time,
+        };
+
+        for (const [field, value] of Object.entries(values)) {
+            const number = Number(value);
+
+            if (!Number.isFinite(number)) {
+                return fail(res, req, 400, `${field} must be a valid number`);
+            }
+
+            if (number < 0) {
+                return fail(res, req, 400, `${field} cannot be negative`);
+            }
+        }
+
+        const distanceFare = Number(distance) * Number(distanceRate);
+        const timeFare = Number(time) * Number(timeRate);
+
+        const subtotal = Math.max(
+            Number(minimumFare),
+            Number(baseFare) + distanceFare + timeFare
+        );
+
+        const totalBeforeTax = subtotal + Number(fees);
+        const taxAmount = totalBeforeTax * (Number(tax) / 100);
+        const total = totalBeforeTax + taxAmount;
+
+        return ok(res, req, 200, 'Fare preview calculated', {
+            breakdown: {
+                baseFare: Number(baseFare),
+                distanceFare,
+                timeFare,
+                minimumFare: Number(minimumFare),
+                fees: Number(fees),
+                subtotal,
+                taxPercent: Number(tax),
+                taxAmount,
+                total,
+            },
+        });
+    } catch (err) {
+        return fail(
+            res,
+            req,
+            500,
+            err.message || 'Failed to calculate fare preview'
+        );
     }
 };

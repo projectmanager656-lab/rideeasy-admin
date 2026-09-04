@@ -43,18 +43,18 @@ const VehiclePanel = (props) => {
                 className="absolute -top-2 left-0 right-0 flex items-center justify-center"
                 onClick={() => props.setVehiclePanel(false)}
             >
-                <div className="h-1.5 w-12 rounded-full bg-slate-300" />
+                <div className="h-1.5 w-12 rounded-full bg-zinc-700" />
             </button>
 
             <div className="pt-2">
                 <div className="flex items-start justify-between gap-3 mb-3">
                     <div>
                         <h3 className="text-xl font-semibold">Choose a ride</h3>
-                        <p className="text-sm text-slate-600">{city ? city.charAt(0).toUpperCase() + city.slice(1) : '—'} • {fare.distanceKm ?? '—'} km • {fare.durationMinutes ?? '—'} min</p>
+                        <p className="text-sm text-zinc-400">{city ? city.charAt(0).toUpperCase() + city.slice(1) : '—'} • {fare.distanceKm ?? '—'} km • {fare.durationMinutes ?? '—'} min</p>
                     </div>
                     <button
                         type="button"
-                        className="h-9 w-9 rounded-full bg-slate-100 text-slate-700 flex items-center justify-center"
+                        className="driver-secondary h-9 w-9 rounded-full p-0"
                         onClick={() => props.setVehiclePanel(false)}
                         aria-label="Close"
                     >
@@ -72,37 +72,37 @@ const VehiclePanel = (props) => {
                                 onClick={() => props.onSelectVehicle?.(v.id)}
                                 className={[
                                     'w-full text-left rounded-2xl border p-3 flex items-center justify-between gap-3 transition',
-                                    active ? 'border-emerald-600 bg-emerald-50' : 'border-slate-200 bg-white hover:border-slate-300'
+                                    active ? 'border-emerald-500/50 bg-emerald-500/10' : 'border-zinc-800 bg-zinc-900 hover:border-zinc-700'
                                 ].join(' ')}
                             >
                                 <div className="flex items-center gap-3">
-                                    <div className={`h-11 w-11 rounded-xl flex items-center justify-center ${active ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-700'}`}>
+                                    <div className={`h-11 w-11 rounded-xl flex items-center justify-center ${active ? 'bg-emerald-600 text-white' : 'bg-zinc-800 text-zinc-300'}`}>
                                         <i className={`${iconFor(v.id)} text-xl`} />
                                     </div>
                                     <div>
                                         <div className="font-semibold">{v.label}</div>
-                                        <div className="text-xs text-slate-600">{titleFor(v)}</div>
+                                        <div className="text-xs text-zinc-400">{titleFor(v)}</div>
                                     </div>
                                 </div>
                                 <div className="text-right">
                                     <div className="font-semibold">₹{priceFor(v)}</div>
-                                    <div className="text-xs text-slate-500">incl. fees</div>
+                                    <div className="text-xs text-zinc-500">incl. fees</div>
                                 </div>
                             </button>
                         )
                     })}
                 </div>
 
-                <div className="mt-4 sticky bottom-0 bg-white pt-3 pb-2">
+                <div className="mt-4 sticky bottom-0 bg-zinc-950 pt-3 pb-2">
                     <button
                         type="button"
                         disabled={!selected}
                         onClick={() => props.onContinue?.()}
-                        className={`w-full rounded-2xl py-3 font-semibold ${selected ? 'bg-slate-900 text-white' : 'bg-slate-200 text-slate-600'}`}
+                        className={`w-full rounded-xl py-3 font-semibold ${selected ? 'bg-emerald-600 text-white hover:bg-emerald-500' : 'bg-zinc-800 text-zinc-500'}`}
                     >
                         {primaryLabel}
                     </button>
-                    <p className="text-xs text-slate-500 mt-2">You can change payment method in the next step.</p>
+                    <p className="mt-2 text-xs text-zinc-500">You can change payment method in the next step.</p>
                 </div>
             </div>
         </div>

@@ -1,4 +1,5 @@
-import { createContext, useState } from 'react';
+import { createContext, useCallback, useState } from 'react';
+import { apiClient, withCaptainAuth } from '../services/http';
 
 export const CaptainDataContext = createContext();
 
@@ -7,9 +8,20 @@ const CaptainContext = ({ children }) => {
     const [ isLoading, setIsLoading ] = useState(false);
     const [ error, setError ] = useState(null);
 
-    const updateCaptain = (captainData) => {
-        setCaptain(captainData);
-    };
+    const updateCaptain = useCallback((captainData) => {
+        setCaptain(captainData || null);
+    }, []);
+
+    const clearCaptain = useCallback(() => {
+        setCaptain(null);
+    }, []);
+
+    const setCaptainStatus = useCallback(async (status) => {
+        const response = await apiClient.post('/captains/status', { status }, withCaptainAuth());
+        const nextStatus = response.data?.status || status;
+        setCaptain((current) => current ? { ...current, status: nextStatus, isOnline: nextStatus === 'active' } : current);
+        return nextStatus;
+    }, []);
 
     const value = {
         captain,
@@ -19,6 +31,9 @@ const CaptainContext = ({ children }) => {
         error,
         setError,
         updateCaptain,
+        clearCaptain,
+        isOnline: captain?.status === 'active',
+        setCaptainStatus,
     };
 
     return (

@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
-import { MapContainer, TileLayer, Marker, Polyline, useMap } from 'react-leaflet'
+import { MapContainer, TileLayer, Marker, Polyline, Popup, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import { fetchOsrmDrivingRoute } from '../utils/osrmClient'
 import { getMapTileUrlTemplate, getOsrmPublicBase } from '../config/externalEndpoints'
@@ -21,6 +21,12 @@ const DefaultIcon = L.icon({
 const driverDivIcon = L.divIcon({
     className: 'driver-live-marker',
     html: '<div style="width:20px;height:20px;background:#2563eb;border:3px solid #fff;border-radius:50%;box-shadow:0 2px 8px rgba(0,0,0,.35)"></div>',
+    iconSize: [20, 20],
+    iconAnchor: [10, 10],
+})
+const staleDriverDivIcon = L.divIcon({
+    className: 'driver-stale-marker',
+    html: '<div style="width:20px;height:20px;background:#94a3b8;border:3px solid #fff;border-radius:50%;box-shadow:0 2px 8px rgba(100,116,139,0.35);"></div>',
     iconSize: [20, 20],
     iconAnchor: [10, 10],
 })
@@ -78,6 +84,8 @@ const RideMap = ({
     pickupCoords = null,
     dropCoords = null,
     driverCoords = null,
+    driverMarkers = [],
+    rideMarkers = [],
     passengerLiveCoords = null,
     currentLocation = null,
     showRoute = true,
@@ -202,7 +210,12 @@ const RideMap = ({
                     ETA ~{trackingEtaMin} min
                 </div>
             )}
-            <MapContainer center={[center.lat, center.lng]} zoom={zoom} style={containerStyle} zoomControl>
+             <MapContainer
+    center={[center.lat, center.lng]}
+    zoom={zoom}
+    style={{ width: '100%', height: '100%', minHeight: '500px' }}
+    zoomControl
+>
                 <MapBoundsSync
                     pickupCoords={pickupCoords}
                     dropCoords={dropCoords}
@@ -220,9 +233,67 @@ const RideMap = ({
                 {dropCoords?.lat != null && dropCoords?.lng != null && (
                     <Marker position={[dropCoords.lat, dropCoords.lng]} icon={DefaultIcon} />
                 )}
-                {driverCoords?.lat != null && driverCoords?.lng != null && (
-                    <Marker position={[driverCoords.lat, driverCoords.lng]} icon={driverDivIcon} />
-                )}
+                   {driverCoords?.lat != null && driverCoords?.lng != null && (
+    <Marker position={[driverCoords.lat, driverCoords.lng]} icon={driverDivIcon} />
+)}
+
+{driverMarkers.map((driver) => {
+    if (driver?.coords?.lat == null || driver?.coords?.lng == null) return null
+
+    const driverId = driver?._id || driver?.id || driver?.driverId || 'Unknown'
+    const status = driver?.liveStatus || driver?.status || 'Unknown'
+    const updatedAt = driver?.lastLocationUpdatedAt
+
+    return (
+        <Marker
+            key={`admin-driver-${driverId}`}
+            position={[driver.coords.lat, driver.coords.lng]}
+            icon={driver.locationFresh ? driverDivIcon : staleDriverDivIcon}
+        >
+            <Popup>
+             <div className="text-sm">
+    <div className="font-semibold">Driver</div>
+    <div>ID: {driverId}</div>
+    <div>Status: {status}</div>
+    <div>
+        Location:{' '}
+        {driver.locationFresh ? 'Fresh' : 'Stale'}
+    </div>
+    <div>
+        Last updated:{' '}
+        {updatedAt
+            ? new Date(updatedAt).toLocaleString()
+            : 'Unknown'}
+    </div>
+</div>
+            </Popup>
+        </Marker>
+    )
+})}
+                {rideMarkers.map((ride) => {
+                    if (ride?.coords?.lat == null || ride?.coords?.lng == null) return null
+
+                    const rideId = ride?._id || ride?.id || 'Unknown'
+                    const status = ride?.status || 'Unknown'
+                    const pickup = ride?.pickupLocation || 'Unknown'
+
+                    return (
+                        <Marker
+                            key={`admin-ride-${rideId}`}
+                            position={[ride.coords.lat, ride.coords.lng]}
+                        >
+                            <Popup>
+                                <div className="text-sm">
+                                    <div className="font-semibold">Ride</div>
+                                    <div>ID: {rideId}</div>
+                                    <div>Status: {status}</div>
+                                    <div>Pickup: {pickup}</div>
+                                </div>
+                            </Popup>
+                        </Marker>
+                    )
+                })}
+
                 {passengerLiveCoords?.lat != null && passengerLiveCoords?.lng != null && (
                     <Marker position={[passengerLiveCoords.lat, passengerLiveCoords.lng]} icon={passengerDivIcon} />
                 )}

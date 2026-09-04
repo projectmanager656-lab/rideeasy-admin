@@ -136,7 +136,7 @@ const ConfirmRidePopUp = (props) => {
                             type="button"
                             onClick={markArrived}
                             disabled={markingArrived}
-                            className={`w-full text-lg flex justify-center font-semibold p-3 rounded-lg ${markingArrived ? 'bg-slate-200 text-slate-700' : 'bg-amber-500 text-white'}`}
+                            className={`w-full text-lg flex justify-center font-semibold p-3 rounded-xl ${markingArrived ? 'bg-zinc-800 text-zinc-500' : 'driver-primary'}`}
                         >
                             {markingArrived ? 'Marking arrived…' : 'Mark Arrived at Pickup'}
                         </button>
@@ -153,12 +153,12 @@ const ConfirmRidePopUp = (props) => {
                             placeholder={arrived ? 'Enter OTP' : 'Arrive first to enter OTP'}
                         />
 
-                        <button disabled={!canStart} className={`w-full mt-5 text-lg flex justify-center font-semibold p-3 rounded-lg ${canStart ? 'bg-green-600 text-white' : 'bg-slate-200 text-slate-700'}`}>Start Ride</button>
+                        <button disabled={!canStart} className={`w-full mt-5 text-lg flex justify-center font-semibold p-3 rounded-xl ${canStart ? 'driver-primary' : 'bg-zinc-800 text-zinc-500'}`}>Start Ride</button>
                         <button onClick={() => {
                             props.setConfirmRidePopupPanel(false)
                             props.setRidePopupPanel(false)
 
-                        }} className='w-full mt-2 bg-red-600 text-lg text-white font-semibold p-3 rounded-lg'>Cancel</button>
+                        }} className='driver-danger w-full mt-2 text-lg'>Cancel</button>
 
                     </form>
                 </div>

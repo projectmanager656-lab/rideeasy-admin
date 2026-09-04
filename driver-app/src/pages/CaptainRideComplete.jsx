@@ -205,8 +205,8 @@ const CaptainRideComplete = () => {
     if (!rideId) return null
 
     return (
-        <div className="min-h-dvh min-h-screen bg-black text-zinc-100 pb-28">
-            <header className="sticky top-0 z-10 border-b border-zinc-800/80 bg-black/90 px-4 py-3 backdrop-blur-md">
+        <div className="driver-page pb-28">
+            <header className="driver-header px-4 py-3">
                 <div className="mx-auto flex max-w-lg items-center justify-between gap-3">
                     <h1 className="text-base font-semibold tracking-tight text-white">Ride completed</h1>
                     <span className="rounded-full bg-zinc-900 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-zinc-500">
@@ -223,7 +223,7 @@ const CaptainRideComplete = () => {
                 {/* Success header */}
                 <section
                     className={[
-                        'rounded-2xl border border-emerald-500/30 bg-gradient-to-b from-emerald-950/50 to-zinc-950 p-5 text-center shadow-lg shadow-emerald-900/20 transition-all duration-700 ease-out',
+                        'driver-card border-emerald-500/30 p-5 text-center transition-all duration-700 ease-out',
                         headerAnim ? 'translate-y-0 opacity-100' : 'translate-y-2 opacity-0',
                     ].join(' ')}
                 >
@@ -240,7 +240,7 @@ const CaptainRideComplete = () => {
                 </section>
 
                 {/* Trip summary */}
-                <section className="rounded-2xl border border-zinc-800 bg-zinc-950/80 p-4 shadow-xl shadow-black/40">
+                <section className="driver-section">
                     <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-500">Trip summary</h3>
                     <div className="space-y-3 text-sm">
                         <div className="flex gap-3">
@@ -275,7 +275,7 @@ const CaptainRideComplete = () => {
                 </section>
 
                 {/* Earnings */}
-                <section className="rounded-2xl border border-zinc-800 bg-zinc-950/80 p-4 shadow-xl shadow-black/40">
+                <section className="driver-section">
                     <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-500">Earnings</h3>
                     <div className="space-y-2 text-sm">
                         <div className="flex justify-between border-b border-zinc-800/80 py-2">
@@ -300,7 +300,7 @@ const CaptainRideComplete = () => {
                 </section>
 
                 {/* Payment status */}
-                <section className="rounded-2xl border border-zinc-800 bg-zinc-950/80 p-4 shadow-xl shadow-black/40">
+                <section className="driver-section">
                     <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-500">Payment</h3>
                     {isCash ? (
                         <div className="flex items-center gap-2 text-emerald-400">
@@ -336,7 +336,7 @@ const CaptainRideComplete = () => {
 
                 {/* Daily progress */}
                 {earnings ? (
-                    <section className="rounded-2xl border border-zinc-800 bg-zinc-950/80 p-4 shadow-xl shadow-black/40">
+                    <section className="driver-section">
                         <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-500">Today</h3>
                         <div className="grid grid-cols-2 gap-3">
                             <div className="rounded-xl bg-zinc-900/80 px-3 py-2">
@@ -354,7 +354,7 @@ const CaptainRideComplete = () => {
                 ) : null}
 
                 {/* Passenger */}
-                <section className="rounded-2xl border border-zinc-800 bg-zinc-950/80 p-4 shadow-xl shadow-black/40">
+                <section className="driver-section">
                     <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-500">Passenger</h3>
                     <div className="flex items-center gap-3">
                         <img
@@ -420,7 +420,7 @@ const CaptainRideComplete = () => {
                                 type="button"
                                 disabled={ratingSubmitting || rating < 1}
                                 onClick={submitRating}
-                                className="w-full rounded-xl bg-zinc-100 py-3 text-sm font-semibold text-zinc-900 hover:bg-white disabled:opacity-50"
+                                        className="driver-primary w-full"
                             >
                                 {ratingSubmitting ? 'Submitting…' : 'Submit rating'}
                             </button>
@@ -440,7 +440,7 @@ const CaptainRideComplete = () => {
                     </button>
                     <Link
                         to="/captain/history"
-                        className="flex w-full items-center justify-center rounded-xl border border-zinc-700 bg-zinc-900/50 py-3.5 text-sm font-semibold text-zinc-100 hover:bg-zinc-800"
+                        className="driver-secondary w-full py-3.5"
                     >
                         View ride history
                     </Link>

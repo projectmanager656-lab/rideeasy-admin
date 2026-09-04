@@ -7,6 +7,7 @@ import UserContext from './context/UserContext';
 import CaptainContext from './context/CaptainContext';
 import SocketProvider from './context/SocketContext';
 import { initSentry } from './initSentry';
+import "leaflet/dist/leaflet.css";
 
 void initSentry();
 

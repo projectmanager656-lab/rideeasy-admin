@@ -254,4 +254,43 @@ export const adminApi = {
       .put('/admin/pricing', payload)
       .then((r) => unwrap(r.data))
   },
+  // =========================================================
+  // FARE CONFIGURATIONS
+  // =========================================================
+
+  getFareConfigurations(signal) {
+    return client
+      .get('/admin/fare-configurations', { signal })
+      .then((r) => unwrap(r.data))
+  },
+
+  createFareConfiguration(payload) {
+    return client
+      .post('/admin/fare-configurations', payload)
+      .then((r) => unwrap(r.data))
+  },
+
+  updateFareConfiguration(id, payload) {
+    return client
+      .put(`/admin/fare-configurations/${id}`, payload)
+      .then((r) => unwrap(r.data))
+  },
+
+  updateFareConfigurationStatus(id, status) {
+    return client
+      .patch(`/admin/fare-configurations/${id}/status`, { status })
+      .then((r) => unwrap(r.data))
+  },
+
+  getFareConfigurationHistory(id, signal) {
+    return client
+      .get(`/admin/fare-configurations/${id}/history`, { signal })
+      .then((r) => unwrap(r.data))
+  },
+
+  previewFareConfiguration(payload) {
+    return client
+      .post('/admin/fare-configurations/preview', payload)
+      .then((r) => unwrap(r.data))
+  },
 }

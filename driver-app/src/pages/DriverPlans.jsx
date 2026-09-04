@@ -7,7 +7,7 @@ import CaptainDetails from '../components/CaptainDetails'
  */
 export default function DriverPlans () {
   return (
-    <div className="min-h-[calc(100dvh-4rem)] bg-black text-zinc-100 px-4 py-6 sm:px-6">
+    <div className="driver-page px-4 py-6 sm:px-6">
       <div className="mx-auto max-w-lg space-y-4">
         <div className="flex items-center justify-between gap-3">
           <div>
@@ -19,7 +19,7 @@ export default function DriverPlans () {
           </div>
           <Link
             to="/captain-home"
-            className="shrink-0 rounded-lg border border-zinc-700 px-3 py-2 text-xs font-medium text-zinc-200 hover:bg-zinc-900"
+            className="driver-secondary shrink-0 px-3 py-2 text-xs"
           >
             Dashboard
           </Link>

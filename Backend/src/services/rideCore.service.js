@@ -5,6 +5,7 @@ const crypto = require('crypto');
 const { expiresInMinutes } = require('../utils/otp');
 const { encryptOtp, hashOtp, verifyOtp } = require('../utils/otpSecure');
 const pricingService = require('./pricing.service');
+const fareConfigurationService = require('./fareConfiguration.service');
 const paymentService = require('./payment.service');
 const ALLOWED_VEHICLE_TYPES = [ 'BIKE', 'AUTO', 'CAR' ];
 
@@ -30,34 +31,73 @@ module.exports.normalizePaymentMethod = normalizePaymentMethod;
 /** Re-export for backward compatibility — prefer `payment.service`. */
 module.exports.settleRidePaymentIfNeeded = paymentService.settleRidePaymentIfNeeded;
 
-async function buildFarePayload(pickup, destination, coordOpts = null) {
+async function buildFarePayload(pickup, destination, coordOpts = null, fareOpts = null) {
     if (!pickup || !destination) throw new Error('Pickup and destination are required');
+
     const distanceTime =
         coordOpts?.pickupCoord && coordOpts?.dropCoord
             ? await mapService.getDistanceTimeCoords(coordOpts.pickupCoord, coordOpts.dropCoord)
             : await mapService.getDistanceTime(pickup, destination);
+
     const distanceKm = distanceTime.distance.value / 1000;
+    const durationMinutes = Math.round(distanceTime.duration.value / 60);
+
     if (!Number.isFinite(distanceKm) || distanceKm <= 0) {
         throw rideError('Distance must be greater than 0', 400);
     }
-    const rates = await pricingService.getRates();
+
+    const cityZone = String(fareOpts?.cityZone || '').trim();
+    const requestedVehicleType = normalizeVehicleType(fareOpts?.vehicleType);
+
     const fare = {};
+    const fareConfigurations = {};
+
     for (const vt of ALLOWED_VEHICLE_TYPES) {
-        const cfg = rates[vt];
-        if (!cfg) continue;
-        fare[vt] = Math.round(cfg.baseFare + distanceKm * cfg.perKm + cfg.platformFee);
+        if (requestedVehicleType && vt !== requestedVehicleType) continue;
+
+        const configuration = await fareConfigurationService.getActiveFareConfiguration({
+            rideType: vt,
+            cityZone,
+        });
+
+        if (!configuration) {
+            throw rideError(
+                `No active fare configuration found for ${vt} in ${cityZone}`,
+                400
+            );
+        }
+
+        const distanceFare = distanceKm * Number(configuration.distanceRate);
+        const timeFare = durationMinutes * Number(configuration.timeRate);
+        const subtotal = Math.max(
+            Number(configuration.minimumFare),
+            Number(configuration.baseFare) + distanceFare + timeFare
+        );
+        const totalBeforeTax = subtotal + Number(configuration.fees || 0);
+        const taxAmount = totalBeforeTax * (Number(configuration.tax || 0) / 100);
+        const total = totalBeforeTax + taxAmount;
+
+        fare[vt] = Math.round(total * 100) / 100;
+        fareConfigurations[vt] = {
+            id: configuration._id,
+            version: configuration.version,
+            rideType: configuration.rideType,
+            cityZone: configuration.cityZone,
+        };
     }
+
     return {
         distanceKm: Math.round(distanceKm * 100) / 100,
         distanceMeters: distanceTime.distance.value,
         durationSeconds: distanceTime.duration.value,
-        durationMinutes: Math.round(distanceTime.duration.value / 60),
+        durationMinutes,
+        fareConfigurations,
         ...fare,
     };
 }
 
-module.exports.getFare = async (pickup, destination, coordOpts = null) =>
-    buildFarePayload(pickup, destination, coordOpts);
+module.exports.getFare = async (pickup, destination, coordOpts = null, fareOpts = null) =>
+    buildFarePayload(pickup, destination, coordOpts, fareOpts);
 
 function normalizeVehicleType(vt) {
     const up = String(vt || '').trim().toUpperCase();
@@ -75,6 +115,8 @@ module.exports.createRide = async ({
     paymentMethod,
     price,
     distanceKm,
+    fareConfigurationId,
+    fareConfigurationVersion,
     customerName,
     customerPhone,
     pickupCoordinates,
@@ -91,6 +133,8 @@ module.exports.createRide = async ({
         vehicleType: normalizeVehicleType(vehicleType),
         distance: distanceKm,
         price,
+        fareConfigurationId,
+        fareConfigurationVersion,
         status: 'searching',
         paymentMethod: normalizePaymentMethod(paymentMethod),
         paymentStatus: 'pending',

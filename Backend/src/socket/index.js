@@ -93,6 +93,11 @@ function emitToCaptain (captainId, event, data) {
     io.to(driverRoomHyphen(id)).emit(event, data);
 }
 
+function emitToAdmins (event, data) {
+    if (!io) return;
+    io.to('admin-live-operations').emit(event, data);
+}
+
 /**
  * Emit standardized ride phase events (in addition to legacy events).
  * Enable with RIDEEASY_STANDARD_SOCKET_EVENTS=true
@@ -125,6 +130,13 @@ async function handleDriverPresenceJoin (socket, payload, sourceEvent) {
         update.location = { type: 'Point', coordinates: [ Number(lng), Number(lat) ] };
     }
     await captainModel.findByIdAndUpdate(did, update);
+
+    emitToAdmins('driver:status-update', {
+        driverId: did,
+        liveStatus: 'ONLINE',
+        isOnline: true,
+        isBusy: false,
+    });
 
     socket.data.rideeasyRole = 'captain';
     socket.data.rideeasyUserId = did;
@@ -180,6 +192,11 @@ function initializeSocket (server, app) {
 
     io.on('connection', (socket) => {
         slog('connection', socket.id);
+
+        socket.on('admin:live-operations:join', () => {
+            socket.join('admin-live-operations');
+            slog('admin live operations joined', socket.id);
+        });
 
         socket.on('join', async (data) => {
             const { userId, userType } = data || {};
@@ -261,6 +278,15 @@ function initializeSocket (server, app) {
                 lastLocationUpdatedAt: new Date(),
                 socketId: socket.id,
             });
+
+            io.to('admin-live-operations').emit('driver:location-update', {
+                driverId,
+                lat,
+                lng,
+                at: Date.now(),
+                source: 'driver',
+            });
+
             if (process.env.DRIVER_LOCATION_PERSIST === 'true') {
                 try {
                     await DriverLocation.create({
@@ -307,18 +333,34 @@ function initializeSocket (server, app) {
 
         socket.on('driver:location-update', onDriverLocationPayload);
         socket.on('driver-location-update', onDriverLocationPayload);
-
         socket.on('disconnect', async () => {
+            const disconnectedDriverId = socket.data.rideeasyUserId;
+
             await Promise.all([
                 captainModel.findOneAndUpdate(
                     { socketId: socket.id },
-                    { $unset: { socketId: '' } }
+                    {
+                        $unset: { socketId: '' },
+                        $set: {
+                            isOnline: false,
+                            status: 'inactive',
+                        },
+                    }
                 ),
                 userModel.findOneAndUpdate(
                     { socketId: socket.id },
                     { $unset: { socketId: '' } }
                 ),
             ]);
+
+            if (disconnectedDriverId) {
+                emitToAdmins('driver:status-update', {
+                    driverId: disconnectedDriverId,
+                    liveStatus: 'OFFLINE',
+                    isOnline: false,
+                    isBusy: false,
+                });
+            }
         });
     });
 }

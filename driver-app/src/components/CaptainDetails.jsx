@@ -33,14 +33,13 @@ function formatRemaining (ms) {
 }
 
 const CaptainDetails = () => {
-    const { captain, setCaptain } = useContext(CaptainDataContext)
+    const { captain, isOnline, setCaptainStatus } = useContext(CaptainDataContext)
     const [earnings, setEarnings] = useState(null)
     const [subscription, setSubscription] = useState(null)
     const [plans, setPlans] = useState(null)
     const [plansError, setPlansError] = useState(false)
     const [subscribing, setSubscribing] = useState(false)
     const [selectedPlan, setSelectedPlan] = useState('weekly')
-    const [isOnline, setIsOnline] = useState(captain?.status === 'active')
     const [togglingStatus, setTogglingStatus] = useState(false)
     const [now, setNow] = useState(() => Date.now())
     const [rideHistory, setRideHistory] = useState([])
@@ -50,10 +49,6 @@ const CaptainDetails = () => {
             .then((res) => setSubscription(res))
             .catch(() => setSubscription({ active: false }))
     }, [])
-
-    useEffect(() => {
-        setIsOnline(captain?.status === 'active')
-    }, [captain?.status])
 
     useEffect(() => {
         // Immediate subscription fallback from login/profile payload
@@ -101,12 +96,7 @@ const CaptainDetails = () => {
     const handleToggleOnline = () => {
         const next = isOnline ? 'inactive' : 'active'
         setTogglingStatus(true)
-        apiClient.post('/captains/status', { status: next }, withCaptainAuth())
-            .then((res) => {
-                const st = res.data?.status
-                setIsOnline(st === 'active')
-                if (setCaptain) setCaptain((prev) => ({ ...(prev || {}), status: st }))
-            })
+        setCaptainStatus(next)
             .catch((e) => alert(e.response?.data?.message || 'Could not update status'))
             .finally(() => setTogglingStatus(false))
     }
@@ -143,27 +133,27 @@ const CaptainDetails = () => {
         <div className="space-y-4">
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 font-semibold">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-500/15 font-semibold text-emerald-400">
                         {displayName.charAt(0)}
                     </div>
                     <div>
                         <h4 className="font-medium">{displayName}</h4>
-                        <p className="text-sm text-slate-500">{captain?.vehicleType} • {captain?.vehicleNumber}</p>
+                        <p className="text-sm text-zinc-400">{captain?.vehicleType} • {captain?.vehicleNumber}</p>
                     </div>
                 </div>
                 <div className="text-right">
                     <h4 className="text-xl font-semibold">₹{earnings?.totalEarnings ?? 0}</h4>
-                    <p className="text-sm text-slate-600">Wallet ₹{earnings?.walletBalance ?? 0}</p>
-                    <p className="text-sm text-slate-600">Total ({earnings?.count ?? earnings?.completedRides ?? 0} rides)</p>
-                    <p className="text-xs text-slate-500">Today: ₹{earnings?.todayEarnings ?? 0} ({earnings?.todayRides ?? 0} rides)</p>
+                    <p className="text-sm text-zinc-400">Wallet ₹{earnings?.walletBalance ?? 0}</p>
+                    <p className="text-sm text-zinc-400">Total ({earnings?.count ?? earnings?.completedRides ?? 0} rides)</p>
+                    <p className="text-xs text-zinc-500">Today: ₹{earnings?.todayEarnings ?? 0} ({earnings?.todayRides ?? 0} rides)</p>
                     {earnings?.last7Days && Object.keys(earnings.last7Days).length > 0 && (
                         <details className="mt-1 text-left">
-                            <summary className="cursor-pointer text-xs text-slate-500">Last 7 days (by date)</summary>
+                            <summary className="cursor-pointer text-xs text-zinc-500">Last 7 days (by date)</summary>
                             <ul className="mt-1 max-h-24 space-y-0.5 overflow-y-auto text-[11px] text-slate-600">
                                 {Object.entries(earnings.last7Days).sort((a, b) => b[0].localeCompare(a[0])).map(([ day, amt ]) => (
-                                    <li key={day} className="flex justify-between gap-2 border-b border-slate-100 pb-0.5">
+                                    <li key={day} className="flex justify-between gap-2 border-b border-zinc-800 pb-0.5">
                                         <span>{day}</span>
-                                        <span className="font-medium text-slate-800">₹{Math.round(amt)}</span>
+                                        <span className="font-medium text-zinc-200">₹{Math.round(amt)}</span>
                                     </li>
                                 ))}
                             </ul>
@@ -178,25 +168,25 @@ const CaptainDetails = () => {
                 </p>
             )}
 
-            <div className="flex items-center justify-between p-3 bg-slate-100 rounded-xl">
-                <span className="text-sm font-medium text-slate-700">Go online to receive rides</span>
+            <div className="flex items-center justify-between rounded-xl border border-zinc-800 bg-zinc-900 p-3">
+                <span className="text-sm font-medium text-zinc-300">Go online to receive rides</span>
                 <button
                     type="button"
                     onClick={handleToggleOnline}
                     disabled={togglingStatus || (!isOnline && !canGoOnline)}
-                    className={`px-4 py-2 rounded-lg font-medium text-sm transition ${isOnline ? 'bg-emerald-600 text-white' : 'bg-slate-300 text-slate-700'} disabled:opacity-50`}
+                    className={`rounded-xl px-4 py-2 text-sm font-medium transition ${isOnline ? 'bg-emerald-600 text-white' : 'bg-zinc-800 text-zinc-400'} disabled:opacity-50`}
                 >
                     {togglingStatus ? '…' : isOnline ? 'Online' : 'Offline'}
                 </button>
             </div>
 
-            <div className="p-3 bg-slate-100 rounded-xl space-y-2">
-                <p className="text-sm font-medium text-slate-600">Subscription</p>
+            <div className="space-y-2 rounded-xl border border-zinc-800 bg-zinc-900 p-3">
+                <p className="text-sm font-medium text-zinc-300">Subscription</p>
                 <p className={subscription?.active ? 'text-emerald-600 font-medium' : 'text-amber-600 font-medium'}>
                     {subscription?.active ? 'Active' : 'Inactive — Subscribe to accept rides'}
                 </p>
                 {subscription?.subscription?.expiresAt && (
-                    <div className="text-xs text-slate-600 space-y-1">
+                    <div className="space-y-1 text-xs text-zinc-400">
                         <p>Ends: <span className="font-medium">{new Date(subscription.subscription.expiresAt).toLocaleString()}</span></p>
                         {subscription?.active && (
                             <p>Time left: <span className="font-mono font-semibold text-emerald-700">{formatRemaining(subExpiresMs)}</span></p>
@@ -211,12 +201,12 @@ const CaptainDetails = () => {
                 )}
                 {!subscription?.active && planPrices && (
                     <div className="mt-3 space-y-2">
-                        <select value={selectedPlan} onChange={(e) => setSelectedPlan(e.target.value)} className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+                        <select value={selectedPlan} onChange={(e) => setSelectedPlan(e.target.value)} className="driver-input">
                             <option value="weekly">Weekly — ₹{planPrices.weekly}</option>
                             <option value="monthly">Monthly (Recommended) — ₹{planPrices.monthly}</option>
                             <option value="yearly">Yearly — ₹{planPrices.yearly}</option>
                         </select>
-                        <button type="button" onClick={handleSubscribe} disabled={subscribing} className="w-full bg-emerald-600 text-white text-sm font-medium py-2 rounded-lg disabled:opacity-50">
+                        <button type="button" onClick={handleSubscribe} disabled={subscribing} className="driver-primary w-full">
                             {subscribing ? 'Activating...' : `Subscribe (₹${price}) — Cash`}
                         </button>
                     </div>

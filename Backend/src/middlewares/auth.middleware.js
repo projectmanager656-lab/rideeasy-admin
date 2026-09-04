@@ -105,7 +105,7 @@ module.exports.authAdmin = async (req, res, next) => {
         if (!token) return fail(res, req, 401, 'Unauthorized');
         await ensureNotBlacklisted(token);
         const decoded = verifyToken(token);
-        if (decoded.role !== 'admin') return fail(res, req, 403, 'Forbidden');
+        if (!['SUPER_ADMIN', 'OPERATIONS', 'SUPPORT'].includes(decoded.role)) return fail(res, req, 403, 'Forbidden');
         const aid = decoded?._id ?? decoded?.id;
         if (!aid) return fail(res, req, 401, 'Unauthorized');
         const admin = await adminModel.findById(aid);

@@ -7,6 +7,7 @@ const BottomNav = () => {
   const hidden =
     path === '/captain-login' ||
     path === '/captain-signup' ||
+    path === '/driver-welcome' ||
     path === '/captain/logout'
 
   if (hidden) return null
@@ -16,7 +17,7 @@ const BottomNav = () => {
 
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 z-20 border-t border-zinc-800 bg-black/95 backdrop-blur"
+      className="fixed bottom-0 left-0 right-0 z-20 border-t border-zinc-800 bg-zinc-950/95 shadow-[0_-8px_24px_rgba(0,0,0,0.35)] backdrop-blur"
       style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
     >
       <div className="mx-auto flex h-14 max-w-lg items-center justify-between px-0.5 sm:px-2">

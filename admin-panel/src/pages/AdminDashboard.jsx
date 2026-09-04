@@ -35,6 +35,9 @@ const AdminDashboard = ({ initialTab = null }) => {
   const [rides, setRides] = useState([])
   const [payments, setPayments] = useState([])
   const [services, setServices] = useState([])
+  const [fareConfigurations, setFareConfigurations] = useState([])
+const [fareLoading, setFareLoading] = useState(false)
+const [fareError, setFareError] = useState('')
   const [pricingJson, setPricingJson] = useState('')
   const [emergencyAlerts, setEmergencyAlerts] = useState([])
   const [policeStations, setPoliceStations] = useState([])
@@ -500,30 +503,33 @@ const [d, usersResult, driversResult, ridesResult, paymentsResult, alertsResult]
     await refreshServices()
   }
 
-  const savePricing = () => {
-    try {
-      const parsed = JSON.parse(pricingJson)
-      const payload = parsed.rates != null && typeof parsed.rates === 'object'
-        ? {
-            rates: parsed.rates,
-            ...(parsed.driverPlans && typeof parsed.driverPlans === 'object'
-              ? { driverPlans: parsed.driverPlans }
-              : {}),
-          }
-        : { rates: parsed }
+  const refreshFareConfigurations = async () => {
+    const result = await adminApi.getFareConfigurations()
+    setFareConfigurations(result?.configurations || [])
+    dataLoadedRef.current.add('fare-configurations')
+  }
 
-      adminApi.putPricing(payload)
-        .then((pricing) => {
-          setPricingJson(JSON.stringify({
-            rates: pricing.rates || {},
-            driverPlans: pricing.driverPlans || {},
-          }, null, 2))
-          alert('Pricing saved')
-        })
-        .catch((e) => alert(e.response?.data?.message || 'Failed'))
-    } catch {
-      alert('Invalid JSON')
-    }
+  const createFareConfiguration = async (payload) => {
+    await adminApi.createFareConfiguration(payload)
+    await refreshFareConfigurations()
+  }
+
+  const updateFareConfiguration = async (id, payload) => {
+    await adminApi.updateFareConfiguration(id, payload)
+    await refreshFareConfigurations()
+  }
+
+  const updateFareConfigurationStatus = async (id, status) => {
+    await adminApi.updateFareConfigurationStatus(id, status)
+    await refreshFareConfigurations()
+  }
+
+  const loadFareConfigurationHistory = async (id) => {
+    return adminApi.getFareConfigurationHistory(id)
+  }
+
+  const previewFareConfiguration = async (payload) => {
+    return adminApi.previewFareConfiguration(payload)
   }
 
   const logout = () => {
@@ -604,19 +610,24 @@ const [d, usersResult, driversResult, ridesResult, paymentsResult, alertsResult]
                     label: 'Finance',
                     description: 'Financial overview',
                     icon: 'ri-money-rupee-circle-line',
-                    tab: 'finance',
-                  },
+                    tab: 'finance',                  },
                   {
                     label: 'Payments',
                     description: 'Review payment history',
                     icon: 'ri-bank-card-line',
                     tab: 'payments',
                   },
-                  {
+                                    {
                     label: 'Services',
                     description: 'Manage service offerings',
                     icon: 'ri-tools-line',
                     path: '/admin/services',
+                  },
+                  {
+                    label: 'Pricing',
+                    description: 'Configure fare rules',
+                    icon: 'ri-money-rupee-circle-line',
+                    tab: 'pricing',
                   },
                 ],
               },
@@ -837,10 +848,14 @@ const [d, usersResult, driversResult, ridesResult, paymentsResult, alertsResult]
         {/* PRICING */}
         {tab === 'pricing' && (
           <PricingTab
-            pricingJson={pricingJson}
-            setPricingJson={setPricingJson}
-            savePricing={savePricing}
-            pricingLoading={pricingLoading}
+            fareConfigurations={fareConfigurations}
+            fareLoading={fareLoading}
+            fareError={fareError}
+            onCreateFare={createFareConfiguration}
+            onUpdateFare={updateFareConfiguration}
+            onUpdateFareStatus={updateFareConfigurationStatus}
+            onLoadHistory={loadFareConfigurationHistory}
+            onPreviewFare={previewFareConfiguration}
           />
         )}
 

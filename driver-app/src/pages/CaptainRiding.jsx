@@ -161,9 +161,9 @@ const CaptainRiding = () => {
     const showRideMap = pickupCoords && dropCoords
 
     return (
-        <div className='h-screen relative flex flex-col justify-end bg-slate-950'>
+        <div className='driver-page relative flex h-screen flex-col justify-end'>
 
-            <div className='fixed left-0 right-0 top-0 z-[400] flex items-center justify-between gap-3 border-b border-slate-800 bg-slate-900/95 px-4 py-2.5 backdrop-blur'>
+            <div className='driver-header fixed left-0 right-0 top-0 z-[400] flex items-center justify-between gap-3 px-4 py-2.5'>
                 <div className="flex min-w-0 flex-1 flex-col gap-1">
                     <div className="flex items-center gap-2">
                         <span className="relative flex h-2.5 w-2.5 shrink-0">
@@ -178,13 +178,13 @@ const CaptainRiding = () => {
                 </div>
                 <Link
                     to='/captain-home'
-                    className='shrink-0 rounded-full bg-slate-800 px-3 py-1.5 text-xs font-semibold text-slate-100 hover:bg-slate-700'
+                    className='driver-secondary shrink-0 rounded-full px-3 py-1.5 text-xs'
                 >
                     Dashboard
                 </Link>
             </div>
 
-            <div className='h-1/5 p-6 flex items-center justify-between relative bg-yellow-400 pt-10'
+            <div className='h-1/5 border-b border-zinc-800 bg-zinc-950 p-6 pt-10'
                 onClick={() => {
                     setFinishRidePanel(true)
                 }}
@@ -193,11 +193,11 @@ const CaptainRiding = () => {
                 <h4 className='text-xl font-semibold'>Route to drop</h4>
                 <div className='flex items-center gap-2'>
                     {showRideMap && (
-                        <button type="button" onClick={(e) => { e.stopPropagation(); openInGoogleMaps(); }} className='bg-slate-700 hover:bg-slate-800 text-white font-semibold p-3 px-5 rounded-lg flex items-center gap-2'>
+                        <button type="button" onClick={(e) => { e.stopPropagation(); openInGoogleMaps(); }} className='driver-secondary flex items-center gap-2'>
                             <i className="ri-navigation-line" /> Navigate
                         </button>
                     )}
-                    <button type="button" onClick={(e) => { e.stopPropagation(); setFinishRidePanel(true); }} className='bg-green-600 text-white font-semibold p-3 px-10 rounded-lg'>Complete Ride</button>
+                    <button type="button" onClick={(e) => { e.stopPropagation(); setFinishRidePanel(true); }} className='driver-primary'>Complete Ride</button>
                 </div>
             </div>
             <div ref={finishRidePanelRef} className={`fixed left-0 right-0 mx-auto w-full max-w-[480px] z-[500] bottom-0 rounded-t-3xl border-t border-zinc-800 bg-zinc-950 px-4 pb-10 pt-14 shadow-[0_-12px_48px_rgba(0,0,0,0.55)] max-h-[88dvh] overflow-y-auto transition-transform duration-300 ease-in-out ${finishRidePanel ? 'translate-y-0' : 'translate-y-full'}`}>

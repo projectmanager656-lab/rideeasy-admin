@@ -92,6 +92,12 @@ const TAB_CONFIG = [
     icon: 'ri-shield-user-line',
     permission: ADMIN_PERMISSIONS.ROLES,
   },
+     {
+    id: 'pricing',
+    label: 'Pricing',
+    icon: 'ri-money-rupee-circle-line',
+    permission: ADMIN_PERMISSIONS.FARE_CONFIGURATION,
+  },
   {
     id: 'settings',
     label: 'Settings',
@@ -115,6 +121,7 @@ const ROUTES = {
   reports: '/reports',
   notifications: '/admin/notifications',
   roles: '/roles',
+  pricing: '/pricing',
   settings: '/settings',
 }
 

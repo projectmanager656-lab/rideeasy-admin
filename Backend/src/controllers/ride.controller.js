@@ -403,11 +403,17 @@ module.exports.createRide = async (req, res) => {
         const fareCoordOpts = hasFullClientCoords
             ? { pickupCoord: pickupCoordinates, dropCoord: dropCoordinates }
             : null;
-        const farePayload = await rideService.getFare(pickupLocation, dropLocation, fareCoordOpts);
         const vehicleTypeNorm = rideService.normalizeVehicleType(vehicleType || req.body.vehicleType);
         if (![ 'BIKE', 'AUTO', 'CAR' ].includes(vehicleTypeNorm)) {
             return fail(res, req, 400, 'Invalid vehicle type');
         }
+
+        const farePayload = await rideService.getFare(
+            pickupLocation,
+            dropLocation,
+            fareCoordOpts,
+            { cityZone: rideCity, vehicleType: vehicleTypeNorm }
+        );
         const computedPrice = Number(farePayload?.[vehicleTypeNorm]);
         if (!Number.isFinite(computedPrice) || computedPrice <= 0) {
             return fail(res, req, 400, 'Could not compute fare for selected vehicle');
@@ -426,6 +432,8 @@ module.exports.createRide = async (req, res) => {
             paymentMethod,
             price: computedPrice,
             distanceKm: computedDistanceKm,
+            fareConfigurationId: farePayload?.fareConfigurations?.[vehicleTypeNorm]?.id,
+            fareConfigurationVersion: farePayload?.fareConfigurations?.[vehicleTypeNorm]?.version,
             customerName: customerName || req.user.name,
             customerPhone: customerPhone || req.user.phone,
             pickupCoordinates,
@@ -587,7 +595,13 @@ module.exports.getFare = async (req, res) => {
         const fareCoordOpts = hasFullClientCoords
             ? { pickupCoord, dropCoord }
             : null;
-        const fare = await rideService.getFare(pickup, destination, fareCoordOpts);
+        const rideCity = inferServiceCityKeyOrNearest(pickupCoord.lat, pickupCoord.lng);
+        const fare = await rideService.getFare(
+            pickup,
+            destination,
+            fareCoordOpts,
+            { cityZone: rideCity }
+        );
         return res.status(200).json({
             ...fare,
             ok: true,

@@ -28,17 +28,17 @@ const RideStatusStepper = ({ status }) => {
                                     className={[
                                         'h-7 w-7 rounded-full flex items-center justify-center text-xs font-semibold',
                                         done ? 'bg-emerald-600 text-white' : '',
-                                        active ? 'bg-slate-900 text-white' : '',
-                                        !done && !active ? 'bg-slate-200 text-slate-700' : '',
+                                        active ? 'bg-emerald-600 text-white' : '',
+                                        !done && !active ? 'bg-zinc-800 text-zinc-500' : '',
                                     ].join(' ')}
                                 >
                                     {idx + 1}
                                 </div>
-                                <div className="text-xs font-medium text-slate-700 truncate">{labelFor(s)}</div>
+                                <div className="truncate text-xs font-medium text-zinc-300">{labelFor(s)}</div>
                             </div>
                             {idx < STATUSES.length - 1 && (
-                                <div className="mt-2 h-1 rounded-full bg-slate-200 overflow-hidden">
-                                    <div className={`h-full ${done ? 'bg-emerald-600 w-full' : active ? 'bg-slate-900 w-1/2' : 'bg-slate-200 w-0'}`} />
+                                <div className="mt-2 h-1 overflow-hidden rounded-full bg-zinc-800">
+                                    <div className={`h-full ${done ? 'w-full bg-emerald-600' : active ? 'w-1/2 bg-emerald-500' : 'w-0 bg-zinc-800'}`} />
                                 </div>
                             )}
                         </div>

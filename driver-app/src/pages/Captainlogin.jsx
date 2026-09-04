@@ -1,206 +1,310 @@
-import React, { useContext, useState, useEffect } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import { CaptainDataContext } from '../context/CaptainContext'
-import { apiClient } from '../services/http'
-import { stripApiEnvelope } from '../utils/apiBody'
-import { formatApiError } from '../utils/apiError'
-import { getCaptainToken } from '../utils/authTokens'
-
-const inputClass =
-  'mb-4 rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 w-full text-base text-white placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500'
+import React, { useContext, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Eye, EyeOff } from 'lucide-react';
+import { CaptainDataContext } from '../context/CaptainContext';
+import { apiClient } from '../services/http';
+import { stripApiEnvelope } from '../utils/apiBody';
+import { formatApiError } from '../utils/apiError';
 
 const Captainlogin = () => {
-  const [ email, setEmail ] = useState('')
-  const [ password, setPassword ] = useState('')
-  const [ phone, setPhone ] = useState('')
-  const [ otp, setOtp ] = useState('')
-  const [ otpSent, setOtpSent ] = useState(false)
-  const [ otpLoading, setOtpLoading ] = useState(false)
-  const [ loading, setLoading ] = useState(false)
-  const [ error, setError ] = useState('')
+  const navigate = useNavigate();
+  const { setCaptain } = useContext(CaptainDataContext);
 
-  const { setCaptain } = useContext(CaptainDataContext)
-  const navigate = useNavigate()
+  const [emailOrPhone, setEmailOrPhone] = useState('');
+  const [password, setPassword] = useState('');
 
-  useEffect(() => {
-    if (getCaptainToken()) {
-      navigate('/captain-home', { replace: true })
+  // Show / Hide password
+  const [showPassword, setShowPassword] = useState(false);
+
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const isValidEmail = (value) => {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+  };
+
+  /*
+   * LOGIN
+   */
+  const handleLogin = async () => {
+    const value = emailOrPhone.trim();
+
+    /*
+     * Validate email / phone
+     */
+    if (!value) {
+      setError('Please enter your email or phone number');
+      return;
     }
-  }, [ navigate ])
 
-  const submitHandler = async (e) => {
-    e.preventDefault()
-    setError('')
-    const captain = {
-      email: String(email || '').trim().toLowerCase(),
-      password,
+    if (!isValidEmail(value)) {
+      setError('Please enter a valid email address');
+      return;
     }
+
+    /*
+     * Validate password
+     */
+    if (!password) {
+      setError('Please enter your password');
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+
     try {
-      setLoading(true)
-      const response = await apiClient.post('/captains/login', captain)
-      if (response.status === 200) {
-        const data = stripApiEnvelope(response.data)
-        const cap = data?.captain ?? data
-        const token = data?.token
-        if (cap && token) {
-          setCaptain(cap)
-          localStorage.setItem('captainToken', token)
-          navigate('/captain-home', { replace: true })
-          setEmail('')
-          setPassword('')
-        } else {
-          setError('Login response missing account or token.')
-        }
+      const body = {};
+
+      /*
+       * Email login
+       */
+      body.email = value.toLowerCase();
+      body.password = password;
+
+      const response = await apiClient.post('/captains/login', body);
+      const data = stripApiEnvelope(response.data);
+      const captain = data?.captain;
+      const token = data?.token;
+      if (!captain || !token) {
+        setError('Login response missing account or token.');
+        return;
       }
-    } catch (err) {
-      setError(formatApiError(err))
-    } finally {
-      setLoading(false)
-    }
-  }
+      setCaptain(captain);
+      localStorage.setItem('captainToken', token);
+      navigate('/captain-home', {
+        replace: true,
+      });
 
-  const sendOtp = async () => {
-    try {
-      setError('')
-      setOtpLoading(true)
-      await apiClient.post('/captains/phone/send-otp', {
-        phone: String(phone || '').trim(),
-      })
-      setOtpSent(true)
     } catch (err) {
-      setError(formatApiError(err))
+      setError(formatApiError(err));
     } finally {
-      setOtpLoading(false)
+      setLoading(false);
     }
-  }
-
-  const verifyOtp = async () => {
-    try {
-      setError('')
-      setOtpLoading(true)
-      const response = await apiClient.post('/captains/phone/verify-otp', {
-        phone: String(phone || '').trim(),
-        otp: String(otp || '').trim(),
-      })
-      if (response.status === 200) {
-        const data = stripApiEnvelope(response.data)
-        const cap = data?.captain ?? data
-        const token = data?.token
-        if (cap && token) {
-          setCaptain(cap)
-          localStorage.setItem('captainToken', token)
-          navigate('/captain-home', { replace: true })
-        } else {
-          setError('Verification response missing account or token.')
-        }
-      }
-    } catch (err) {
-      setError(formatApiError(err))
-    } finally {
-      setOtpLoading(false)
-    }
-  }
+  };
 
   return (
-    <div className="min-h-screen bg-black text-white flex flex-col justify-between p-6 sm:p-8">
-      <div className="mx-auto w-full max-w-md">
-        <div className="mb-8 rounded-2xl border border-zinc-800 bg-zinc-950/80 p-6 shadow-xl">
-          <div className="mb-6 flex items-center gap-3">
-            <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-emerald-500/40 bg-emerald-500/10">
-              <span className="text-xl font-bold text-emerald-400">R</span>
-            </span>
+    <div className="fixed inset-0 w-full h-[100dvh] overflow-hidden bg-black">
+
+      <main className="relative mx-auto h-full w-full max-w-[430px] overflow-hidden">
+
+        {/* Background */}
+        <img
+          src="/WelcomeBg.jpeg"
+          alt="Night City Background"
+          className="absolute inset-0 z-0 h-full w-full object-cover brightness-125 contrast-105"
+        />
+
+        {/* Overlay */}
+        <div className="absolute inset-0 z-10 bg-black/75" />
+
+        {/* Content */}
+        <div className="relative z-20 flex h-full flex-col px-6 pb-6 pt-10">
+
+          {/* Header */}
+          <div className="flex items-start justify-between pb-10">
+
             <div>
-              <p className="text-lg font-semibold">RideEasy Driver</p>
-              <p className="text-xs text-zinc-500">Sign in to go online</p>
+              <h1 className="text-3xl font-bold tracking-tight text-white">
+                Ride
+                <span className="text-[#FFB800]">
+                  Easy
+                </span>
+              </h1>
+
+              <p className="mt-1 text-sm text-gray-400">
+                Drive, earn, and stay in control
+              </p>
             </div>
-          </div>
 
-          <form onSubmit={submitHandler}>
-            {error ? (
-              <div
-                role="alert"
-                className="mb-4 rounded-xl border border-red-900/50 bg-red-950/40 px-3 py-2 text-sm text-red-200 whitespace-pre-line"
-              >
-                {error}
-              </div>
-            ) : null}
-            <label className="mb-1 block text-sm text-zinc-400">Email</label>
-            <input
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className={inputClass}
-              type="email"
-              placeholder="email@example.com"
-            />
-            <label className="mb-1 block text-sm text-zinc-400">Password</label>
-            <input
-              className={inputClass}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              type="password"
-              placeholder="Password"
-            />
-            <button
-              disabled={loading}
-              type="submit"
-              className="w-full rounded-xl bg-emerald-600 py-3 text-base font-semibold text-white hover:bg-emerald-500 disabled:opacity-60"
-            >
-              {loading ? 'Logging in…' : 'Login'}
-            </button>
-          </form>
-        </div>
+            {/* Static Language Button */}
+            <div className="relative">
 
-        <div className="rounded-2xl border border-zinc-800 bg-zinc-950/80 p-5">
-          <h4 className="mb-3 text-sm font-semibold text-zinc-300">Phone OTP</h4>
-          <input
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            className={inputClass}
-            type="tel"
-            placeholder="Driver phone number"
-          />
-          {!otpSent ? (
-            <button
-              type="button"
-              onClick={sendOtp}
-              disabled={otpLoading || !String(phone || '').trim()}
-              className="w-full rounded-xl bg-blue-600 py-2.5 text-sm font-semibold text-white hover:bg-blue-500 disabled:opacity-60"
-            >
-              {otpLoading ? 'Sending OTP…' : 'Send OTP'}
-            </button>
-          ) : (
-            <div className="space-y-2">
-              <input
-                value={otp}
-                onChange={(e) => setOtp(e.target.value)}
-                className={inputClass}
-                type="text"
-                maxLength={6}
-                placeholder="6-digit OTP"
-              />
               <button
                 type="button"
-                onClick={verifyOtp}
-                disabled={otpLoading || String(otp || '').trim().length !== 6}
-                className="w-full rounded-xl bg-blue-600 py-2.5 text-sm font-semibold text-white hover:bg-blue-500 disabled:opacity-60"
+                className="flex items-center gap-1.5 rounded-full border border-gray-700/80 bg-[#16181e]/80 px-3.5 py-1.5 text-xs font-medium text-gray-300 backdrop-blur-md"
               >
-                {otpLoading ? 'Verifying…' : 'Verify & Login'}
+                <span>🌐</span>
+
+                <span>
+                  English
+                </span>
               </button>
+
             </div>
-          )}
+
+          </div>
+
+          {/* Login Section */}
+          <div className="mb-2 flex w-full flex-col items-center gap-6 pt-10">
+
+            {/* Tagline */}
+            <p className="text-center text-base font-normal tracking-wide text-gray-200">
+              Turn Miles Into Money
+            </p>
+
+            {/* Login Card */}
+            <div className="w-full rounded-[24px] border border-gray-800/80 bg-[#0c0f14]/20 p-5 ">
+
+              {/* Title */}
+              <h2 className="text-2xl font-bold text-white">
+                Welcome back
+              </h2>
+
+              <p className="mt-0.5 text-xs text-gray-400">
+                Sign in to continue
+              </p>
+
+              {/* Email / Phone */}
+              <div className="mt-5">
+
+                <label className="mb-2 block text-xs font-medium text-gray-300">
+                  Email address
+                </label>
+
+                <input
+                  type="text"
+                  value={emailOrPhone}
+                  onChange={(e) => {
+                    setEmailOrPhone(
+                      e.target.value
+                    );
+
+                    setError('');
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      handleLogin();
+                    }
+                  }}
+                  placeholder="Enter your email address"
+                  autoComplete="username"
+                  className="h-12 w-full rounded-xl border border-gray-800 bg-[#12161f] px-4 text-sm text-white placeholder-gray-500 outline-none focus:border-[#FFB800]"
+                />
+
+              </div>
+
+              {/* Password */}
+              <div className="mt-4">
+
+                <label className="mb-2 block text-xs font-medium text-gray-300">
+                  Password
+                </label>
+
+                {/* Password Input Wrapper */}
+                <div className="relative">
+
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    value={password}
+                    onChange={(e) => {
+                      setPassword(
+                        e.target.value
+                      );
+
+                      setError('');
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        handleLogin();
+                      }
+                    }}
+                    placeholder="Enter your password"
+                    autoComplete="current-password"
+                    className="h-12 w-full rounded-xl border border-gray-800 bg-[#12161f] px-4 pr-12 text-sm text-white placeholder-gray-500 outline-none focus:border-[#FFB800]"
+                  />
+
+                  {/* Show / Hide Password */}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setShowPassword(
+                        !showPassword
+                      )
+                    }
+                    className="absolute right-0 top-0 flex h-12 w-12 items-center justify-center text-gray-400 transition hover:text-white"
+                    aria-label={
+                      showPassword
+                        ? 'Hide password'
+                        : 'Show password'
+                    }
+                  >
+                    {showPassword ? (
+                      <EyeOff
+                        size={19}
+                        strokeWidth={1.8}
+                      />
+                    ) : (
+                      <Eye
+                        size={19}
+                        strokeWidth={1.8}
+                      />
+                    )}
+                  </button>
+
+                </div>
+
+              </div>
+
+              {/* Error */}
+              {error && (
+                <p className="mt-3 text-xs text-red-400">
+                  {error}
+                </p>
+              )}
+
+              {/* Login Button */}
+              <button
+                type="button"
+                onClick={handleLogin}
+                disabled={loading}
+                className="mt-4 h-12 w-full rounded-xl bg-[#FFB800] text-sm font-bold text-black transition hover:bg-[#ffa800] disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {loading
+                  ? 'Signing in...'
+                  : 'Sign In'}
+              </button>
+
+              {/* Forgot Password */}
+              <button
+                type="button"
+                onClick={() =>
+                  navigate('/captain-forgot-password')
+                }
+                className="mt-4 w-full text-center text-xs font-medium text-[#FFB800] hover:text-[#ffa800]"
+              >
+                Forgot password?
+              </button>
+
+              {/* Don't Have An Account */}
+              <div className="mt-4 text-center">
+
+                <span className="text-xs text-gray-500">
+                  Don&apos;t have an account?{' '}
+                </span>
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    navigate('/captain-signup')
+                  }
+                  className="text-xs font-semibold text-[#FFB800] hover:text-[#ffa800]"
+                >
+                  Sign up
+                </button>
+
+              </div>
+
+            </div>
+
+          </div>
+
         </div>
 
-        <p className="mt-6 text-center text-sm text-zinc-500">
-          New driver?{' '}
-          <Link to="/captain-signup" className="font-medium text-emerald-400 hover:text-emerald-300">
-            Register
-          </Link>
-        </p>
-      </div>
-    </div>
-  )
-}
+      </main>
 
-export default Captainlogin
+    </div>
+  );
+};
+
+export default Captainlogin;

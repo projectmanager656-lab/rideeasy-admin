@@ -5,27 +5,27 @@ import { apiClient, withCaptainAuth } from '../services/http'
 import { stripApiEnvelope } from '../utils/apiBody'
 import { driverBackendJson } from '../services/driverBackendFetch'
 
+const subscriptionBypassPaths = [
+  '/plans',
+  '/captain-riding',
+  '/captain-ride-complete',
+  '/captain/logout',
+  '/profile',
+  '/history',
+  '/captain/history',
+  '/earnings',
+]
+
 const CaptainProtectWrapper = ({
   children
 }) => {
   const token = localStorage.getItem('captainToken') || localStorage.getItem('captain-token')
   const navigate = useNavigate()
   const location = useLocation()
-  const { captain, setCaptain } = useContext(CaptainDataContext)
+  const { captain, setCaptain, clearCaptain } = useContext(CaptainDataContext)
   const [isLoading, setIsLoading] = useState(true)
   const [loadError, setLoadError] = useState('')
   const [retryNonce, setRetryNonce] = useState(0)
-
-  const subscriptionBypassPaths = [
-    '/plans',
-    '/captain-riding',
-    '/captain-ride-complete',
-    '/captain/logout',
-    '/profile',
-    '/history',
-    '/captain/history',
-    '/earnings',
-  ]
 
   useEffect(() => {
     if (!token) {
@@ -57,6 +57,7 @@ const CaptainProtectWrapper = ({
         if (err.response?.status === 401) {
           localStorage.removeItem('captainToken')
           localStorage.removeItem('captain-token')
+          clearCaptain()
           navigate('/captain-login', { replace: true })
           return
         }
@@ -73,7 +74,7 @@ const CaptainProtectWrapper = ({
     return () => {
       cancelled = true
     }
-  }, [token, navigate, setCaptain, retryNonce])
+  }, [token, navigate, setCaptain, clearCaptain, retryNonce])
 
   useEffect(() => {
     if (!token || !captain?._id) return undefined

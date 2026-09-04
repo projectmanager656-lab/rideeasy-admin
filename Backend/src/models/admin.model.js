@@ -4,11 +4,16 @@ const { signPayload } = require('../config/jwt.config');
 
 const adminSchema = new mongoose.Schema({
     email: { type: String, required: true, unique: true, lowercase: true },
-    password: { type: String, required: true, select: false }
+      password: { type: String, required: true, select: false },
+role: {
+    type: String,
+    enum: ['SUPER_ADMIN', 'OPERATIONS', 'SUPPORT'],
+    default: 'SUPER_ADMIN'
+}
 }, { timestamps: true, collection: 'admins' });
 
 adminSchema.methods.generateAuthToken = function () {
-    return signPayload({ _id: this._id, role: 'admin' });
+ return signPayload({ _id: this._id, role: this.role });
 };
 
 adminSchema.methods.comparePassword = async function (password) {

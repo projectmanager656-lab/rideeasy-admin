@@ -21,6 +21,13 @@ const rideSchema = new mongoose.Schema({
     vehicleType: { type: String, enum: [ 'BIKE', 'AUTO', 'CAR' ], required: true },
     distance: { type: Number, required: true }, // km
     price: { type: Number, required: true },
+    fareConfigurationId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'FareConfiguration',
+    },
+    fareConfigurationVersion: {
+        type: Number,
+    },
 
     status: {
         type: String,

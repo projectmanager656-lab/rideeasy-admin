@@ -22,5 +22,5 @@ export function jwtRole (token) {
 }
 
 export function isAdminRoleToken (token) {
-  return jwtRole(token) === 'admin'
+  return ['SUPER_ADMIN', 'OPERATIONS', 'SUPPORT'].includes(jwtRole(token))
 }
