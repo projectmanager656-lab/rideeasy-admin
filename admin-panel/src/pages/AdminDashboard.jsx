@@ -33,6 +33,7 @@ const AdminDashboard = ({ initialTab = null }) => {
   const [users, setUsers] = useState([])
   const [drivers, setDrivers] = useState([])
   const [rides, setRides] = useState([])
+  const [selectedRide, setSelectedRide] = useState(null)
   const [payments, setPayments] = useState([])
   const [services, setServices] = useState([])
   const [fareConfigurations, setFareConfigurations] = useState([])
@@ -77,6 +78,23 @@ const [fareError, setFareError] = useState('')
     setTab('analytics')
     setStatsNonce((n) => n + 1)
   }, [])
+
+  const refreshRides = useCallback(async () => {
+    setRidesLoading(true)
+    setTabError('')
+    try {
+      const list = await adminApi.getRides(rideStatusFilter)
+      setRides(list)
+      setSelectedRide((current) => {
+        if (!current?._id) return current
+        return list.find((ride) => String(ride._id) === String(current._id)) || current
+      })
+    } catch (e) {
+      setTabError(fmtErr(e))
+    } finally {
+      setRidesLoading(false)
+    }
+  }, [rideStatusFilter])
 
   useEffect(() => {
     if (initialTab) {
@@ -791,6 +809,8 @@ const [d, usersResult, driversResult, ridesResult, paymentsResult, alertsResult]
           <RidesTab
             ridesLoading={ridesLoading}
             filteredRides={filteredRides}
+            selectedRide={selectedRide}
+            onViewRide={setSelectedRide}
             rides={rides}
             rideStatusFilter={rideStatusFilter}
             setRideStatusFilter={setRideStatusFilter}
@@ -803,6 +823,7 @@ const [d, usersResult, driversResult, ridesResult, paymentsResult, alertsResult]
             tableHeaderSelectRef={tableHeaderSelectRef}
             deleteRide={deleteRide}
             bulkDeleteRides={bulkDeleteRides}
+            refreshRides={refreshRides}
           />
         )}
 
