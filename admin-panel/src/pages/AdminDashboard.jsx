@@ -108,6 +108,27 @@ const [fareError, setFareError] = useState('')
     setSelectedIds([])
     setTableSearch('')
   }, [tab])
+
+  // Refresh driver data immediately when network reconnects
+  useEffect(() => {
+    if (tab !== 'drivers') return
+
+    const handleOnline = async () => {
+      try {
+        const list = await adminApi.getDrivers()
+        setDrivers(Array.isArray(list) ? list : [])
+        setTabError('')
+      } catch (e) {
+        setTabError(fmtErr(e))
+      }
+    }
+
+    window.addEventListener('online', handleOnline)
+
+    return () => {
+      window.removeEventListener('online', handleOnline)
+    }
+  }, [tab])
   const fmtErr = (e) => e?.response?.data?.message || e?.message || 'Request failed'
   /** Overview only — `statsNonce` bumps on "Refresh stats" without re-fetching rides/users/etc. */
   useEffect(() => {
