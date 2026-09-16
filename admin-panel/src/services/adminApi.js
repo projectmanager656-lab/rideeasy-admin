@@ -151,6 +151,15 @@ export const adminApi = {
       )
   },
 
+  getRideAudit(id, signal) {
+    return client
+      .get(`/admin/rides/${id}/audit`, { signal })
+      .then((r) => {
+        const data = unwrap(r.data)
+        return Array.isArray(data?.audit) ? data.audit : []
+      })
+  },
+
   deleteRide(id) {
     return client
       .delete(`/admin/rides/${id}`)
@@ -167,6 +176,12 @@ export const adminApi = {
       .then((r) =>
         normalizeListResponse(unwrap(r.data), 'payments')
       )
+  },
+
+  getPayment(id, signal) {
+    return client
+      .get(`/admin/payments/${id}`, { signal })
+      .then((r) => unwrap(r.data))
   },
 
   // =========================================================

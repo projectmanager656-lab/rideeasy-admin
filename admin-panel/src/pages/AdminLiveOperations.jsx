@@ -70,7 +70,7 @@ function isLocationFresh(driver) {
 }
 
 export default function AdminLiveOperations() {
-  const { socket } = useContext(SocketContext)
+  const { socket, isConnected, connectionStatus } = useContext(SocketContext)
 
   const [drivers, setDrivers] = useState([])
   const [rides, setRides] = useState([])
@@ -78,6 +78,38 @@ export default function AdminLiveOperations() {
   const [statusFilter, setStatusFilter] = useState('ALL')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+
+  const socketStatus = useMemo(() => {
+    if (connectionStatus === 'connected' || isConnected) {
+      return {
+        label: 'Live updates connected',
+        className: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+        dot: 'bg-emerald-500',
+      }
+    }
+
+    if (connectionStatus === 'reconnecting') {
+      return {
+        label: 'Reconnecting live updates…',
+        className: 'bg-amber-50 text-amber-700 border-amber-200',
+        dot: 'bg-amber-500',
+      }
+    }
+
+    if (connectionStatus === 'disabled') {
+      return {
+        label: 'Live updates disabled',
+        className: 'bg-gray-50 text-gray-600 border-gray-200',
+        dot: 'bg-gray-400',
+      }
+    }
+
+    return {
+      label: 'Live updates disconnected',
+      className: 'bg-red-50 text-red-700 border-red-200',
+      dot: 'bg-red-500',
+    }
+  }, [connectionStatus, isConnected])
 
   const loadDrivers = useCallback(async () => {
     try {
@@ -103,8 +135,9 @@ export default function AdminLiveOperations() {
   useEffect(() => {
     if (!socket) return
 
-    const joinRoom = () => {
+    const joinRoom = async () => {
       socket.emit('admin:live-operations:join')
+      await loadDrivers()
     }
 
     const handleDriverLocationUpdate = (update) => {
@@ -140,7 +173,7 @@ export default function AdminLiveOperations() {
       socket.off('connect', joinRoom)
       socket.off('driver:location-update', handleDriverLocationUpdate)
     }
-  }, [socket])
+  }, [socket, loadDrivers])
 
   const filteredDrivers = useMemo(() => {
     const query = search.trim().toLowerCase()
@@ -249,15 +282,24 @@ const mapDrivers = useMemo(() => {
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={loadDrivers}
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+          <span
+            className={`inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-semibold ${socketStatus.className}`}
+          >
+            <span className={`h-2 w-2 rounded-full ${socketStatus.dot}`} />
+            {socketStatus.label}
+          </span>
+
+          <button
+            type="button"
+            onClick={loadDrivers}
           disabled={loading}
           className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#E5E7EB] bg-white px-4 py-2.5 text-sm font-semibold text-[#152238] shadow-sm transition hover:bg-[#F8FAFC] disabled:cursor-not-allowed disabled:opacity-60"
         >
-          <i className="ri-refresh-line" />
-          Refresh
-        </button>
+            <i className="ri-refresh-line" />
+            Refresh
+          </button>
+        </div>
       </div>
 
       {/* Status Summary */}
@@ -344,9 +386,26 @@ const mapDrivers = useMemo(() => {
     <h2 className="text-lg font-semibold text-[#152238]">
       Live Map
     </h2>
-    <p className="mt-1 text-sm text-[#718096]">
-      Driver and active ride locations
-    </p>
+    <div className="mt-1 flex flex-wrap items-center gap-3 text-xs font-medium text-[#718096]">
+      <span className="inline-flex items-center gap-1.5">
+        <span className="h-2.5 w-2.5 rounded-full bg-blue-500" />
+        Live
+      </span>
+
+      <span className="inline-flex items-center gap-1.5">
+        <span className="h-2.5 w-2.5 rounded-full bg-slate-400" />
+        Stale
+      </span>
+
+      <span className="inline-flex items-center gap-1.5">
+        <span className="h-2.5 w-2.5 rounded-full bg-gray-500" />
+        Offline
+      </span>
+
+      <span className="text-[#A0AEC0]">
+        Driver and active ride locations
+      </span>
+    </div>
   </div>
 
 <div className="h-[500px] p-3">

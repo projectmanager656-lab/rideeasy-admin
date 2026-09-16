@@ -20,23 +20,44 @@ function captainRefToId (c) {
 
 async function recordRideFareLedger (rideId, payableAmount) {
     try {
-        const dup = await PaymentRecord.findOne({ rideId, paymentType: 'ride_fare' });
-        if (dup) return dup;
         const populated = await rideModel.findById(rideId).populate('user').populate('captain');
         if (!populated) return null;
+
         const pm = String(populated.paymentMethod || 'Cash').toUpperCase();
         const mode = [ 'UPI', 'QR', 'Cash', 'WALLET' ].includes(pm) ? pm : 'Cash';
-        return await PaymentRecord.create({
+
+        const existing = await PaymentRecord.findOne({
             rideId,
-            driverId: populated.captain?._id ?? populated.captain,
-            userId: populated.user?._id ?? populated.user,
-            amount: payableAmount,
-            paymentMode: mode,
-            paymentStatus: 'success',
             paymentType: 'ride_fare',
         });
+
+        if (existing) return existing;
+
+        try {
+            return await PaymentRecord.create({
+                rideId,
+                driverId: populated.captain?._id ?? populated.captain,
+                userId: populated.user?._id ?? populated.user,
+                amount: payableAmount,
+                paymentMode: mode,
+                paymentStatus: 'success',
+                paymentType: 'ride_fare',
+            });
+        } catch (createError) {
+            if (createError?.code === 11000) {
+                const duplicate = await PaymentRecord.findOne({
+                    rideId,
+                    paymentType: 'ride_fare',
+                });
+                if (duplicate) return duplicate;
+            }
+            throw createError;
+        }
     } catch (e) {
-        logger.payment('ledger ride_fare skipped', { rideId: String(rideId), err: e?.message });
+        logger.payment('ledger ride_fare skipped', {
+            rideId: String(rideId),
+            err: e?.message,
+        });
         return null;
     }
 }

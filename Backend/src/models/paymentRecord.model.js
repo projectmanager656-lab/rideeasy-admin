@@ -14,6 +14,7 @@ const paymentRecordSchema = new mongoose.Schema({
     /** ride_fare | driver_subscription | platform_commission (future) */
     paymentType: { type: String, enum: [ 'ride_fare', 'driver_subscription', 'referral', 'other' ], default: 'ride_fare' },
     externalRef: { type: String, maxlength: 120 },
+    webhookEventId: { type: String, maxlength: 200, unique: true, sparse: true, index: true },
 }, { timestamps: true, collection: 'payments' });
 
 paymentRecordSchema.index({ createdAt: -1 });

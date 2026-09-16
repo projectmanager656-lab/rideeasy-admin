@@ -1,4 +1,5 @@
 const rideModel = require('../models/rideCore.model');
+const { recordRideAudit } = require('./rideAudit.service');
 const captainModel = require('../models/captain.model');
 const mapService = require('./maps.service');
 const crypto = require('crypto');
@@ -151,6 +152,7 @@ module.exports.confirmRide = async ({ rideId, captain }) => {
         hashOtp(plain),
         Promise.resolve(encryptOtp(plain)),
     ]);
+
     const ride = await rideModel.findOneAndUpdate(
         {
             _id: rideId,
@@ -175,17 +177,63 @@ module.exports.confirmRide = async ({ rideId, captain }) => {
         if (!exists) throw rideError('Ride not found', 404);
         throw rideError('Ride already assigned or no longer available', 409);
     }
+
+    await recordRideAudit({
+        ride,
+        actor: captain._id,
+        actorType: 'captain',
+        field: 'status',
+        oldValue: 'searching',
+        newValue: 'accepted',
+    });
+
+    await rideModel.updateOne(
+        { _id: rideId },
+        {
+            $set: {
+                'matchingAttempts.$[attempt].response': 'accepted',
+                'matchingAttempts.$[attempt].respondedAt': new Date(),
+            },
+        },
+        {
+            arrayFilters: [
+                {
+                    'attempt.captain': captain._id,
+                    'attempt.response': 'pending',
+                },
+            ],
+        }
+    );
+
     return { ride, otpPlain: plain };
 };
 
 module.exports.rejectRide = async ({ rideId, captain }) => {
     const ride = await rideModel.findOne({ _id: rideId, status: 'searching' });
     if (!ride) throw rideError('Ride not found or already assigned', 409);
+
     await rideModel.updateOne(
         { _id: rideId },
-        { $addToSet: { declinedBy: captain._id } }
+        {
+            $addToSet: { declinedBy: captain._id },
+            $set: {
+                'matchingAttempts.$[attempt].response': 'rejected',
+                'matchingAttempts.$[attempt].respondedAt': new Date(),
+            },
+        },
+        {
+            arrayFilters: [
+                {
+                    'attempt.captain': captain._id,
+                    'attempt.response': 'pending',
+                },
+            ],
+        }
     );
-    return rideModel.findById(rideId).populate('user', 'name phone email').populate('captain');
+
+    return rideModel.findById(rideId)
+        .populate('user', 'name phone email')
+        .populate('captain');
 };
 
 module.exports.markArrived = async ({ rideId, captain }) => {
@@ -201,6 +249,16 @@ module.exports.markArrived = async ({ rideId, captain }) => {
         { new: true }
     ).populate('user').populate('captain');
     if (!ride) throw rideError('Ride not found / not accepted', 409);
+
+    await recordRideAudit({
+        ride,
+        actor: captain._id,
+        actorType: 'captain',
+        field: 'status',
+        oldValue: 'accepted',
+        newValue: 'arrived',
+    });
+
     return ride;
 };
 
@@ -211,11 +269,56 @@ module.exports.startRide = async ({ rideId, otp, captain }) => {
         .select('+otpHash');
     if (!ride) throw rideError('Ride not found', 404);
     if (ride.status !== 'arrived') throw rideError('Driver has not arrived', 409);
+
+    const verifiedAt = new Date();
     const ok = await verifyOtp(String(otp || '').trim(), ride.otpHash);
-    if (!ok) throw rideError('Invalid OTP', 400);
-    if (ride.otpExpiresAt && ride.otpExpiresAt < new Date()) throw rideError('OTP expired — ask passenger for new code', 400);
-    await rideModel.updateOne({ _id: rideId }, { status: 'started', startedAt: new Date() });
-    return rideModel.findById(rideId).populate('user').populate('captain');
+
+    if (!ok) {
+        await rideModel.updateOne(
+            { _id: rideId },
+            {
+                otpVerificationStatus: 'failed',
+                otpVerificationFailedAt: verifiedAt,
+                otpVerificationFailureReason: 'invalid_pin',
+            },
+        );
+        throw rideError('Invalid OTP', 400);
+    }
+
+    if (ride.otpExpiresAt && ride.otpExpiresAt < verifiedAt) {
+        await rideModel.updateOne(
+            { _id: rideId },
+            {
+                otpVerificationStatus: 'failed',
+                otpVerificationFailedAt: verifiedAt,
+                otpVerificationFailureReason: 'expired_pin',
+            },
+        );
+        throw rideError('OTP expired — ask passenger for new code', 400);
+    }
+
+    await rideModel.updateOne(
+        { _id: rideId },
+        {
+            status: 'started',
+            startedAt: verifiedAt,
+            otpVerificationStatus: 'success',
+            otpVerifiedAt: verifiedAt,
+        },
+    );
+
+    const startedRide = await rideModel.findById(rideId).populate('user').populate('captain');
+
+    await recordRideAudit({
+        ride: startedRide,
+        actor: captain._id,
+        actorType: 'captain',
+        field: 'status',
+        oldValue: 'arrived',
+        newValue: 'started',
+    });
+
+    return startedRide;
 };
 
 module.exports.endRide = async ({ rideId, captain }) => {
@@ -240,6 +343,20 @@ module.exports.endRide = async ({ rideId, captain }) => {
         ...(norm === 'Cash' ? { paymentStatus: 'success' } : {}),
     };
     await rideModel.updateOne({ _id: rideId }, patch);
+
+    const completedRide = await rideModel.findById(rideId)
+        .populate('user')
+        .populate('captain');
+
+    await recordRideAudit({
+        ride: completedRide,
+        actor: captain._id,
+        actorType: 'captain',
+        field: 'status',
+        oldValue: 'started',
+        newValue: 'completed',
+    });
+
     if (norm === 'Cash') {
         await paymentService.settleRidePaymentIfNeeded(rideId);
     }

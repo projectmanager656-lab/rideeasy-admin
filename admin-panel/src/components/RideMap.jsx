@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react'
+import React, { memo, useEffect, useMemo, useRef, useState } from 'react'
 import { MapContainer, TileLayer, Marker, Polyline, Popup, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import { fetchOsrmDrivingRoute } from '../utils/osrmClient'
@@ -309,4 +309,4 @@ const RideMap = ({
     )
 }
 
-export default RideMap
+export default memo(RideMap)

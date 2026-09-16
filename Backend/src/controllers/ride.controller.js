@@ -17,11 +17,12 @@ const {
 } = require('../utils/serviceArea');
 const { userNeedsFemaleDriver, buildDriverGenderFilter } = require('../utils/rideAllocationRules');
 
-const { emitToUser, emitToCaptain, emitStandardRidePhase } = require('../socket');
+const { emitToUser, emitToCaptain, emitToAdmins, emitStandardRidePhase } = require('../socket');
 const {
     RIDE_REQUEST,
     RIDE_ACCEPTED,
     RIDE_STARTED,
+    RIDE_OTP_VERIFIED,
     RIDE_COMPLETED,
 } = require('../socket/rideSocket.events');
 
@@ -321,6 +322,28 @@ async function findCityAnyVehicleDriverIds ({ rideCity }) {
     return drivers.map((d) => d._id.toString());
 }
 
+async function recordMatchingAttempts(rideId, driverIds) {
+    if (!rideId || !driverIds?.length) return;
+
+    const ride = await rideModel.findById(rideId).select('matchingAttempts');
+    if (!ride) return;
+
+    const existingAttempts = ride.matchingAttempts || [];
+    const nextAttemptNumber = existingAttempts.length + 1;
+
+    const attempts = driverIds.map((captainId, index) => ({
+        captain: captainId,
+        attemptNumber: nextAttemptNumber + index,
+        offeredAt: new Date(),
+        response: 'pending',
+    }));
+
+    await rideModel.updateOne(
+        { _id: rideId, status: 'searching' },
+        { $push: { matchingAttempts: { $each: attempts } } }
+    );
+}
+
 function broadcastRideNew(rideDoc, driverIds) {
     const ride = publicRide(rideDoc);
     const offeredAt = Date.now();
@@ -471,6 +494,7 @@ module.exports.createRide = async (req, res) => {
                 nearbyDriverIds.length,
                 cityDriverIds.length);
         }
+        await recordMatchingAttempts(populated._id, driverIds);
         broadcastRideNew(populated, driverIds);
 
         return res.status(201).json({
@@ -530,6 +554,7 @@ module.exports.retryAssign = async (req, res) => {
         if (driverIds.length === 0) {
             driverIds = await findCityAnyVehicleDriverIds({ rideCity: ride.city });
         }
+        await recordMatchingAttempts(ride._id, driverIds);
         broadcastRideNew(ride, driverIds);
         return res.status(200).json({
             ...publicRide(ride),
@@ -789,7 +814,19 @@ module.exports.cancelRideByUser = async (req, res) => {
             cancellationReason: String(req.body?.reason || '').slice(0, 240),
         };
         await rideModel.updateOne({ _id: ride._id }, { $set: patch });
+
         const finalRide = await rideModel.findById(ride._id).populate('user').populate('captain');
+
+        const { recordRideAudit } = require('../services/rideAudit.service');
+
+        await recordRideAudit({
+            ride: finalRide,
+            actor: req.user?._id,
+            actorType: 'user',
+            field: 'status',
+            oldValue: st,
+            newValue: 'cancelled',
+        });
         const uid = userIdOf(finalRide.user);
         const cid = captainIdOf(finalRide.captain);
         const payload = {
@@ -834,6 +871,18 @@ module.exports.cancelRideByCaptain = async (req, res) => {
         });
         const penalty = shouldTrackDriverCancel(ride) ? await applyDriverCancelPenalty(captainIdOf(req.captain)) : null;
         ride = await rideModel.findById(ride._id).populate('user').populate('captain');
+
+        const { recordRideAudit } = require('../services/rideAudit.service');
+
+        await recordRideAudit({
+            ride,
+            actor: req.captain?._id,
+            actorType: 'captain',
+            field: 'status',
+            oldValue: st,
+            newValue: 'cancelled',
+        });
+
         const uid = userIdOf(ride.user);
         const payload = {
             rideId: ride._id,
@@ -962,7 +1011,22 @@ module.exports.startRide = async (req, res) => {
 
     try {
         const ride = await rideService.startRide({ rideId, otp, captain: req.captain });
+
+        emitToAdmins(RIDE_OTP_VERIFIED, {
+            rideId: ride._id,
+            verifiedAt: new Date(),
+            verificationStatus: 'success',
+        });
+
         const pr = publicRide(ride);
+
+        emitToAdmins(RIDE_STARTED, {
+            rideId: ride._id,
+            ride: pr,
+            status: 'started',
+            startedAt: ride.startedAt,
+        });
+
         const etaMeta = await computeEtaCaptainToPickup(ride);
         const confirmation = buildPassengerConfirmation(ride, null, etaMeta);
         confirmation.rideStatus = 'started';
@@ -986,6 +1050,17 @@ module.exports.startRide = async (req, res) => {
         return res.status(200).json({ ...pr, confirmation });
     } catch (err) {
         const code = Number(err.statusCode) || 400;
+
+        if (rideId && (err.message === 'Invalid OTP' || err.message?.startsWith('OTP expired'))) {
+            emitToAdmins(RIDE_OTP_VERIFIED, {
+                rideId,
+                verifiedAt: null,
+                failedAt: new Date(),
+                verificationStatus: 'failed',
+                reason: err.message === 'Invalid OTP' ? 'invalid_pin' : 'expired_pin',
+            });
+        }
+
         return res.status(code).json({ message: err.message || 'Start ride failed' });
     }
 };

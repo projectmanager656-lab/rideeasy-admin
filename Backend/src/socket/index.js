@@ -375,6 +375,7 @@ module.exports = {
     sendMessageToSocketId,
     emitToUser,
     emitToCaptain,
+    emitToAdmins,
     emitStandardRidePhase,
     STANDARD_PHASE_EVENTS,
     getIo,

@@ -1,7 +1,9 @@
 const crypto = require('crypto');
+const PaymentRecord = require('../models/paymentRecord.model');
+const WebhookEvent = require('../models/webhookEvent.model');
 
 /** Body must be raw Buffer (mount with express.raw before express.json) */
-module.exports.razorpayWebhook = (req, res) => {
+module.exports.razorpayWebhook = async (req, res) => {
     const secret = process.env.RAZORPAY_WEBHOOK_SECRET;
     if (!secret) {
         console.warn('RAZORPAY_WEBHOOK_SECRET not set');
@@ -26,6 +28,47 @@ module.exports.razorpayWebhook = (req, res) => {
         return res.status(400).json({ message: 'Invalid JSON' });
     }
 
-    // TODO: switch (payload.event) { case 'payment.captured': ... }
-    return res.json({ received: true });
+    const webhookEventId = String(
+        req.headers['x-razorpay-event-id'] ||
+        payload.id ||
+        ''
+    ).trim();
+
+    if (!webhookEventId) {
+        return res.status(400).json({ message: 'Missing webhook event ID' });
+    }
+
+    try {
+        await WebhookEvent.create({
+            provider: 'razorpay',
+            eventId: webhookEventId,
+            eventType: payload.event,
+        });
+    } catch (error) {
+        if (error?.code === 11000) {
+            const existingEvent = await WebhookEvent.findOne({
+                provider: 'razorpay',
+                eventId: webhookEventId,
+            }).lean();
+
+            return res.status(200).json({
+                received: true,
+                duplicate: true,
+                webhookEventId,
+                processedAt: existingEvent?.processedAt || null,
+            });
+        }
+
+        console.error('Razorpay webhook event registration failed:', error);
+        return res.status(500).json({ message: 'Webhook processing failed' });
+    }
+
+    // Financial record creation can safely happen after this point.
+    // The unique webhook event record prevents the same event from
+    // being processed more than once.
+    return res.json({
+        received: true,
+        duplicate: false,
+        webhookEventId,
+    });
 };

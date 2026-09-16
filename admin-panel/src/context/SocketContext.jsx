@@ -1,4 +1,4 @@
-import React, { createContext, useEffect } from 'react';
+import React, { createContext, useEffect, useState } from 'react';
 import { io } from 'socket.io-client';
 import { API_BASE_URL } from '../config/apiBaseUrl';
 
@@ -32,6 +32,44 @@ const socket =
           });
 
 const SocketProvider = ({ children }) => {
+    const [isConnected, setIsConnected] = useState(socket.connected);
+    const [connectionStatus, setConnectionStatus] = useState(
+        socket.connected ? 'connected' : 'disconnected'
+    );
+
+    useEffect(() => {
+        if (import.meta.env.VITE_DISABLE_SOCKET === 'true') {
+            setIsConnected(false);
+            setConnectionStatus('disabled');
+            return;
+        }
+
+        const handleConnect = () => {
+            setIsConnected(true);
+            setConnectionStatus('connected');
+        };
+
+        const handleDisconnect = () => {
+            setIsConnected(false);
+            setConnectionStatus('disconnected');
+        };
+
+        const handleConnectError = () => {
+            setIsConnected(false);
+            setConnectionStatus('reconnecting');
+        };
+
+        socket.on('connect', handleConnect);
+        socket.on('disconnect', handleDisconnect);
+        socket.on('connect_error', handleConnectError);
+
+        return () => {
+            socket.off('connect', handleConnect);
+            socket.off('disconnect', handleDisconnect);
+            socket.off('connect_error', handleConnectError);
+        };
+    }, []);
+
     useEffect(() => {
         if (import.meta.env.VITE_DISABLE_SOCKET === 'true') return;
 
@@ -56,7 +94,7 @@ const SocketProvider = ({ children }) => {
     }, []);
 
     return (
-        <SocketContext.Provider value={{ socket }}>
+        <SocketContext.Provider value={{ socket, isConnected, connectionStatus }}>
             {children}
         </SocketContext.Provider>
     );

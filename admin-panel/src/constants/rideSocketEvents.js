@@ -2,6 +2,7 @@
 export const RIDE_REQUEST = 'rideRequest'
 export const RIDE_ACCEPTED = 'rideAccepted'
 export const RIDE_STARTED = 'rideStarted'
+export const RIDE_OTP_VERIFIED = 'ride:otp-verified'
 export const RIDE_COMPLETED = 'rideCompleted'
 
 /** Live GPS for driver ↔ passenger. Payload: { rideId, lat, lng, at, source: 'driver' | 'passenger' } */

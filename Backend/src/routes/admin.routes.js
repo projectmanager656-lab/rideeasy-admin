@@ -28,13 +28,14 @@ router.post('/fare-configurations', auth.authAdmin, adminController.createFareCo
 router.put('/fare-configurations/:id', auth.authAdmin, adminController.updateFareConfiguration);
 router.patch('/fare-configurations/:id/status', auth.authAdmin, adminController.updateFareConfigurationStatus);
 router.get('/fare-configurations/:id/history', auth.authAdmin, adminController.getFareConfigurationHistory);
-router.post('/fare-configurations/preview', auth.authAdmin, adminController.previewFareConfiguration);
 router.get('/services', auth.authAdmin, adminController.getServices);
 router.post('/services', auth.authAdmin, adminController.createService);
 router.put('/services/:id', auth.authAdmin, adminController.updateService);
 router.delete('/services/:id', auth.authAdmin, adminController.deleteService);
+router.get('/rides/:id/audit', auth.authAdmin, adminController.getRideAudit);
 router.get('/rides', auth.authAdmin, adminController.getRides);
 router.get('/payments', auth.authAdmin, adminController.getPayments);
+router.get('/payments/:id', auth.authAdmin, adminController.getPayment);
 router.get('/subscriptions', auth.authAdmin, adminController.getSubscriptions);
 router.get('/safety/emergency-alerts', auth.authAdmin, adminController.getEmergencyAlerts);
 router.get('/safety/police-stations', auth.authAdmin, adminController.getPoliceStations);

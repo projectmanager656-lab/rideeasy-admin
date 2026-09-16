@@ -3,6 +3,7 @@ module.exports = {
     RIDE_REQUEST: 'rideRequest',
     RIDE_ACCEPTED: 'rideAccepted',
     RIDE_STARTED: 'rideStarted',
+    RIDE_OTP_VERIFIED: 'ride:otp-verified',
     RIDE_COMPLETED: 'rideCompleted',
     /** Standardized phases (dual-emit when RIDEEASY_STANDARD_SOCKET_EVENTS=true) */
     PHASE_SEARCHING: 'ride:searching',

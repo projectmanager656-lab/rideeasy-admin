@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import AdminSidebar from './AdminSidebar'
 import AdminHeader from './AdminHeader'
+import BottomNav from './BottomNav'
 import ConfirmationDialog from './ui/ConfirmationDialog'
 
 const AdminLayout = ({
@@ -79,6 +80,9 @@ const AdminLayout = ({
             </div>
           </main>
         </div>
+
+        {/* MOBILE BOTTOM NAV */}
+        <BottomNav onLogout={requestLogout} />
       </div>
 
       {/* ONE LOGOUT CONFIRMATION */}

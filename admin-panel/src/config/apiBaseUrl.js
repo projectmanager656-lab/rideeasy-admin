@@ -5,6 +5,7 @@ import { Capacitor } from '@capacitor/core'
  * Prefer `VITE_BASE_URL`, then `VITE_API_BASE_URL`.
  */
 export const DEFAULT_LOCAL_API_URL = 'http://localhost:5001'
+export const DEFAULT_ANDROID_API_URL = 'http://10.0.2.2:5001'
 
 function isLocalApiHost (hostish) {
   const s = String(hostish).toLowerCase()
@@ -44,7 +45,9 @@ export function getApiBaseUrl () {
   const raw =
     import.meta.env.VITE_BASE_URL
     || import.meta.env.VITE_API_BASE_URL
-    || (isNative ? '' : (import.meta.env.DEV ? DEFAULT_LOCAL_API_URL : ''))
+    || (isNative
+      ? (Capacitor.getPlatform() === 'android' ? DEFAULT_ANDROID_API_URL : '')
+      : (import.meta.env.DEV ? DEFAULT_LOCAL_API_URL : ''))
   let u = String(raw).trim().replace(/\/$/, '')
   if (!u) {
     if (import.meta.env.DEV && !isNative) u = DEFAULT_LOCAL_API_URL

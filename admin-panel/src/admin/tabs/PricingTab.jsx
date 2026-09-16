@@ -9,6 +9,8 @@ const EMPTY_FORM = {
   timeRate: '',
   minimumFare: '',
   fees: '0',
+  registrationFee: '0',
+  minimumWalletBalance: '0',
   tax: '0',
   effectiveFrom: '',
   effectiveTo: '',
@@ -95,6 +97,8 @@ export default function PricingTab({
       ['timeRate', 'Time rate'],
       ['minimumFare', 'Minimum fare'],
       ['fees', 'Fees'],
+      ['registrationFee', 'Registration fee'],
+      ['minimumWalletBalance', 'Minimum wallet balance'],
       ['tax', 'Tax'],
     ]
 
@@ -163,6 +167,8 @@ export default function PricingTab({
       timeRate: Number(form.timeRate),
       minimumFare: Number(form.minimumFare),
       fees: Number(form.fees),
+      registrationFee: Number(form.registrationFee),
+      minimumWalletBalance: Number(form.minimumWalletBalance),
       tax: Number(form.tax),
       effectiveFrom: new Date(form.effectiveFrom).toISOString(),
       effectiveTo: form.effectiveTo
@@ -205,6 +211,8 @@ export default function PricingTab({
       timeRate: String(configuration.timeRate ?? ''),
       minimumFare: String(configuration.minimumFare ?? ''),
       fees: String(configuration.fees ?? '0'),
+      registrationFee: String(configuration.registrationFee ?? '0'),
+      minimumWalletBalance: String(configuration.minimumWalletBalance ?? '0'),
       tax: String(configuration.tax ?? '0'),
       effectiveFrom: toInputDate(configuration.effectiveFrom),
       effectiveTo: toInputDate(configuration.effectiveTo),
@@ -435,6 +443,8 @@ export default function PricingTab({
               ['timeRate', 'Time Rate / min'],
               ['minimumFare', 'Minimum Fare'],
               ['fees', 'Fees'],
+              ['registrationFee', 'Registration Fee'],
+              ['minimumWalletBalance', 'Minimum Wallet Balance'],
               ['tax', 'Tax (%)'],
             ].map(([name, label]) => (
               <label

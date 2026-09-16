@@ -4,7 +4,21 @@ const rideSchema = new mongoose.Schema({
     user: { type: mongoose.Schema.Types.ObjectId, ref: 'user', required: true },
     captain: { type: mongoose.Schema.Types.ObjectId, ref: 'captain', default: null },
     declinedBy: { type: [ { type: mongoose.Schema.Types.ObjectId, ref: 'captain' } ], default: [] },
-
+       
+         matchingAttempts: {
+        type: [{
+            captain: { type: mongoose.Schema.Types.ObjectId, ref: 'captain' },
+            attemptNumber: { type: Number, required: true },
+            offeredAt: { type: Date, default: Date.now },
+            respondedAt: { type: Date },
+            response: {
+                type: String,
+                enum: [ 'pending', 'accepted', 'rejected', 'expired' ],
+                default: 'pending',
+            },
+        }],
+        default: [],
+    },
     pickupLocation: { type: String, required: true },
     dropLocation: { type: String, required: true },
 
@@ -48,6 +62,14 @@ const rideSchema = new mongoose.Schema({
     /** AES-GCM ciphertext — passenger OTP display via HTTPS only */
     otpCipher: { type: String, select: false },
     otpExpiresAt: { type: Date },
+    otpVerificationStatus: {
+        type: String,
+        enum: [ 'pending', 'success', 'failed' ],
+        default: 'pending',
+    },
+    otpVerifiedAt: { type: Date },
+    otpVerificationFailedAt: { type: Date },
+    otpVerificationFailureReason: { type: String, maxlength: 120 },
     acceptedAt: { type: Date },
     arrivedAt: { type: Date },
     startedAt: { type: Date },

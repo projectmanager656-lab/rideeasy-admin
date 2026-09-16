@@ -1,7 +1,9 @@
-import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
+import React, { useState, useEffect, useCallback, useMemo, useRef, useContext } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { adminApi } from '../services/adminApi'
 import { displayName } from '../admin/adminUtils'
+import { SocketContext } from '../context/SocketContext'
+import { RIDE_STARTED, RIDE_OTP_VERIFIED } from '../constants/rideSocketEvents'
 import AdminLayout from '../components/AdminLayout'
 import { AlertCard } from '../components/AdminUIComponents'
 import {
@@ -22,6 +24,7 @@ import AdminRoles from './AdminRoles'
 import AdminFinance from './AdminFinance'
 
 const AdminDashboard = ({ initialTab = null }) => {
+  const { socket } = useContext(SocketContext)
   const navigate = useNavigate()
   const location = useLocation()
   const dataLoadedRef = useRef(new Set())
@@ -34,7 +37,12 @@ const AdminDashboard = ({ initialTab = null }) => {
   const [drivers, setDrivers] = useState([])
   const [rides, setRides] = useState([])
   const [selectedRide, setSelectedRide] = useState(null)
+  const [rideAudit, setRideAudit] = useState([])
+  const [rideAuditLoading, setRideAuditLoading] = useState(false)
+  const [rideAuditError, setRideAuditError] = useState('')
   const [payments, setPayments] = useState([])
+  const [selectedPayment, setSelectedPayment] = useState(null)
+  const [paymentDetailLoading, setPaymentDetailLoading] = useState(false)
   const [services, setServices] = useState([])
   const [fareConfigurations, setFareConfigurations] = useState([])
 const [fareLoading, setFareLoading] = useState(false)
@@ -79,6 +87,40 @@ const [fareError, setFareError] = useState('')
     setStatsNonce((n) => n + 1)
   }, [])
 
+  useEffect(() => {
+    const rideId = selectedRide?._id
+    if (!rideId) {
+      setRideAudit([])
+      setRideAuditError('')
+      return undefined
+    }
+
+    const controller = new AbortController()
+
+    const loadRideAudit = async () => {
+      setRideAuditLoading(true)
+      setRideAuditError('')
+
+      try {
+        const audit = await adminApi.getRideAudit(rideId, controller.signal)
+        setRideAudit(Array.isArray(audit) ? audit : [])
+      } catch (err) {
+        if (err?.name !== 'CanceledError' && err?.name !== 'AbortError') {
+          setRideAuditError(err?.message || 'Failed to load ride audit')
+          setRideAudit([])
+        }
+      } finally {
+        if (!controller.signal.aborted) {
+          setRideAuditLoading(false)
+        }
+      }
+    }
+
+    loadRideAudit()
+
+    return () => controller.abort()
+  }, [selectedRide?._id])
+
   const refreshRides = useCallback(async () => {
     setRidesLoading(true)
     setTabError('')
@@ -95,6 +137,106 @@ const [fareError, setFareError] = useState('')
       setRidesLoading(false)
     }
   }, [rideStatusFilter])
+
+  useEffect(() => {
+    if (!socket) return
+
+    const handleOtpVerified = (payload) => {
+      const rideId = payload?.rideId
+
+      if (!rideId) return
+
+      setRides((current) =>
+        current.map((ride) =>
+          String(ride._id) === String(rideId)
+            ? {
+                ...ride,
+                otpVerificationStatus: payload.verificationStatus || 'success',
+                otpVerifiedAt: payload.verifiedAt || new Date().toISOString(),
+              }
+            : ride
+        )
+      )
+
+      setSelectedRide((current) =>
+        current && String(current._id) === String(rideId)
+          ? {
+              ...current,
+              otpVerificationStatus: payload.verificationStatus || 'success',
+              otpVerifiedAt: payload.verifiedAt || new Date().toISOString(),
+            }
+          : current
+      )
+    }
+
+    socket.on(RIDE_OTP_VERIFIED, handleOtpVerified)
+
+    return () => {
+      socket.off(RIDE_OTP_VERIFIED, handleOtpVerified)
+    }
+  }, [socket])
+
+  useEffect(() => {
+    if (!socket) return
+
+    const handleRideStarted = (payload) => {
+      const rideId = payload?.rideId || payload?.ride?._id
+
+      if (!rideId) return
+
+      const incomingStartedAt = payload?.startedAt || payload?.ride?.startedAt
+
+      setRides((current) =>
+        current.map((ride) => {
+          if (String(ride._id) !== String(rideId)) return ride
+
+          const existingStartedAt = ride.startedAt
+
+          if (
+            existingStartedAt &&
+            incomingStartedAt &&
+            new Date(incomingStartedAt).getTime() < new Date(existingStartedAt).getTime()
+          ) {
+            return ride
+          }
+
+          return {
+            ...ride,
+            ...(payload?.ride || {}),
+            status: 'started',
+            ...(incomingStartedAt ? { startedAt: incomingStartedAt } : {}),
+          }
+        })
+      )
+
+      setSelectedRide((current) => {
+        if (!current || String(current._id) !== String(rideId)) return current
+
+        const existingStartedAt = current.startedAt
+
+        if (
+          existingStartedAt &&
+          incomingStartedAt &&
+          new Date(incomingStartedAt).getTime() < new Date(existingStartedAt).getTime()
+        ) {
+          return current
+        }
+
+        return {
+          ...current,
+          ...(payload?.ride || {}),
+          status: 'started',
+          ...(incomingStartedAt ? { startedAt: incomingStartedAt } : {}),
+        }
+      })
+    }
+
+    socket.on(RIDE_STARTED, handleRideStarted)
+
+    return () => {
+      socket.off(RIDE_STARTED, handleRideStarted)
+    }
+  }, [socket, refreshRides])
 
   useEffect(() => {
     if (initialTab) {
@@ -230,6 +372,22 @@ const [d, usersResult, driversResult, ridesResult, paymentsResult, alertsResult]
           if (!signal.aborted) setRidesLoading(false)
         }
         return
+      }
+
+      const loadPaymentDetail = async (paymentId) => {
+        if (!paymentId) return
+        setPaymentDetailLoading(true)
+        setTabError('')
+        try {
+          const result = await adminApi.getPayment(paymentId, signal)
+          if (signal.aborted) return
+          setSelectedPayment(result?.transaction || result || null)
+        } catch (e) {
+          if (signal.aborted) return
+          setTabError(fmtErr(e))
+        } finally {
+          if (!signal.aborted) setPaymentDetailLoading(false)
+        }
       }
 
       if (tab === 'payments') {
@@ -831,6 +989,9 @@ const [d, usersResult, driversResult, ridesResult, paymentsResult, alertsResult]
             ridesLoading={ridesLoading}
             filteredRides={filteredRides}
             selectedRide={selectedRide}
+            rideAudit={rideAudit}
+            rideAuditLoading={rideAuditLoading}
+            rideAuditError={rideAuditError}
             onViewRide={setSelectedRide}
             rides={rides}
             rideStatusFilter={rideStatusFilter}
@@ -855,7 +1016,10 @@ const [d, usersResult, driversResult, ridesResult, paymentsResult, alertsResult]
 
         {/* FINANCE */}
         {tab === 'finance' && (
-          <AdminFinance />
+          <AdminFinance
+            payments={payments}
+            paymentsLoading={paymentsLoading}
+          />
         )}
 
         {/* PAYMENTS */}
@@ -873,6 +1037,10 @@ const [d, usersResult, driversResult, ridesResult, paymentsResult, alertsResult]
             tableHeaderSelectRef={tableHeaderSelectRef}
             deleteRide={deleteRide}
             bulkDeletePayments={bulkDeletePayments}
+            onViewPayment={loadPaymentDetail}
+            selectedPayment={selectedPayment}
+            paymentDetailLoading={paymentDetailLoading}
+            onClosePayment={() => setSelectedPayment(null)}
           />
         )}
 

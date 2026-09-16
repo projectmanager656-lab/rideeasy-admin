@@ -44,13 +44,25 @@ const fareConfigurationSchema = new mongoose.Schema({
         required: true,
         min: 0,
     },
-
+      
     fees: {
         type: Number,
         required: true,
         min: 0,
         default: 0,
     },
+   registrationFee: {
+    type: Number,
+    required: true,
+    min: 0,
+    default: 0,
+},
+minimumWalletBalance: {
+    type: Number,
+    required: true,
+    min: 0,
+    default: 0,
+},
 
     tax: {
         type: Number,

@@ -3,11 +3,24 @@ import { displayName, rowStableKey, statusBadgeClass, RIDE_STATUSES } from '../a
 import MobileRecordCard, { MobileField } from '../../components/MobileRecordCard'
 import Modal from '../../components/ui/Modal'
 
+const money = (value) => {
+  if (value == null || value === '') return '—'
+  return `₹${Number(value).toLocaleString('en-IN')}`
+}
+
+const fareDifference = (bookedFare, finalFare) => {
+  if (bookedFare == null || finalFare == null) return null
+  return Number(finalFare) - Number(bookedFare)
+}
+
 export default function RidesTab ({
   ridesLoading,
   filteredRides,
   rides,
   selectedRide,
+  rideAudit,
+  rideAuditLoading,
+  rideAuditError,
   onViewRide,
   rideStatusFilter,
   setRideStatusFilter,
@@ -75,7 +88,7 @@ export default function RidesTab ({
   >
     Delete
   </button>
-</div>}><MobileField label="Pickup" value={ride.pickupLocation} /><MobileField label="Drop" value={ride.dropLocation} /><MobileField label="User" value={displayName(ride.user?.name)} /><MobileField label="Driver" value={displayName(ride.captain?.name) || 'Unassigned'} /><MobileField label="Vehicle" value={ride.vehicleType || '—'} /><MobileField label="Distance" value={ride.distance != null ? `${ride.distance} km` : '—'} /><MobileField label="Fare" value={ride.price != null ? `₹${ride.price}` : '—'} /><MobileField label="Payment" value={ride.paymentMethod ? `${ride.paymentMethod} · ${ride.paymentStatus || 'pending'}` : (ride.paymentStatus || '—')} /></MobileRecordCard>)}
+</div>}><MobileField label="Pickup" value={ride.pickupLocation} /><MobileField label="Drop" value={ride.dropLocation} /><MobileField label="User" value={displayName(ride.user?.name)} /><MobileField label="Driver" value={displayName(ride.captain?.name) || 'Unassigned'} /><MobileField label="Vehicle" value={ride.vehicleType || '—'} /><MobileField label="Distance" value={ride.distance != null ? `${ride.distance} km` : '—'} /><MobileField label="Booked Fare" value={money(ride.price)} /><MobileField label="Final Fare" value={ride.chargedAmount != null ? money(ride.chargedAmount) : 'Payment pending'} /><MobileField label="Difference" value={(() => { const difference = fareDifference(ride.price, ride.chargedAmount); return difference == null ? '—' : `${difference >= 0 ? '+' : '−'}${money(Math.abs(difference))}` })()} /><MobileField label="Payment" value={ride.paymentMethod ? `${ride.paymentMethod} · ${ride.paymentStatus || 'pending'}` : (ride.paymentStatus || '—')} /></MobileRecordCard>)}
           </div>
 
           <div className="hidden overflow-x-auto md:block">
@@ -93,13 +106,13 @@ export default function RidesTab ({
                   </th>
                   <th className="px-4 py-3">When</th>
                   <th className="px-4 py-3">City</th>
-                  <th className="px-4 py-3">Passenger</th>
+                  <th className="px-4 py-3">Rider</th>
                   <th className="px-4 py-3">Driver</th>
-                  <th className="px-4 py-3">Vehicle</th>
-                  <th className="px-4 py-3">Distance</th>
-                  <th className="px-4 py-3">Route</th>
-                  <th className="px-4 py-3 text-right">₹</th>
-                  <th className="px-4 py-3">Payment</th>
+                  <th className="px-4 py-3">Pickup → Destination</th>
+                  <th className="px-4 py-3">Completed</th>
+                  <th className="px-4 py-3 text-right">Booked Fare</th>
+                  <th className="px-4 py-3 text-right">Final Fare</th>
+                  <th className="px-4 py-3 text-right">Difference</th>
                   <th className="px-4 py-3">Status</th>
                   <th className="sticky right-0 z-20 bg-neutral-100 px-4 py-3">Action</th>
                 </tr>
@@ -136,23 +149,27 @@ export default function RidesTab ({
                       {displayName(r.captain?.name) || '—'}
                       <span className="block text-xs text-neutral-500">{r.captain?.vehicleNumber || r.captain?.phone || ''}</span>
                     </td>
-                    <td className="px-4 py-3 text-neutral-600">
-                    {r.vehicleType || '—'}
-                  </td>
-                  <td className="px-4 py-3 text-neutral-600 whitespace-nowrap">
-                    {r.distance != null ? `${r.distance} km` : '—'}
-                  </td>
-                  <td className="max-w-xs px-4 py-3 text-neutral-600">
-                      <span className="line-clamp-2">{r.pickupLocation ?? '—'}</span>
-                      <span className="text-neutral-600"> → </span>
-                      <span className="line-clamp-2">{r.dropLocation ?? '—'}</span>
+                    <td className="max-w-xs px-4 py-3 text-neutral-600">
+                      <div className="line-clamp-2">{r.pickupLocation ?? '—'}</div>
+                      <div className="text-neutral-400">→</div>
+                      <div className="line-clamp-2">{r.dropLocation ?? '—'}</div>
                     </td>
-                    <td className="px-4 py-3 text-right tabular-nums font-medium text-black">₹{r.price ?? '—'}</td>
-                    <td className="px-4 py-3 text-neutral-600">
-                      {r.paymentMethod || '—'}
-                      <span className="block text-xs text-neutral-500">
-                        {r.paymentStatus || ''}
-                      </span>
+                    <td className="px-4 py-3 whitespace-nowrap text-neutral-600">
+                      {r.completedAt ? new Date(r.completedAt).toLocaleString() : '—'}
+                    </td>
+                    <td className="px-4 py-3 text-right tabular-nums font-medium text-black">
+                      {money(r.price)}
+                    </td>
+                    <td className="px-4 py-3 text-right tabular-nums font-medium text-black">
+                      {money(r.chargedAmount)}
+                    </td>
+                    <td className="px-4 py-3 text-right tabular-nums font-medium">
+                      {(() => {
+                        const difference = fareDifference(r.price, r.chargedAmount)
+                        return difference == null
+                          ? '—'
+                          : `${difference >= 0 ? '+' : '−'}${money(Math.abs(difference))}`
+                      })()}
                     </td>
                     <td className="px-4 py-3">
                       <span className={`inline-flex rounded-full border px-2 py-0.5 text-xs font-medium capitalize ${statusBadgeClass(r.status)}`}>
@@ -471,19 +488,29 @@ export default function RidesTab ({
 
               <div className="mt-4 space-y-4">
                 {[
-                  ['Ride Created', selectedRide.createdAt],
-                  ['Driver Accepted', selectedRide.acceptedAt],
-                  ['Driver Arrived', selectedRide.arrivedAt],
-                  ['Ride Started', selectedRide.startedAt],
-                  ['Ride Completed', selectedRide.completedAt],
-                  ['Ride Cancelled', selectedRide.cancelledAt],
+                  ['Ride Created', selectedRide.createdAt, 'normal'],
+                  ['Driver Accepted', selectedRide.acceptedAt, 'normal'],
+                  ['Driver Arrived', selectedRide.arrivedAt, 'normal'],
+                  ['PIN Verified', selectedRide.otpVerifiedAt, 'success'],
+                  ['PIN Verification Failed', selectedRide.otpVerificationFailedAt, 'failed'],
+                  ['Ride Started', selectedRide.startedAt, 'success'],
+                  ['Ride Completed', selectedRide.completedAt, 'normal'],
+                  ['Ride Cancelled', selectedRide.cancelledAt, 'failed'],
                 ]
                   .filter(([, value]) => value)
-                  .map(([label, value], index) => (
+                  .map(([label, value, type], index, events) => (
                     <div key={label} className="flex gap-3">
                       <div className="flex flex-col items-center">
-                        <span className="mt-1 h-2.5 w-2.5 rounded-full bg-neutral-900" />
-                        {index < 5 && (
+                        <span
+                          className={`mt-1 h-2.5 w-2.5 rounded-full ${
+                            type === 'failed'
+                              ? 'bg-red-500'
+                              : type === 'success'
+                                ? 'bg-emerald-500'
+                                : 'bg-neutral-900'
+                          }`}
+                        />
+                        {index < events.length - 1 && (
                           <span className="mt-1 h-full min-h-6 w-px bg-neutral-200" />
                         )}
                       </div>
@@ -493,10 +520,120 @@ export default function RidesTab ({
                         <p className="mt-1 text-xs text-neutral-500">
                           {new Date(value).toLocaleString()}
                         </p>
+                        {type === 'failed' && label === 'PIN Verification Failed' && (
+                          <p className="mt-1 text-xs font-medium text-red-600">
+                            {selectedRide.otpVerificationFailureReason === 'expired_pin'
+                              ? 'PIN expired'
+                              : 'Invalid PIN'}
+                          </p>
+                        )}
                       </div>
                     </div>
                   ))}
               </div>
+            </div>
+
+            <div className="border-t border-neutral-200 pt-5">
+              <h3 className="text-sm font-semibold text-neutral-900">Change Audit</h3>
+
+              {rideAuditLoading && (
+                <p className="mt-3 text-sm text-neutral-500">Loading audit history…</p>
+              )}
+
+              {rideAuditError && (
+                <p className="mt-3 text-sm text-red-600">{rideAuditError}</p>
+              )}
+
+              {!rideAuditLoading && !rideAuditError && rideAudit.length === 0 && (
+                <p className="mt-3 text-sm text-neutral-500">
+                  No ride changes have been recorded yet.
+                </p>
+              )}
+
+              {!rideAuditLoading && rideAudit.length > 0 && (
+                <div className="mt-4 space-y-3">
+                  {rideAudit.map((entry, index) => (
+                    <div
+                      key={entry._id || `${entry.field}-${entry.createdAt}-${index}`}
+                      className="rounded-xl border border-neutral-200 bg-neutral-50 p-3"
+                    >
+                      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                        <div>
+                          <p className="text-sm font-semibold capitalize text-neutral-900">
+                            {String(entry.field || 'Change').replace(/([A-Z])/g, ' $1')}
+                          </p>
+                          <p className="mt-1 text-xs text-neutral-500">
+                            Actor: {entry.actorType || 'System'}
+                            {entry.actor ? ` · ${entry.actor}` : ''}
+                          </p>
+                        </div>
+
+                        <p className="text-xs text-neutral-500">
+                          {entry.createdAt
+                            ? new Date(entry.createdAt).toLocaleString()
+                            : '—'}
+                        </p>
+                      </div>
+
+                      <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                        <div className="rounded-lg bg-white p-2">
+                          <p className="text-[10px] font-semibold uppercase tracking-wide text-neutral-500">
+                            Old Value
+                          </p>
+                          <p className="mt-1 break-words text-xs text-neutral-900">
+                            {entry.oldValue != null
+                              ? typeof entry.oldValue === 'object'
+                                ? JSON.stringify(entry.oldValue)
+                                : String(entry.oldValue)
+                              : '—'}
+                          </p>
+                        </div>
+
+                        <div className="rounded-lg bg-white p-2">
+                          <p className="text-[10px] font-semibold uppercase tracking-wide text-neutral-500">
+                            New Value
+                          </p>
+                          <p className="mt-1 break-words text-xs text-neutral-900">
+                            {entry.newValue != null
+                              ? typeof entry.newValue === 'object'
+                                ? JSON.stringify(entry.newValue)
+                                : String(entry.newValue)
+                              : '—'}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                        <div>
+                          <p className="text-[10px] font-semibold uppercase tracking-wide text-neutral-500">
+                            Resulting Route
+                          </p>
+                          <p className="mt-1 text-xs text-neutral-700">
+                            {entry.route?.pickup || '—'} → {entry.route?.drop || '—'}
+                            {entry.route?.distance != null
+                              ? ` · ${entry.route.distance} km`
+                              : ''}
+                          </p>
+                        </div>
+
+                        <div>
+                          <p className="text-[10px] font-semibold uppercase tracking-wide text-neutral-500">
+                            Resulting Fare
+                          </p>
+                          <p className="mt-1 text-xs text-neutral-700">
+                            {entry.fare?.price != null
+                              ? `Price ₹${entry.fare.price}`
+                              : 'Price —'}
+                            {entry.fare?.chargedAmount != null
+                              ? ` · Charged ₹${entry.fare.chargedAmount}`
+                              : ''}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {(selectedRide.cancelledBy || selectedRide.cancellationReason ||
