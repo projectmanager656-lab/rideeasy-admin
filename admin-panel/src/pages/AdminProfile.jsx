@@ -69,7 +69,7 @@ const AdminProfile = () => {
           <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={() => navigate('/admin/settings')}
+              onClick={() => navigate('/admin/dashboard', { state: { tab: 'settings' } })}
               className="grid h-9 w-9 place-items-center rounded-xl border border-[#D9E0E8] bg-white text-[#475569] transition hover:bg-[#F7F9FC]"
               aria-label="Back to settings"
             >
@@ -207,7 +207,7 @@ const AdminProfile = () => {
 
               <button
                 type="button"
-                onClick={() => navigate('/admin/settings')}
+                onClick={() => navigate('/admin/dashboard', { state: { tab: 'settings' } })}
                 className="h-11 rounded-xl border border-[#CBD5E1] bg-white px-5 text-sm font-semibold text-[#475569] transition hover:bg-[#F8FAFC]"
               >
                 Cancel

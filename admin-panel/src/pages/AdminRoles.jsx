@@ -24,6 +24,7 @@ const INITIAL_ROLES = [
       'Notifications',
       'Roles',
       'Settings',
+      'Fare Configuration',
     ],
   },
   {
@@ -74,6 +75,7 @@ const PERMISSIONS = [
   'Notifications',
   'Roles',
   'Settings',
+  'Fare Configuration',
 ]
 
 function StatusBadge({ status }) {
@@ -102,6 +104,8 @@ export default function AdminRoles() {
     description: '',
     permissions: [],
   })
+
+  const [formError, setFormError] = useState('')
 
   const handleTabChange = (nextTab) => {
     const routes = {
@@ -170,12 +174,26 @@ export default function AdminRoles() {
     }))
   }
 
+  const closeModal = () => {
+    setShowModal(false)
+    setEditingRole(null)
+    setFormError('')
+    setForm({
+      name: '',
+      description: '',
+      permissions: [],
+    })
+  }
+
   const saveRole = (event) => {
     event.preventDefault()
 
     if (!form.name.trim()) {
+      setFormError('Role name is required.')
       return
     }
+
+    setFormError('')
 
     if (editingRole) {
       setRoles((current) =>
@@ -403,7 +421,7 @@ export default function AdminRoles() {
 
                   <button
                     type="button"
-                    onClick={() => setShowModal(false)}
+                    onClick={closeModal}
                     className="grid h-9 w-9 place-items-center rounded-lg transition hover:bg-[#F8FAFC]"
                     aria-label="Close"
                   >
@@ -423,15 +441,22 @@ export default function AdminRoles() {
 
                     <input
                       value={form.name}
-                      onChange={(event) =>
+                      onChange={(event) => {
                         setForm((current) => ({
                           ...current,
                           name: event.target.value,
                         }))
-                      }
+                        if (formError) setFormError('')
+                      }}
                       placeholder="e.g. Operations"
                       className="h-11 w-full rounded-xl border border-[#D9DEE7] px-3 py-2.5 text-sm outline-none transition focus:border-[#FFA726] focus:ring-2 focus:ring-[#FFA726]/20"
                     />
+
+                    {formError && (
+                      <p className="mt-1.5 text-xs font-medium text-red-600">
+                        {formError}
+                      </p>
+                    )}
                   </div>
 
                   {/* DESCRIPTION */}
@@ -507,7 +532,7 @@ export default function AdminRoles() {
 
                   <button
                     type="button"
-                    onClick={() => setShowModal(false)}
+                    onClick={closeModal}
                     className="rounded-xl border border-[#D9DEE7] px-4 py-2.5 text-sm font-semibold text-[#152238] transition hover:bg-[#F8FAFC]"
                   >
                     Cancel

@@ -170,6 +170,28 @@ export const adminApi = {
   // PAYMENTS
   // =========================================================
 
+  getAppSettings(signal) {
+    return client
+      .get('/admin/app-settings', { signal })
+      .then((r) => unwrap(r.data))
+  },
+
+  updateAppSettings(settings, signal) {
+    return client
+      .put('/admin/app-settings', settings, { signal })
+      .then((r) => unwrap(r.data))
+  },
+
+  changePassword(currentPassword, newPassword, signal) {
+    return client
+      .patch(
+        '/admin/change-password',
+        { currentPassword, newPassword },
+        { signal }
+      )
+      .then((r) => unwrap(r.data))
+  },
+
   getPayments(signal) {
     return client
       .get('/admin/payments', { signal })

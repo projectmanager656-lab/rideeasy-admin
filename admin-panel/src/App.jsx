@@ -11,6 +11,9 @@ const AdminVehicles = lazy(() => import('./pages/AdminVehicles'))
 const AdminVerification = lazy(() => import('./pages/AdminVerification'))
 const AdminProtectWrapper = lazy(() => import('./pages/AdminProtectWrapper'))
 const AdminProfile = lazy(() => import('./pages/AdminProfile'))
+const AdminChangePassword = lazy(() => import('./pages/AdminChangePassword'))
+const AdminAppSettings = lazy(() => import('./pages/AdminAppSettings'))
+const AdminLanguage = lazy(() => import('./pages/AdminLanguage'))
 
 const AdminFinance = lazy(() => import('./pages/AdminFinance'))
 const AdminLiveOperations = lazy(() => import('./pages/AdminLiveOperations'))
@@ -380,6 +383,33 @@ const App = () => {
               <AdminProtectWrapper>
                 <AdminProfile />
               </AdminProtectWrapper>
+            }
+          />
+
+          <Route
+            path="/admin/language"
+            element={
+              <StandaloneAdminPage tab="settings">
+                <AdminLanguage />
+              </StandaloneAdminPage>
+            }
+          />
+
+          <Route
+            path="/admin/app-settings"
+            element={
+              <StandaloneAdminPage tab="settings">
+                <AdminAppSettings />
+              </StandaloneAdminPage>
+            }
+          />
+
+          <Route
+            path="/admin/change-password"
+            element={
+              <StandaloneAdminPage tab="settings">
+                <AdminChangePassword />
+              </StandaloneAdminPage>
             }
           />
 

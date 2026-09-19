@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { displayName, rowStableKey, statusBadgeClass, RIDE_STATUSES } from '../adminUtils'
 import MobileRecordCard, { MobileField } from '../../components/MobileRecordCard'
 import Modal from '../../components/ui/Modal'
@@ -35,6 +35,28 @@ export default function RidesTab ({
   bulkDeleteRides,
   refreshRides,
 }) {
+  const [ridesPage, setRidesPage] = useState(1)
+  const ridesPageSize = 10
+
+  const ridesPageCount = Math.max(
+    1,
+    Math.ceil(filteredRides.length / ridesPageSize)
+  )
+
+  const paginatedRides = filteredRides.slice(
+    (ridesPage - 1) * ridesPageSize,
+    ridesPage * ridesPageSize
+  )
+
+  useEffect(() => {
+    setRidesPage(1)
+  }, [rideStatusFilter, tableSearch])
+
+  useEffect(() => {
+    if (ridesPage > ridesPageCount) {
+      setRidesPage(ridesPageCount)
+    }
+  }, [ridesPage, ridesPageCount])
   return (
     <div className="space-y-4">
       <div className="flex flex-col gap-3 rounded-2xl border border-neutral-200 bg-white px-3 py-3 sm:px-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
@@ -73,7 +95,7 @@ export default function RidesTab ({
         ) : (
           <>
           <div className="space-y-3 p-3 md:hidden">
-            {filteredRides.map((ride, index) => <MobileRecordCard key={rowStableKey(ride, index)} title={`Ride ${String(ride._id).slice(-8)}`} subtitle={ride.createdAt ? new Date(ride.createdAt).toLocaleString() : 'Date unavailable'} badge={<span className={`rounded-full border px-2 py-1 text-[10px] font-semibold capitalize ${statusBadgeClass(ride.status)}`}>{ride.status || '—'}</span>} checked={selectedIds.includes(String(ride._id))} onCheck={() => toggleSelect(ride._id)} actions={<div className="flex gap-2">
+            {paginatedRides.map((ride, index) => <MobileRecordCard key={rowStableKey(ride, index)} title={`Ride ${String(ride._id).slice(-8)}`} subtitle={ride.createdAt ? new Date(ride.createdAt).toLocaleString() : 'Date unavailable'} badge={<span className={`rounded-full border px-2 py-1 text-[10px] font-semibold capitalize ${statusBadgeClass(ride.status)}`}>{ride.status || '—'}</span>} checked={selectedIds.includes(String(ride._id))} onCheck={() => toggleSelect(ride._id)} actions={<div className="flex gap-2">
   <button
     type="button"
     onClick={() => onViewRide(ride)}
@@ -127,7 +149,7 @@ export default function RidesTab ({
                     </td>
                   </tr>
                 )}
-                {filteredRides.map((r, idx) => (
+                {paginatedRides.map((r, idx) => (
                   <tr key={rowStableKey(r, idx)} className="hover:bg-neutral-100">
                     <td className="px-2 py-3">
                       <input
@@ -199,6 +221,38 @@ export default function RidesTab ({
               </tbody>
             </table>
           </div>
+
+          {filteredRides.length > ridesPageSize && (
+            <div className="flex flex-col gap-3 border-t border-neutral-200 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-sm text-neutral-500">
+                Showing {((ridesPage - 1) * ridesPageSize) + 1}–{Math.min(ridesPage * ridesPageSize, filteredRides.length)} of {filteredRides.length} rides
+              </p>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setRidesPage((page) => Math.max(1, page - 1))}
+                  disabled={ridesPage === 1}
+                  className="rounded-lg border border-neutral-300 px-3 py-2 text-sm font-medium text-neutral-700 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  Previous
+                </button>
+
+                <span className="min-w-[80px] text-center text-sm font-medium text-neutral-700">
+                  Page {ridesPage} of {ridesPageCount}
+                </span>
+
+                <button
+                  type="button"
+                  onClick={() => setRidesPage((page) => Math.min(ridesPageCount, page + 1))}
+                  disabled={ridesPage === ridesPageCount}
+                  className="rounded-lg border border-neutral-300 px-3 py-2 text-sm font-medium text-neutral-700 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          )}
           </>
         )}
       </div>
@@ -661,15 +715,14 @@ export default function RidesTab ({
               </div>
             )}
 
-            {(selectedRide.rating != null || selectedRide.ratingComment ||
-              selectedRide.captainPassengerRating != null) && (
+            {selectedRide && (
               <div className="border-t border-neutral-200 pt-5">
                 <h3 className="text-sm font-semibold text-neutral-900">Ratings</h3>
                 <div className="mt-3 grid gap-3 sm:grid-cols-2">
                   <div>
                     <p className="text-xs text-neutral-500">Passenger Rating</p>
                     <p className="mt-1 text-sm text-neutral-900">
-                      {selectedRide.rating != null ? `${selectedRide.rating}/5` : '—'}
+                      {selectedRide.rating != null ? `${selectedRide.rating}/5` : 'Not rated'}
                     </p>
                   </div>
 
@@ -678,7 +731,7 @@ export default function RidesTab ({
                     <p className="mt-1 text-sm text-neutral-900">
                       {selectedRide.captainPassengerRating != null
                         ? `${selectedRide.captainPassengerRating}/5`
-                        : '—'}
+                        : 'Not rated'}
                     </p>
                   </div>
 
@@ -688,6 +741,22 @@ export default function RidesTab ({
                       <p className="mt-1 text-sm text-neutral-900">{selectedRide.ratingComment}</p>
                     </div>
                   )}
+
+                  <div>
+                    <p className="text-xs text-neutral-500">Compliments</p>
+                    <p className="mt-1 text-sm text-neutral-900">
+                      {Array.isArray(selectedRide.compliments) && selectedRide.compliments.length > 0
+                        ? selectedRide.compliments.join(', ')
+                        : 'None'}
+                    </p>
+                  </div>
+
+                  <div>
+                    <p className="text-xs text-neutral-500">Tip</p>
+                    <p className="mt-1 text-sm text-neutral-900">
+                      ₹{Number(selectedRide.tipAmount || 0).toFixed(2)}
+                    </p>
+                  </div>
                 </div>
               </div>
             )}

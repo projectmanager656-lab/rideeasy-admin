@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Card } from '../../components/AdminUIComponents'
 import { SecondaryPageShell } from './SecondaryPageShell'
 
@@ -9,7 +10,11 @@ export default function SafetyTab ({
   onResolve,
   highlightedAlertId,
 }) {
+  const navigate = useNavigate()
   const highlightedAlertRef = useRef(null)
+  const emergencyAlertsSectionRef = useRef(null)
+  const policeStationsSectionRef = useRef(null)
+  const safetySettingsSectionRef = useRef(null)
 
   const statusClass = {
     pending: 'bg-[#FFF4DF] text-[#B86B00] border-[#FFD98A]',
@@ -38,11 +43,47 @@ export default function SafetyTab ({
         title="Safety"
         subtitle="Emergency controls & safety operations"
         rows={[
-          { title: 'Emergency Alerts', description: 'View and manage emergency alerts', icon: 'ri-alarm-warning-line', tone: 'orange' },
-          { title: 'Police Stations', description: 'Manage nearby police stations', icon: 'ri-police-car-line', tone: 'blue' },
-          { title: 'Safety Settings', description: 'Configure safety features', icon: 'ri-settings-3-line', tone: 'green' },
+          {
+            title: 'Emergency Alerts',
+            description: 'View and manage emergency alerts',
+            icon: 'ri-alarm-warning-line',
+            tone: 'orange',
+            onClick: () => emergencyAlertsSectionRef.current?.scrollIntoView({
+              behavior: 'smooth',
+              block: 'start',
+            }),
+          },
+          {
+            title: 'Police Stations',
+            description: 'Manage nearby police stations',
+            icon: 'ri-police-car-line',
+            tone: 'blue',
+            onClick: () => policeStationsSectionRef.current?.scrollIntoView({
+              behavior: 'smooth',
+              block: 'start',
+            }),
+          },
+          {
+            title: 'Safety Settings',
+            description: 'Configure safety features',
+            icon: 'ri-settings-3-line',
+            tone: 'green',
+            onClick: () => safetySettingsSectionRef.current?.scrollIntoView({
+              behavior: 'smooth',
+              block: 'start',
+            }),
+          },
           { title: 'Emergency Contacts', description: 'Manage emergency contacts', icon: 'ri-contacts-line', tone: 'purple' },
-          { title: 'Blocked Users', description: 'View blocked users list', icon: 'ri-user-forbid-line', tone: 'navy' },
+          {
+            title: 'Blocked Users',
+            description: 'View blocked users list',
+            icon: 'ri-user-forbid-line',
+            tone: 'navy',
+            onClick: () =>
+              navigate('/admin/users', {
+                state: { blockedUsersOnly: true },
+              }),
+          },
         ]}
       />
 
@@ -160,7 +201,10 @@ export default function SafetyTab ({
       </div>
 
       {/* Emergency Alerts + Police */}
-      <div className="grid gap-6 xl:grid-cols-[1.3fr_0.7fr]">
+      <div
+        ref={emergencyAlertsSectionRef}
+        className="grid gap-6 xl:grid-cols-[1.3fr_0.7fr]"
+      >
 
         {/* Emergency Alerts */}
         <Card className="overflow-hidden rounded-2xl border border-[#E5E7EB] bg-white p-0 shadow-sm">
@@ -331,6 +375,7 @@ export default function SafetyTab ({
         </Card>
 
         {/* Police Stations */}
+        <div ref={policeStationsSectionRef}>
         <Card className="overflow-hidden rounded-2xl border border-[#E5E7EB] bg-white p-0 shadow-sm">
 
           <div className="border-b border-[#E5E7EB] px-5 py-4">
@@ -412,9 +457,11 @@ export default function SafetyTab ({
 
         </Card>
 
+        </div>
       </div>
 
       {/* Driver Allocation Rules */}
+      <div ref={safetySettingsSectionRef}>
       <Card className="overflow-hidden rounded-2xl border border-[#E5E7EB] bg-white p-0 shadow-sm">
 
         {/* Rule header */}
@@ -564,6 +611,7 @@ export default function SafetyTab ({
 
       </Card>
 
+    </div>
     </div>
   )
 }

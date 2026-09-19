@@ -11,6 +11,9 @@ router.post('/login',
     adminController.loginAdmin
 );
 
+router.patch('/change-password', auth.authAdmin, adminController.changePassword);
+router.get('/app-settings', auth.authAdmin, adminController.getAppSettings);
+router.put('/app-settings', auth.authAdmin, adminController.updateAppSettings);
 router.get('/analytics', auth.authAdmin, adminController.getAnalytics);
 router.get('/users', auth.authAdmin, adminController.getUsers);
 router.get('/drivers', auth.authAdmin, adminController.getDrivers);

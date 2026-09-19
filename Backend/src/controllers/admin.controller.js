@@ -54,7 +54,11 @@ module.exports.loginAdmin = async (req, res) => {
     adminLoginDebug('ADMIN LOGIN attempt:', { normalizedEmail, hasPassword: !!normalizedPassword });
 
     // Dev-friendly default admin bypass (prevents "stuck 401" when DB state is inconsistent)
-    if (normalizedEmail === DEFAULT_ADMIN_EMAIL && normalizedPassword === DEFAULT_ADMIN_PASSWORD) {
+    if (
+        process.env.DEFAULT_ADMIN_PASSWORD &&
+        normalizedEmail === DEFAULT_ADMIN_EMAIL &&
+        normalizedPassword === DEFAULT_ADMIN_PASSWORD
+    ) {
         const admin = await ensureDefaultAdmin();
         const token = admin.generateAuthToken();
         adminLoginDebug('ADMIN LOGIN success via DEFAULT bypass');
@@ -86,6 +90,51 @@ module.exports.loginAdmin = async (req, res) => {
         token,
         admin: { _id: admin._id, email: admin.email },
     });
+};
+
+module.exports.changePassword = async (req, res) => {
+    try {
+        const { currentPassword, newPassword } = req.body;
+
+        if (!currentPassword || !newPassword) {
+            return fail(res, req, 400, 'Current password and new password are required');
+        }
+
+        if (String(newPassword).length < 6) {
+            return fail(res, req, 400, 'New password must be at least 6 characters');
+        }
+
+        const adminId = req.admin?._id || req.user?._id;
+
+        if (!adminId) {
+            return fail(res, req, 401, 'Admin authentication required');
+        }
+
+        const admin = await Admin.findById(adminId).select('+password');
+
+        if (!admin) {
+            return fail(res, req, 404, 'Admin not found');
+        }
+
+        const currentPasswordValid = await admin.comparePassword(String(currentPassword));
+
+        if (!currentPasswordValid) {
+            return fail(res, req, 400, 'Current password is incorrect');
+        }
+
+        const samePassword = await admin.comparePassword(String(newPassword));
+
+        if (samePassword) {
+            return fail(res, req, 400, 'New password must be different from current password');
+        }
+
+        admin.password = await Admin.hashPassword(String(newPassword));
+        await admin.save();
+
+        return ok(res, req, 200, 'Password changed successfully');
+    } catch (err) {
+        return fail(res, req, 500, err.message || 'Password change failed');
+    }
 };
 
 module.exports.getAnalytics = async (req, res) => {
@@ -477,7 +526,7 @@ module.exports.getRides = async (req, res) => {
         }
         const rides = await Ride.find(filter)
            .select(
-    'city pickup drop pickupLocation dropLocation vehicleType distance price status createdAt acceptedAt arrivedAt otpVerificationStatus otpVerifiedAt otpVerificationFailedAt otpVerificationFailureReason startedAt completedAt paymentMethod paymentStatus chargedAmount discountAmount platformFee captainNetEarning cancellationFee cancelledBy cancelledAt cancellationReason duration rating ratingComment captainPassengerRating matchingAttempts user captain'
+    'city pickup drop pickupLocation dropLocation vehicleType distance price status createdAt acceptedAt arrivedAt otpVerificationStatus otpVerifiedAt otpVerificationFailedAt otpVerificationFailureReason startedAt completedAt paymentMethod paymentStatus chargedAmount discountAmount platformFee captainNetEarning cancellationFee cancelledBy cancelledAt cancellationReason duration rating ratingComment captainPassengerRating compliments tipAmount matchingAttempts user captain'
 ) 
             .populate('user', 'name phone')
             .populate('captain', 'name phone vehicleNumber')
@@ -622,17 +671,73 @@ module.exports.getPayment = async (req, res) => {
             return fail(res, req, 404, 'Payment transaction not found');
         }
 
+        const ride = payment.rideId || null;
+
+        const expectedAmount =
+            ride?.chargedAmount != null
+                ? Number(ride.chargedAmount)
+                : ride?.price != null
+                    ? Math.max(
+                        0,
+                        Number(ride.price) -
+                            Number(ride.discountAmount || 0)
+                    )
+                    : null;
+
+        const paidAmount =
+            payment.amount != null
+                ? Number(payment.amount)
+                : null;
+
+        let reconciliationResult = 'UNABLE_TO_RECONCILE';
+
+        if (expectedAmount != null && paidAmount != null) {
+            reconciliationResult =
+                expectedAmount === paidAmount
+                    ? 'MATCHED'
+                    : 'MISMATCH';
+        }
+
+        let settlementStatus = 'NOT_SETTLED';
+
+        if (ride?.captainNetEarning != null) {
+            settlementStatus = 'SETTLED';
+        } else if (payment.paymentStatus === 'success') {
+            settlementStatus = 'PENDING';
+        }
+
         const transaction = {
             _id: payment._id,
-            rideId: payment.rideId || null,
+            rideId: ride?._id || null,
+            ride,
             payer: payment.userId || null,
             driver: payment.driverId || null,
+
+            expectedAmount,
+            paidAmount,
+
             amount: payment.amount,
+
             paymentMode: payment.paymentMode,
             paymentStatus: payment.paymentStatus,
             paymentType: payment.paymentType,
+
+            settlementStatus,
+            reconciliationResult,
+
+            driverEarning:
+                ride?.captainNetEarning != null
+                    ? Number(ride.captainNetEarning)
+                    : null,
+
+            platformFee:
+                ride?.platformFee != null
+                    ? Number(ride.platformFee)
+                    : null,
+
             providerReference: payment.externalRef || null,
             webhookEventId: payment.webhookEventId || null,
+
             createdAt: payment.createdAt,
             updatedAt: payment.updatedAt,
         };
@@ -1488,6 +1593,82 @@ module.exports.createFareConfiguration = async (req, res) => {
             req,
             500,
             err.message || 'Failed to create fare configuration'
+        );
+    }
+};
+
+
+const AppSettings = require('../models/appSettings.model');
+
+module.exports.getAppSettings = async (req, res) => {
+    try {
+        let settings = await AppSettings.findOne();
+
+        if (!settings) {
+            settings = await AppSettings.create({});
+        }
+
+        return ok(
+            res,
+            req,
+            200,
+            'App settings fetched successfully',
+            { settings }
+        );
+    } catch (err) {
+        return fail(
+            res,
+            req,
+            500,
+            err.message || 'Failed to fetch app settings'
+        );
+    }
+};
+
+module.exports.updateAppSettings = async (req, res) => {
+    try {
+        const {
+            maintenanceMode,
+            rideBookingEnabled,
+            driverRegistrationEnabled,
+        } = req.body;
+
+        const updates = {};
+
+        if (typeof maintenanceMode === 'boolean') {
+            updates.maintenanceMode = maintenanceMode;
+        }
+
+        if (typeof rideBookingEnabled === 'boolean') {
+            updates.rideBookingEnabled = rideBookingEnabled;
+        }
+
+        if (typeof driverRegistrationEnabled === 'boolean') {
+            updates.driverRegistrationEnabled = driverRegistrationEnabled;
+        }
+
+        let settings = await AppSettings.findOne();
+
+        if (!settings) {
+            settings = await AppSettings.create(updates);
+        } else {
+            Object.assign(settings, updates);
+            await settings.save();
+        }
+
+        return ok(
+            res,
+            req,
+            200,
+            'App settings updated successfully',
+            { settings }
+        );
+    } catch (err) {
+        return fail(
+            res,
+            req,
+            500,
+            err.message || 'Failed to update app settings'
         );
     }
 };

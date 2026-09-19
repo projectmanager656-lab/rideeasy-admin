@@ -1,5 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useContext } from 'react'
+import { SocketContext } from '../context/SocketContext'
 import { AlertCard, Card } from '../components/AdminUIComponents'
 import { adminApi } from '../services/adminApi'
 import { getReadAlertIds, isAlertUnread, markAlertRead, markAlertsRead } from '../admin/notificationReadState'
@@ -8,8 +10,110 @@ const FILTERS = [ 'All', 'Emergency', 'Rides', 'Drivers', 'System' ]
 const formatTime = (value) => value ? new Date(value).toLocaleString('en-IN') : 'Not available'
 
 export default function AdminNotifications () {
+  const { socket } = useContext(SocketContext)
+
+  useEffect(() => {
+    if (!socket) return
+
+    const joinAdminRoom = () => {
+      socket.emit('admin:live-operations:join')
+    }
+
+    joinAdminRoom()
+    socket.on('connect', joinAdminRoom)
+
+    return () => {
+      socket.off('connect', joinAdminRoom)
+    }
+  }, [socket])
+
+
+  useEffect(() => {
+    if (!socket) return
+
+    const addNotification = (notification) => {
+      window.dispatchEvent(
+        new CustomEvent('rideeasy:admin-notification', {
+          detail: {
+            ...notification,
+            createdAt: notification.createdAt || new Date().toISOString(),
+          },
+        })
+      )
+    }
+
+    const handleNewRide = (payload) => {
+      addNotification({
+        id: `ride-new-${payload?.rideId || Date.now()}`,
+        type: 'ride',
+        title: 'New Ride Arrived',
+        message: 'A new ride request has arrived.',
+        data: payload,
+      })
+    }
+
+    const handleDriverStatus = (payload) => {
+      const status = payload?.liveStatus
+      if (status !== 'ONLINE' && status !== 'OFFLINE') return
+
+      addNotification({
+        id: `driver-${status.toLowerCase()}-${payload?.driverId || Date.now()}`,
+        type: 'driver',
+        title: status === 'ONLINE' ? 'Driver Online' : 'Driver Offline',
+        message: status === 'ONLINE'
+          ? 'A driver is now online.'
+          : 'A driver has gone offline.',
+        data: payload,
+      })
+    }
+
+    const handleRideAccepted = (payload) => {
+      addNotification({
+        id: `ride-accepted-${payload?.rideId || Date.now()}`,
+        type: 'ride',
+        title: 'Ride Accepted',
+        message: 'A driver has accepted a ride.',
+        data: payload,
+      })
+    }
+
+    const handleRideStarted = (payload) => {
+      addNotification({
+        id: `ride-started-${payload?.rideId || Date.now()}`,
+        type: 'ride',
+        title: 'Ride Started',
+        message: 'A ride has started.',
+        data: payload,
+      })
+    }
+
+    const handleRideCompleted = (payload) => {
+      addNotification({
+        id: `ride-completed-${payload?.rideId || Date.now()}`,
+        type: 'ride',
+        title: 'Ride Completed',
+        message: 'A ride has been completed.',
+        data: payload,
+      })
+    }
+
+    socket.on('admin:ride:new', handleNewRide)
+    socket.on('driver:status-update', handleDriverStatus)
+    socket.on('admin:ride:accepted', handleRideAccepted)
+    socket.on('ride:started', handleRideStarted)
+    socket.on('admin:ride:completed', handleRideCompleted)
+
+    return () => {
+      socket.off('admin:ride:new', handleNewRide)
+      socket.off('driver:status-update', handleDriverStatus)
+      socket.off('admin:ride:accepted', handleRideAccepted)
+      socket.off('ride:started', handleRideStarted)
+      socket.off('admin:ride:completed', handleRideCompleted)
+    }
+  }, [socket])
   const navigate = useNavigate()
   const [alerts, setAlerts] = useState([])
+  const [realtimeNotifications, setRealtimeNotifications] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [filter, setFilter] = useState('All')
@@ -32,14 +136,70 @@ export default function AdminNotifications () {
 
   useEffect(() => { loadAlerts() }, [loadAlerts])
 
-  const visibleAlerts = useMemo(() => {
-    if (filter !== 'All' && filter !== 'Emergency') return []
+  useEffect(() => {
+    const handleRealtimeNotification = (event) => {
+      const notification = event?.detail
+
+      if (!notification?.id) return
+
+      setRealtimeNotifications((current) => [
+        notification,
+        ...current.filter((item) => item.id !== notification.id),
+      ])
+    }
+
+    window.addEventListener('rideeasy:admin-notification', handleRealtimeNotification)
+
+    return () => {
+      window.removeEventListener('rideeasy:admin-notification', handleRealtimeNotification)
+    }
+  }, [])
+
+  const visibleNotifications = useMemo(() => {
     const query = search.trim().toLowerCase()
-    return alerts.filter((alert) => !query || [
-      alert.riderName, alert.driverName, alert.rideId, alert.ride?._id,
-      alert.city, alert.location?.address, 'Emergency Alert',
-    ].filter(Boolean).join(' ').toLowerCase().includes(query))
-  }, [alerts, filter, search])
+
+    const emergencyItems = filter === 'All' || filter === 'Emergency'
+      ? alerts
+          .filter((alert) => !query || [
+            alert.riderName, alert.driverName, alert.rideId, alert.ride?._id,
+            alert.city, alert.location?.address, 'Emergency Alert',
+          ].filter(Boolean).join(' ').toLowerCase().includes(query))
+          .map((alert) => ({
+            kind: 'emergency',
+            id: `emergency-${alert._id}`,
+            createdAt: alert.createdAt,
+            alert,
+          }))
+      : []
+
+    const realtimeItems = filter === 'All'
+      ? realtimeNotifications
+      : realtimeNotifications.filter((notification) => {
+          if (filter === 'Rides') return notification.type === 'ride'
+          if (filter === 'Drivers') return notification.type === 'driver'
+          if (filter === 'System') return notification.type === 'system'
+          return false
+        })
+
+    const filteredRealtime = realtimeItems.filter((notification) => {
+      if (!query) return true
+      return [
+        notification.title,
+        notification.message,
+        notification.type,
+        notification.data?.rideId,
+        notification.data?.driverId,
+      ].filter(Boolean).join(' ').toLowerCase().includes(query)
+    }).map((notification) => ({
+      kind: 'realtime',
+      id: notification.id,
+      createdAt: notification.createdAt,
+      notification,
+    }))
+
+    return [...emergencyItems, ...filteredRealtime]
+      .sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime())
+  }, [alerts, realtimeNotifications, filter, search])
 
   const markRead = (alert) => {
     markAlertRead(alert._id)
@@ -104,7 +264,7 @@ export default function AdminNotifications () {
       </Card>
 
       {error && <AlertCard type="error" title="Unable to load notifications" message="Unable to load notifications" />}
-      {loading ? <Card><div className="py-12 text-center text-sm text-[#6B7280]"><i className="ri-loader-4-line mr-2 inline-block animate-spin text-xl text-[#FFA726]" />Loading notifications…</div></Card> : !error && (visibleAlerts.length ? <div className="space-y-3">{visibleAlerts.map((alert) => <EmergencyNotification key={alert._id} alert={alert} unread={isAlertUnread(alert, getReadAlertIds())} working={workingId === alert._id} onRead={markRead} onView={viewEmergency} onAcknowledge={acknowledge} onResolve={resolve} />)}</div> : <EmptyState filter={filter} />)}
+      {loading ? <Card><div className="py-12 text-center text-sm text-[#6B7280]"><i className="ri-loader-4-line mr-2 inline-block animate-spin text-xl text-[#FFA726]" />Loading notifications…</div></Card> : !error && (visibleNotifications.length ? <div className="space-y-3">{visibleNotifications.map((item) => item.kind === 'emergency' ? <EmergencyNotification key={item.id} alert={item.alert} unread={isAlertUnread(item.alert, getReadAlertIds())} working={workingId === item.alert._id} onRead={markRead} onView={viewEmergency} onAcknowledge={acknowledge} onResolve={resolve} /> : <RealtimeNotification key={item.id} notification={item.notification} />)}</div> : <EmptyState filter={filter} />)}
     </div>
     </>
   )
@@ -116,6 +276,41 @@ function EmergencyNotification ({ alert, unread, working, onRead, onView, onAckn
   const location = alert.city || alert.location?.address || alert.location?.name
   const unavailable = 'Not available'
   return <Card className={`border-l-4 p-4 sm:p-5 ${unread ? 'border-l-[#E5484D] bg-[#FFF8F8]' : 'border-l-slate-200'}`}><button type="button" onClick={() => onRead(alert)} className="block w-full text-left"><div className="flex gap-3"><div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#FEE2E2] text-[#E5484D]"><i className="ri-alarm-warning-line text-lg" /></div><div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><h2 className="font-bold text-[#111827]">Emergency Alert</h2><span className="rounded-full bg-[#FEE2E2] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[#E5484D]">High priority</span>{unread && <span className="h-2 w-2 rounded-full bg-[#E5484D]" />}</div><div className="mt-4 grid gap-4 text-sm sm:grid-cols-3"><NotificationGroup title="Passenger / User" rows={[[ 'Name', alert.riderName ], [ 'Phone', alert.phone ]]} fallback={unavailable} /><NotificationGroup title="Driver" rows={[[ 'Name', alert.driverName ], [ 'Vehicle number', alert.vehicleNumber ], [ 'Vehicle type', alert.vehicleType ]]} fallback={unavailable} /><NotificationGroup title="Ride" rows={[[ 'Ride ID', rideId && `#${String(rideId)}` ], [ 'Location', location ], [ 'City', alert.city ], [ 'Emergency time', formatTime(alert.createdAt) ]]} fallback={unavailable} /></div></div></div></button><div className="mt-4 flex flex-col gap-3 border-t border-slate-200 pt-3 sm:flex-row sm:items-center sm:justify-between"><span className={`inline-flex w-fit rounded-full px-2.5 py-1 text-xs font-semibold ${status === 'pending' ? 'bg-[#FFF3E0] text-[#B86B00]' : status === 'acknowledged' ? 'bg-[#EAFBF2] text-[#1FAA59]' : 'bg-slate-100 text-[#6B7280]'}`}>Status: {status}</span><div className="flex flex-wrap gap-2"><button type="button" onClick={() => onView(alert)} className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-[#111827] hover:bg-slate-50">{status === 'resolved' ? 'View Details' : 'View Emergency'}</button>{status === 'pending' && <button disabled={working} type="button" onClick={() => onAcknowledge(alert)} className="rounded-lg bg-[#FFA726] px-3 py-2 text-xs font-semibold text-[#111827] disabled:opacity-50">Acknowledge</button>}{status !== 'resolved' && <button disabled={working} type="button" onClick={() => onResolve(alert)} className="rounded-lg bg-[#E5484D] px-3 py-2 text-xs font-semibold text-white disabled:opacity-50">Resolve & Call Police</button>}</div></div></Card>
+}
+
+function RealtimeNotification ({ notification }) {
+  const type = notification?.type === 'driver' ? 'driver' : 'ride'
+  const isDriver = type === 'driver'
+
+  return (
+    <Card className="border-l-4 border-l-[#FFA726] bg-white p-4 sm:p-5">
+      <div className="flex gap-3">
+        <div className={`grid h-10 w-10 shrink-0 place-items-center rounded-full ${isDriver ? 'bg-[#EAFBF2] text-[#1FAA59]' : 'bg-[#FFF3E0] text-[#FFA726]'}`}>
+          <i className={`${isDriver ? 'ri-steering-2-line' : 'ri-taxi-line'} text-lg`} />
+        </div>
+
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <h2 className="font-bold text-[#111827]">
+              {notification?.title || 'RideEasy Notification'}
+            </h2>
+            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[#6B7280]">
+              {type}
+            </span>
+            <span className="h-2 w-2 rounded-full bg-[#FFA726]" />
+          </div>
+
+          <p className="mt-2 text-sm text-[#6B7280]">
+            {notification?.message || 'New activity received.'}
+          </p>
+
+          <p className="mt-3 text-xs text-[#9CA3AF]">
+            {formatTime(notification?.createdAt)}
+          </p>
+        </div>
+      </div>
+    </Card>
+  )
 }
 
 function NotificationGroup ({ title, rows, fallback }) { return <div><h3 className="font-semibold text-[#111827]">{title}</h3><div className="mt-1.5 space-y-1 text-xs text-[#6B7280]">{rows.map(([label, value]) => <p key={label}><span className="font-medium text-[#111827]">{label}:</span> {value || fallback}</p>)}</div></div> }

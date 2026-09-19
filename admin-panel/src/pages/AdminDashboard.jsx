@@ -18,6 +18,10 @@ import {
   SettingsTab,
   ComplaintsTab,
   ReportsTab,
+  EarningsReport,
+  BookingsReport,
+  DriversReport,
+  UsersReport,
 } from '../admin/tabs'
 import AdminLiveOperations from './AdminLiveOperations'
 import AdminRoles from './AdminRoles'
@@ -53,6 +57,7 @@ const [fareError, setFareError] = useState('')
   const [tab, setTab] = useState(
   () => initialTab || location.state?.tab || 'analytics'
   )
+  const [reportView, setReportView] = useState(null)
   useEffect(() => {
   if (initialTab) {
     setTab(initialTab)
@@ -239,6 +244,154 @@ const [fareError, setFareError] = useState('')
   }, [socket, refreshRides])
 
   useEffect(() => {
+    if (!socket) return
+
+    const handleAdminNewRide = (payload) => {
+      const ride = payload?.ride || payload
+      const rideId = ride?._id || payload?.rideId
+
+      if (!rideId) return
+
+      window.dispatchEvent(
+        new CustomEvent('rideeasy:admin-notification', {
+          detail: {
+            id: `ride-${rideId}-${payload?.offeredAt || Date.now()}`,
+            type: 'ride',
+            title: 'New Ride Arrived',
+            message: `A new ride request has arrived${ride?.user?.name ? ` from ${ride.user.name}` : ''}.`,
+            data: payload,
+            createdAt: new Date().toISOString(),
+          },
+        })
+      )
+    }
+
+    socket.on('admin:ride:new', handleAdminNewRide)
+
+    return () => {
+      socket.off('admin:ride:new', handleAdminNewRide)
+    }
+  }, [socket])
+
+  useEffect(() => {
+    if (!socket) return
+
+    const handleDriverStatusUpdate = (payload) => {
+      const driverId = payload?.driverId
+      const status = String(payload?.liveStatus || '').toUpperCase()
+
+      if (!driverId || !['ONLINE', 'OFFLINE'].includes(status)) return
+
+      window.dispatchEvent(
+        new CustomEvent('rideeasy:admin-notification', {
+          detail: {
+            id: `driver-${driverId}-${status}-${Date.now()}`,
+            type: 'driver',
+            title: status === 'ONLINE' ? 'Driver Online' : 'Driver Offline',
+            message: `A driver is now ${status.toLowerCase()}.`,
+            data: payload,
+            createdAt: new Date().toISOString(),
+          },
+        })
+      )
+    }
+
+    socket.on('driver:status-update', handleDriverStatusUpdate)
+
+    return () => {
+      socket.off('driver:status-update', handleDriverStatusUpdate)
+    }
+  }, [socket])
+
+  useEffect(() => {
+    if (!socket) return
+
+    const handleAdminRideAccepted = (payload) => {
+      const ride = payload?.ride || payload
+      const rideId = ride?._id || payload?.rideId
+
+      if (!rideId) return
+
+      window.dispatchEvent(
+        new CustomEvent('rideeasy:admin-notification', {
+          detail: {
+            id: `ride-${rideId}-accepted-${payload?.at || Date.now()}`,
+            type: 'ride',
+            title: 'Ride Accepted',
+            message: 'A driver has accepted a ride request.',
+            data: payload,
+            createdAt: new Date().toISOString(),
+          },
+        })
+      )
+    }
+
+    socket.on('admin:ride:accepted', handleAdminRideAccepted)
+
+    return () => {
+      socket.off('admin:ride:accepted', handleAdminRideAccepted)
+    }
+  }, [socket])
+
+  useEffect(() => {
+    if (!socket) return
+
+    const handleAdminRideStarted = (payload) => {
+      const rideId = payload?.rideId || payload?.ride?._id
+
+      if (!rideId) return
+
+      window.dispatchEvent(
+        new CustomEvent('rideeasy:admin-notification', {
+          detail: {
+            id: `ride-${rideId}-started-${payload?.startedAt || Date.now()}`,
+            type: 'ride',
+            title: 'Ride Started',
+            message: 'A ride has started successfully.',
+            data: payload,
+            createdAt: new Date().toISOString(),
+          },
+        })
+      )
+    }
+
+    socket.on(RIDE_STARTED, handleAdminRideStarted)
+
+    return () => {
+      socket.off(RIDE_STARTED, handleAdminRideStarted)
+    }
+  }, [socket])
+
+  useEffect(() => {
+    if (!socket) return
+
+    const handleAdminRideCompleted = (payload) => {
+      const rideId = payload?.rideId || payload?.ride?._id
+
+      if (!rideId) return
+
+      window.dispatchEvent(
+        new CustomEvent('rideeasy:admin-notification', {
+          detail: {
+            id: `ride-${rideId}-completed-${payload?.completedAt || payload?.at || Date.now()}`,
+            type: 'ride',
+            title: 'Ride Completed',
+            message: 'A ride has been completed successfully.',
+            data: payload,
+            createdAt: new Date().toISOString(),
+          },
+        })
+      )
+    }
+
+    socket.on('admin:ride:completed', handleAdminRideCompleted)
+
+    return () => {
+      socket.off('admin:ride:completed', handleAdminRideCompleted)
+    }
+  }, [socket])
+
+  useEffect(() => {
     if (initialTab) {
       setTab(initialTab)
     } else if (location.state?.tab) {
@@ -272,6 +425,27 @@ const [fareError, setFareError] = useState('')
     }
   }, [tab])
   const fmtErr = (e) => e?.response?.data?.message || e?.message || 'Request failed'
+  const loadPaymentDetail = async (paymentId) => {
+    if (!paymentId) return
+
+    const ac = new AbortController()
+    const { signal } = ac
+
+    setPaymentDetailLoading(true)
+    setTabError('')
+
+    try {
+      const result = await adminApi.getPayment(paymentId, signal)
+      if (signal.aborted) return
+      setSelectedPayment(result?.transaction || result || null)
+    } catch (e) {
+      if (signal.aborted) return
+      setTabError(fmtErr(e))
+    } finally {
+      if (!signal.aborted) setPaymentDetailLoading(false)
+    }
+  }
+
   /** Overview only — `statsNonce` bumps on "Refresh stats" without re-fetching rides/users/etc. */
   useEffect(() => {
     if (tab !== 'analytics') return
@@ -374,20 +548,67 @@ const [d, usersResult, driversResult, ridesResult, paymentsResult, alertsResult]
         return
       }
 
-      const loadPaymentDetail = async (paymentId) => {
-        if (!paymentId) return
-        setPaymentDetailLoading(true)
+      if (tab === 'reports') {
         setTabError('')
+
         try {
-          const result = await adminApi.getPayment(paymentId, signal)
-          if (signal.aborted) return
-          setSelectedPayment(result?.transaction || result || null)
+          const requests = []
+
+          if (!dataLoadedRef.current.has('rides')) {
+            requests.push(
+              adminApi.getRides('all', signal).then((list) => {
+                if (!signal.aborted) {
+                  setRides(Array.isArray(list) ? list : [])
+                  dataLoadedRef.current.add('rides')
+                }
+              })
+            )
+          }
+
+          if (!dataLoadedRef.current.has('drivers')) {
+            requests.push(
+              adminApi.getDrivers(signal).then((list) => {
+                if (!signal.aborted) {
+                  setDrivers(Array.isArray(list) ? list : [])
+                  dataLoadedRef.current.add('drivers')
+                }
+              })
+            )
+          }
+
+          if (!dataLoadedRef.current.has('users')) {
+            requests.push(
+              adminApi.getUsers(signal).then((list) => {
+                if (!signal.aborted) {
+                  setUsers(Array.isArray(list) ? list : [])
+                  dataLoadedRef.current.add('users')
+                }
+              })
+            )
+          }
+
+          if (!dataLoadedRef.current.has('payments')) {
+            setPaymentsLoading(true)
+
+            requests.push(
+              adminApi.getPayments(signal).then((list) => {
+                if (!signal.aborted) {
+                  setPayments(Array.isArray(list) ? list : [])
+                  dataLoadedRef.current.add('payments')
+                }
+              }).finally(() => {
+                if (!signal.aborted) setPaymentsLoading(false)
+              })
+            )
+          }
+
+          await Promise.all(requests)
         } catch (e) {
           if (signal.aborted) return
           setTabError(fmtErr(e))
-        } finally {
-          if (!signal.aborted) setPaymentDetailLoading(false)
         }
+
+        return
       }
 
       if (tab === 'payments') {
@@ -446,7 +667,7 @@ const [d, usersResult, driversResult, ridesResult, paymentsResult, alertsResult]
         return
       }
 
-      if (tab === 'safety') {
+      if (tab === 'safety' || tab === 'sos') {
         setTabError('')
         try {
           const [alertsRes, policeRes] = await Promise.all([
@@ -547,12 +768,29 @@ const [d, usersResult, driversResult, ridesResult, paymentsResult, alertsResult]
   const filteredUsers = useMemo(() => {
     const q = tableSearch.trim().toLowerCase()
     const base = users.filter((u) => u && u._id)
+
+    if (location.state?.blockedUsersOnly) {
+      const blocked = base.filter((u) => Boolean(u.blocked))
+      if (!q) return blocked
+      return blocked.filter((u) => {
+        const blob = [displayName(u.name), u.email, u.phone, u.city, String(u._id)]
+          .filter(Boolean)
+          .join(' ')
+          .toLowerCase()
+        return blob.includes(q)
+      })
+    }
+
     if (!q) return base
+
     return base.filter((u) => {
-      const blob = [displayName(u.name), u.email, u.phone, u.city, String(u._id)].filter(Boolean).join(' ').toLowerCase()
+      const blob = [displayName(u.name), u.email, u.phone, u.city, String(u._id)]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase()
       return blob.includes(q)
     })
-  }, [users, tableSearch])
+  }, [users, tableSearch, location.state?.blockedUsersOnly])
 
   const filteredDrivers = useMemo(() => {
     const q = tableSearch.trim().toLowerCase()
@@ -1073,6 +1311,10 @@ const [d, usersResult, driversResult, ridesResult, paymentsResult, alertsResult]
         {tab === 'settings' && (
           <SettingsTab
             setTab={setTab}
+            onProfile={() => navigate('/admin/profile')}
+            onChangePassword={() => navigate('/admin/change-password')}
+            onAppSettings={() => navigate('/admin/app-settings')}
+            onLanguage={() => navigate('/admin/language')}
             onNotifications={() => navigate('/admin/notifications')}
             onLogout={logout}
           />
@@ -1083,8 +1325,40 @@ const [d, usersResult, driversResult, ridesResult, paymentsResult, alertsResult]
   <ComplaintsTab />
 )}
         {/* REPORTS */}
-        {tab === 'reports' && (
-          <ReportsTab />
+        {tab === 'reports' && !reportView && (
+          <ReportsTab onReportSelect={setReportView} />
+        )}
+
+        {tab === 'reports' && reportView === 'earnings' && (
+          <EarningsReport
+            rides={rides}
+            payments={payments}
+            onBack={() => setReportView(null)}
+          />
+        )}
+
+        {tab === 'reports' && reportView === 'bookings' && (
+          <BookingsReport
+            rides={rides}
+            onBack={() => setReportView(null)}
+          />
+        )}
+
+        {tab === 'reports' && reportView === 'drivers' && (
+          <DriversReport
+            drivers={drivers}
+            rides={rides}
+            onBack={() => setReportView(null)}
+          />
+        )}
+
+        
+        {tab === 'reports' && reportView === 'users' && (
+          <UsersReport
+            users={users}
+            rides={rides}
+            onBack={() => setReportView(null)}
+          />
         )}
 
             {/* SOS / SAFETY */}

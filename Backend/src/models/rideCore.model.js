@@ -79,6 +79,8 @@ const rideSchema = new mongoose.Schema({
     /** Driver's rating of the passenger (optional). */
     captainPassengerRating: { type: Number, min: 1, max: 5 },
     captainPassengerTags: { type: [ String ], default: [] },
+    compliments: { type: [ String ], default: [] },
+    tipAmount: { type: Number, default: 0, min: 0 },
     captainNetEarning: { type: Number },
     platformFee: { type: Number },
     discountAmount: { type: Number, default: 0 },

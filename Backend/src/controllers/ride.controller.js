@@ -263,6 +263,14 @@ async function notifyPassengerAccepted(ride, otpPlain, prebuiltConfirmation = nu
     if (cid) {
         emitToCaptain(cid, RIDE_ACCEPTED, safe);
     }
+
+    emitToAdmins('admin:ride:accepted', {
+        ride: safe,
+        rideId: ride._id,
+        driverId: cid || null,
+        status: 'accepted',
+        at: Date.now(),
+    });
 }
 
 async function findNearbyDriverIds({ rideCity, vehicleType, pickupLng, pickupLat, userGender }) {
@@ -363,6 +371,8 @@ function broadcastRideNew(rideDoc, driverIds) {
         emitToCaptain(id, RIDE_REQUEST, payload);
         emitToCaptain(id, 'new-ride', payload);
     }
+
+    emitToAdmins('admin:ride:new', payload);
 }
 
 function mergeUniqueIds(...lists) {
@@ -1223,6 +1233,15 @@ module.exports.endRide = async (req, res) => {
         if (cid) {
             emitToCaptain(cid, RIDE_COMPLETED, { rideId: ride._id, status: 'completed', ride: pr });
         }
+
+        emitToAdmins('admin:ride:completed', {
+            rideId: ride._id,
+            status: 'completed',
+            ride: pr,
+            completedAt: ride.completedAt || new Date(),
+            at: Date.now(),
+        });
+
         emitStandardRidePhase('completed', {
             userId: uid,
             captainId: cid,
