@@ -12,6 +12,7 @@ import {
   EmptyState,
   ErrorState,
 } from '../components/AdminUIComponents'
+import { Modal } from '../components/ui'
 
 import Table from '../components/ui/Table'
 const vehicleStatus = (driver) => {
@@ -74,6 +75,7 @@ export default function AdminVehicles() {
   const [error, setError] = useState('')
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
+  const [selectedVehicle, setSelectedVehicle] = useState(null)
 
   const loadVehicles = useCallback(async (signal) => {
   setLoading(true)
@@ -271,6 +273,21 @@ export default function AdminVehicles() {
           </Badge>
         )
       },
+    },
+
+    {
+      key: 'actions',
+      label: 'Action',
+      render: (driver) => (
+        <button
+          type="button"
+          onClick={() => setSelectedVehicle(driver)}
+          className="inline-flex items-center gap-1.5 rounded-lg bg-slate-50 px-3 py-2 text-xs font-semibold text-[#334155] transition hover:bg-slate-100"
+        >
+          <i className="ri-eye-line" />
+          View
+        </button>
+      ),
     },
   ]
 
@@ -540,7 +557,110 @@ export default function AdminVehicles() {
           </div>
         )}
 
-      </div>
+      {/* Vehicle Details Modal */}
+      {selectedVehicle && (
+        <Modal
+          open={Boolean(selectedVehicle)}
+          onClose={() => setSelectedVehicle(null)}
+          title="Vehicle Details"
+        >
+          <div className="space-y-5">
+            <div className="flex items-center gap-4 rounded-xl bg-[#F7F9FC] p-4">
+              <div className="grid h-14 w-14 shrink-0 place-items-center rounded-full bg-[#0B1B2B] text-white">
+                <i className="ri-car-line text-2xl" />
+              </div>
 
+              <div className="min-w-0">
+                <h3 className="truncate text-lg font-bold text-[#152238]">
+                  {valueOrUnavailable(selectedVehicle.vehicleNumber)}
+                </h3>
+                <p className="text-sm text-[#718096]">
+                  {displayName(selectedVehicle.name) || 'Unnamed driver'}
+                </p>
+              </div>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <VehicleDetail
+                label="Vehicle Number"
+                value={selectedVehicle.vehicleNumber}
+              />
+              <VehicleDetail
+                label="Vehicle Type"
+                value={selectedVehicle.vehicleType}
+              />
+              <VehicleDetail
+                label="Vehicle Model"
+                value={
+                  selectedVehicle.vehicleModel ||
+                  selectedVehicle.model
+                }
+              />
+              <VehicleDetail
+                label="Driver"
+                value={displayName(selectedVehicle.name)}
+              />
+              <VehicleDetail
+                label="Driver Email"
+                value={selectedVehicle.email}
+              />
+              <VehicleDetail
+                label="Driver Phone"
+                value={selectedVehicle.phone}
+              />
+              <VehicleDetail
+                label="RC Status"
+                value={
+                  selectedVehicle.rcStatus ||
+                  selectedVehicle.rc?.status
+                }
+              />
+              <VehicleDetail
+                label="Insurance Status"
+                value={
+                  selectedVehicle.insuranceStatus ||
+                  selectedVehicle.insurance?.status
+                }
+              />
+              <VehicleDetail
+                label="Registration Date"
+                value={formatDate(
+                  selectedVehicle.registrationDate ||
+                  selectedVehicle.createdAt
+                )}
+              />
+              <VehicleDetail
+                label="Vehicle Status"
+                value={vehicleStatus(selectedVehicle).label}
+              />
+            </div>
+
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={() => setSelectedVehicle(null)}
+                className="rounded-lg bg-[#0B1B2B] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#152238]"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+    </div>
+  )
+}
+
+function VehicleDetail({ label, value }) {
+  return (
+    <div className="rounded-xl border border-[#E6EBF2] bg-white p-3">
+      <p className="text-xs font-medium text-[#718096]">
+        {label}
+      </p>
+      <p className="mt-1 break-words text-sm font-semibold text-[#152238]">
+        {value || 'Not available'}
+      </p>
+    </div>
   )
 }

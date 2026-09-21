@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { displayName, rowStableKey } from '../adminUtils'
 import {
   Button,
@@ -8,6 +8,7 @@ import {
   Badge,
   Loader,
   EmptyState,
+  Modal,
 } from '../../components/ui'
 
 export default function UsersTab({
@@ -25,6 +26,8 @@ export default function UsersTab({
   deleteUser,
   bulkDeleteUsers,
 }) {
+  const [selectedUser, setSelectedUser] = useState(null)
+
   const visibleUsers = filteredUsers || []
   const totalUsers = users?.length || 0
 
@@ -139,6 +142,15 @@ export default function UsersTab({
 
         return (
           <div className="flex min-w-[190px] items-center justify-end gap-2">
+            <Button
+              size="sm"
+              variant="secondary"
+              icon="ri-eye-line"
+              onClick={() => setSelectedUser(user)}
+            >
+              View
+            </Button>
+
             <Button
               size="sm"
               variant={blocked ? 'secondary' : 'primary'}
@@ -332,6 +344,99 @@ export default function UsersTab({
         )}
 
       </Card>
+
+      <Modal
+        open={Boolean(selectedUser)}
+        onClose={() => setSelectedUser(null)}
+        title="User Details"
+      >
+        {selectedUser && (
+          <div className="space-y-5">
+            <div className="flex items-center gap-3">
+              <div className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-[#0B1B2B] text-sm font-bold text-white">
+                {String(
+                  displayName(selectedUser.name) || 'U'
+                )
+                  .charAt(0)
+                  .toUpperCase()}
+              </div>
+
+              <div className="min-w-0">
+                <p className="font-semibold text-[#152238]">
+                  {displayName(selectedUser.name) || 'Unnamed User'}
+                </p>
+                <p className="text-xs text-[#718096]">
+                  Passenger
+                </p>
+              </div>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <p className="text-xs font-medium text-[#718096]">
+                  User ID
+                </p>
+                <p className="mt-1 break-all text-sm text-[#152238]">
+                  {selectedUser._id || '—'}
+                </p>
+              </div>
+
+              <div>
+                <p className="text-xs font-medium text-[#718096]">
+                  Status
+                </p>
+                <div className="mt-1">
+                  <Badge
+                    variant={
+                      selectedUser.blocked
+                        ? 'danger'
+                        : 'success'
+                    }
+                  >
+                    {selectedUser.blocked ? 'Blocked' : 'Active'}
+                  </Badge>
+                </div>
+              </div>
+
+              <div>
+                <p className="text-xs font-medium text-[#718096]">
+                  Email
+                </p>
+                <p className="mt-1 break-all text-sm text-[#152238]">
+                  {selectedUser.email || '—'}
+                </p>
+              </div>
+
+              <div>
+                <p className="text-xs font-medium text-[#718096]">
+                  Phone
+                </p>
+                <p className="mt-1 text-sm text-[#152238]">
+                  {selectedUser.phone || '—'}
+                </p>
+              </div>
+
+              <div>
+                <p className="text-xs font-medium text-[#718096]">
+                  City
+                </p>
+                <p className="mt-1 text-sm text-[#152238]">
+                  {selectedUser.city || '—'}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex justify-end border-t border-slate-200 pt-4">
+              <Button
+                variant="secondary"
+                onClick={() => setSelectedUser(null)}
+              >
+                Close
+              </Button>
+            </div>
+          </div>
+        )}
+      </Modal>
     </div>
   )
 }

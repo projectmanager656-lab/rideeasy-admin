@@ -1,5 +1,4 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { useContext } from 'react'
 import { SocketContext } from '../context/SocketContext'
 import { AlertCard, Card } from '../components/AdminUIComponents'
@@ -11,6 +10,7 @@ const formatTime = (value) => value ? new Date(value).toLocaleString('en-IN') : 
 
 export default function AdminNotifications () {
   const { socket } = useContext(SocketContext)
+  const [selectedEmergency, setSelectedEmergency] = useState(null)
 
   useEffect(() => {
     if (!socket) return
@@ -111,7 +111,6 @@ export default function AdminNotifications () {
       socket.off('admin:ride:completed', handleRideCompleted)
     }
   }, [socket])
-  const navigate = useNavigate()
   const [alerts, setAlerts] = useState([])
   const [realtimeNotifications, setRealtimeNotifications] = useState([])
   const [loading, setLoading] = useState(true)
@@ -245,11 +244,121 @@ export default function AdminNotifications () {
 
   const viewEmergency = (alert) => {
     markRead(alert)
-    navigate('/admin/dashboard', { state: { tab: 'safety', alertId: alert._id } })
+    setSelectedEmergency(alert)
   }
 
   return (
     <>
+      {selectedEmergency && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-2xl rounded-2xl bg-white shadow-2xl">
+
+            <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4">
+              <div>
+                <h2 className="text-xl font-bold text-[#111827]">
+                  Emergency Details
+                </h2>
+                <p className="mt-1 text-sm text-[#6B7280]">
+                  Emergency alert information
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setSelectedEmergency(null)}
+                className="grid h-9 w-9 place-items-center rounded-full bg-slate-100 text-xl text-slate-600 hover:bg-slate-200"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="space-y-5 p-6">
+
+              <div className="flex items-center gap-3 rounded-xl bg-[#FEF2F2] p-4">
+                <div className="grid h-11 w-11 place-items-center rounded-xl bg-white text-[#E5484D]">
+                  <i className="ri-alarm-warning-line text-xl" />
+                </div>
+
+                <div>
+                  <p className="font-bold text-[#111827]">
+                    Emergency Alert
+                  </p>
+                  <p className="text-sm text-[#6B7280]">
+                    Status: {selectedEmergency.status || 'Pending'}
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+
+                <div className="rounded-xl border border-slate-200 p-4">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    Passenger / User
+                  </p>
+                  <p className="mt-2 font-semibold text-[#111827]">
+                    {selectedEmergency.riderName || 'Not available'}
+                  </p>
+                  <p className="mt-1 text-sm text-slate-600">
+                    {selectedEmergency.phone || 'Not available'}
+                  </p>
+                </div>
+
+                <div className="rounded-xl border border-slate-200 p-4">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    Driver
+                  </p>
+                  <p className="mt-2 font-semibold text-[#111827]">
+                    {selectedEmergency.driverName || 'Not available'}
+                  </p>
+                  <p className="mt-1 text-sm text-slate-600">
+                    Vehicle: {selectedEmergency.vehicleNumber || 'Not available'}
+                  </p>
+                  <p className="mt-1 text-sm text-slate-600">
+                    Type: {selectedEmergency.vehicleType || 'Not available'}
+                  </p>
+                </div>
+
+                <div className="rounded-xl border border-slate-200 p-4">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    Location
+                  </p>
+                  <p className="mt-2 font-semibold text-[#111827]">
+                    {selectedEmergency.city || 'Not available'}
+                  </p>
+                  <p className="mt-1 text-sm text-slate-600">
+                    {selectedEmergency.location?.address ||
+                      (typeof selectedEmergency.location === 'string'
+                        ? selectedEmergency.location
+                        : selectedEmergency.city || 'Not available')}
+                  </p>
+                </div>
+
+                <div className="rounded-xl border border-slate-200 p-4">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    Emergency Time
+                  </p>
+                  <p className="mt-2 font-semibold text-[#111827]">
+                    {formatTime(selectedEmergency.createdAt)}
+                  </p>
+                </div>
+
+              </div>
+
+              <div className="flex justify-end border-t border-slate-200 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setSelectedEmergency(null)}
+                  className="rounded-lg border border-slate-200 px-4 py-2.5 text-sm font-semibold text-[#111827] hover:bg-slate-50"
+                >
+                  Close
+                </button>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      )}
+
     <div className="space-y-6">
       <div className="flex flex-col gap-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:flex-row sm:items-end sm:justify-between sm:p-6">
         <div><h1 className="text-2xl font-bold text-[#111827]">Notifications</h1><p className="mt-1 text-sm text-[#6B7280]">Stay updated about important RideEasy activity.</p></div>

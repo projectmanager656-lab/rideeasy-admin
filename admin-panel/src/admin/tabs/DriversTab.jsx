@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { displayName, rowStableKey } from '../adminUtils'
 import {
   Button,
@@ -8,6 +8,7 @@ import {
   Badge,
   Loader,
   EmptyState,
+  Modal,
 } from '../../components/ui'
 
 export default function DriversTab({
@@ -16,6 +17,8 @@ export default function DriversTab({
   drivers,
   tableSearch,
   setTableSearch,
+  driverStatusFilter,
+  setDriverStatusFilter,
   selectedIds,
   toggleSelect,
   selectAllVisible,
@@ -27,6 +30,8 @@ export default function DriversTab({
   deleteDriver,
   bulkDeleteDrivers,
 }) {
+  const [selectedDriver, setSelectedDriver] = useState(null)
+
   const approvedCount = drivers.filter(
     (driver) => driver.approved
   ).length
@@ -236,6 +241,16 @@ export default function DriversTab({
             <Button
               variant="ghost"
               size="sm"
+              icon="ri-eye-line"
+              onClick={() => setSelectedDriver(driver)}
+              className="bg-slate-50 text-[#334155] hover:bg-slate-100"
+            >
+              View
+            </Button>
+
+            <Button
+              variant="ghost"
+              size="sm"
               icon="ri-delete-bin-line"
               onClick={() => deleteDriver(driver._id)}
               className="bg-red-50 text-[#DC2626] hover:bg-red-100"
@@ -310,6 +325,24 @@ export default function DriversTab({
               }
               placeholder="Search by driver name, email, vehicle or city…"
             />
+          </div>
+
+          <div className="w-full lg:w-48">
+            <label className="mb-1.5 block text-xs font-medium text-[#6B7280]">
+              Status
+            </label>
+            <select
+              value={driverStatusFilter}
+              onChange={(event) =>
+                setDriverStatusFilter(event.target.value)
+              }
+              className="w-full rounded-lg border border-[#D1D5DB] bg-white px-3 py-2 text-sm text-[#152238] outline-none focus:border-[#152238]"
+            >
+              <option value="all">All Statuses</option>
+              <option value="online">Online</option>
+              <option value="busy">Busy</option>
+              <option value="offline">Offline</option>
+            </select>
           </div>
 
           {selectedIds.length > 0 && (
@@ -422,6 +455,78 @@ export default function DriversTab({
         )}
 
       </Card>
+
+      {/* Driver Details Modal */}
+      {selectedDriver && (
+        <Modal
+          open={Boolean(selectedDriver)}
+          onClose={() => setSelectedDriver(null)}
+          title="Driver Details"
+        >
+          <div className="space-y-5">
+            <div className="flex items-center gap-4 rounded-xl bg-[#F7F9FC] p-4">
+              <div className="grid h-14 w-14 shrink-0 place-items-center rounded-full bg-[#0B1B2B] text-lg font-bold text-white">
+                {String(displayName(selectedDriver.name) || 'D')
+                  .charAt(0)
+                  .toUpperCase()}
+              </div>
+
+              <div className="min-w-0">
+                <h3 className="truncate text-lg font-bold text-[#111827]">
+                  {displayName(selectedDriver.name) || 'Unnamed Driver'}
+                </h3>
+                <p className="text-sm text-[#6B7280]">
+                  Driver ID: {selectedDriver._id || '—'}
+                </p>
+              </div>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <DetailItem label="Email" value={selectedDriver.email} />
+              <DetailItem label="Phone" value={selectedDriver.phone} />
+              <DetailItem label="City" value={selectedDriver.city} />
+              <DetailItem label="Vehicle Type" value={selectedDriver.vehicleType} />
+              <DetailItem label="Vehicle Number" value={selectedDriver.vehicleNumber} />
+              <DetailItem
+                label="Approval"
+                value={selectedDriver.approved ? 'Approved' : 'Pending'}
+              />
+              <DetailItem
+                label="Account Status"
+                value={selectedDriver.blocked ? 'Blocked' : 'Active'}
+              />
+              <DetailItem
+                label="Live Status"
+                value={
+                  selectedDriver.online === true
+                    ? 'Online'
+                    : selectedDriver.status || 'Offline'
+                }
+              />
+            </div>
+
+            <div className="flex justify-end">
+              <Button
+                variant="secondary"
+                onClick={() => setSelectedDriver(null)}
+              >
+                Close
+              </Button>
+            </div>
+          </div>
+        </Modal>
+      )}
+    </div>
+  )
+}
+
+function DetailItem({ label, value }) {
+  return (
+    <div className="rounded-xl border border-[#E5E7EB] bg-white p-3">
+      <p className="text-xs font-medium text-[#6B7280]">{label}</p>
+      <p className="mt-1 break-words text-sm font-semibold text-[#111827]">
+        {value || '—'}
+      </p>
     </div>
   )
 }

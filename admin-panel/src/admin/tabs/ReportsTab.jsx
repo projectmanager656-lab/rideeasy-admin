@@ -1,7 +1,14 @@
 import React from 'react'
 import { SecondaryPageShell } from './SecondaryPageShell'
+import { downloadReportCsv } from '../../utils/downloadReportCsv'
 
-export default function ReportsTab ({ onReportSelect }) {
+export default function ReportsTab ({
+  onReportSelect,
+  rides = [],
+  payments = [],
+  drivers = [],
+  users = [],
+}) {
   const reportRows = [
     {
       title: 'Earnings Report',
@@ -33,9 +40,24 @@ export default function ReportsTab ({ onReportSelect }) {
     },
     {
       title: 'Download Reports',
-      description: 'Download data in CSV/PDF',
+      description: 'Download data in CSV',
       icon: 'ri-download-2-line',
       tone: 'navy',
+      onClick: () => {
+        const rows = rides.map((ride) => ({
+          'Ride ID': ride._id || ride.id || '',
+          'Status': ride.status || '',
+          'Passenger': ride.user?.name || ride.userName || '',
+          'Driver': ride.captain?.name || ride.driverName || '',
+          'Pickup': ride.pickupLocation || ride.pickup?.address || '',
+          'Destination': ride.dropLocation || ride.destination?.address || '',
+          'Fare': ride.chargedAmount ?? ride.price ?? 0,
+          'Payment Status': ride.paymentStatus || '',
+          'Created At': ride.createdAt || '',
+        }))
+
+        downloadReportCsv('rideeasy-rides-report.csv', rows)
+      },
     },
   ]
 

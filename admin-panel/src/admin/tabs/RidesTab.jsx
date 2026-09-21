@@ -17,6 +17,8 @@ export default function RidesTab ({
   ridesLoading,
   filteredRides,
   rides,
+  users,
+  drivers,
   selectedRide,
   rideAudit,
   rideAuditLoading,
@@ -24,6 +26,12 @@ export default function RidesTab ({
   onViewRide,
   rideStatusFilter,
   setRideStatusFilter,
+  rideDateFilter,
+  setRideDateFilter,
+  rideDriverFilter,
+  setRideDriverFilter,
+  rideUserFilter,
+  setRideUserFilter,
   tableSearch,
   setTableSearch,
   selectedIds,
@@ -70,6 +78,48 @@ export default function RidesTab ({
             >
               {RIDE_STATUSES.map((o) => (
                 <option key={o.value} value={o.value}>{o.label}</option>
+              ))}
+            </select>
+          </label>
+
+          <label className="text-sm text-neutral-600">
+            Date
+            <input
+              type="date"
+              value={rideDateFilter}
+              onChange={(e) => setRideDateFilter(e.target.value)}
+              className="ml-2 rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm text-black"
+            />
+          </label>
+
+          <label className="text-sm text-neutral-600">
+            Driver
+            <select
+              value={rideDriverFilter}
+              onChange={(e) => setRideDriverFilter(e.target.value)}
+              className="ml-2 max-w-[180px] rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm text-black"
+            >
+              <option value="all">All Drivers</option>
+              {drivers.map((driver) => (
+                <option key={driver._id} value={driver._id}>
+                  {displayName(driver.name) || driver.phone || 'Unnamed Driver'}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="text-sm text-neutral-600">
+            User
+            <select
+              value={rideUserFilter}
+              onChange={(e) => setRideUserFilter(e.target.value)}
+              className="ml-2 max-w-[180px] rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm text-black"
+            >
+              <option value="all">All Users</option>
+              {users.map((user) => (
+                <option key={user._id} value={user._id}>
+                  {displayName(user.name) || user.phone || 'Unnamed User'}
+                </option>
               ))}
             </select>
           </label>

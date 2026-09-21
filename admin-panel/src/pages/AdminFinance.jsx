@@ -3,6 +3,7 @@ import React, { useMemo, useState } from 'react'
 export default function AdminFinance ({
   payments = [],
   paymentsLoading = false,
+  error = '',
 }) {
   const [search, setSearch] = useState('')
   const [selectedInvoice, setSelectedInvoice] = useState(null)
@@ -111,6 +112,49 @@ export default function AdminFinance ({
     })
   }, [invoices, search])
 
+  const financeSummary = useMemo(() => {
+    const summary = payments.reduce(
+      (totals, payment) => {
+        const paidAmount = Number(
+          payment.paidAmount ?? payment.amount ?? 0
+        )
+        const platformFee = Number(payment.platformFee ?? 0)
+        const driverEarning = Number(payment.driverEarning ?? 0)
+
+        if (Number.isFinite(paidAmount)) {
+          totals.revenue += paidAmount
+        }
+
+        if (Number.isFinite(platformFee)) {
+          totals.platformFee += platformFee
+        }
+
+        if (Number.isFinite(driverEarning)) {
+          totals.driverEarning += driverEarning
+        }
+
+        if (
+          String(payment.settlementStatus || '').toUpperCase() ===
+          'PENDING'
+        ) {
+          if (Number.isFinite(driverEarning)) {
+            totals.pendingPayout += driverEarning
+          }
+        }
+
+        return totals
+      },
+      {
+        revenue: 0,
+        platformFee: 0,
+        driverEarning: 0,
+        pendingPayout: 0,
+      }
+    )
+
+    return summary
+  }, [payments])
+
   return (
     <div className="space-y-6">
       <div>
@@ -125,6 +169,62 @@ export default function AdminFinance ({
         <p className="mt-1 text-sm text-[#718096]">
           View ride invoices, fare totals and linked payment information.
         </p>
+      </div>
+
+      {error && (
+        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {error}
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="rounded-2xl border border-[#E5E7EB] bg-white p-5 shadow-sm">
+          <p className="text-sm font-medium text-[#718096]">
+            Platform Revenue
+          </p>
+          <p className="mt-2 text-2xl font-bold text-[#152238]">
+            {formatAmount(financeSummary.revenue)}
+          </p>
+          <p className="mt-1 text-xs text-[#718096]">
+            Total paid amount
+          </p>
+        </div>
+
+        <div className="rounded-2xl border border-[#E5E7EB] bg-white p-5 shadow-sm">
+          <p className="text-sm font-medium text-[#718096]">
+            Platform Commission
+          </p>
+          <p className="mt-2 text-2xl font-bold text-[#152238]">
+            {formatAmount(financeSummary.platformFee)}
+          </p>
+          <p className="mt-1 text-xs text-[#718096]">
+            Platform fee earned
+          </p>
+        </div>
+
+        <div className="rounded-2xl border border-[#E5E7EB] bg-white p-5 shadow-sm">
+          <p className="text-sm font-medium text-[#718096]">
+            Driver Share
+          </p>
+          <p className="mt-2 text-2xl font-bold text-[#152238]">
+            {formatAmount(financeSummary.driverEarning)}
+          </p>
+          <p className="mt-1 text-xs text-[#718096]">
+            Driver earnings
+          </p>
+        </div>
+
+        <div className="rounded-2xl border border-[#E5E7EB] bg-white p-5 shadow-sm">
+          <p className="text-sm font-medium text-[#718096]">
+            Pending Payouts
+          </p>
+          <p className="mt-2 text-2xl font-bold text-[#152238]">
+            {formatAmount(financeSummary.pendingPayout)}
+          </p>
+          <p className="mt-1 text-xs text-[#718096]">
+            Driver settlements pending
+          </p>
+        </div>
       </div>
 
       {selectedInvoice && (

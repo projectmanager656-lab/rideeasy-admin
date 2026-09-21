@@ -107,22 +107,22 @@ const TAB_CONFIG = [
 ]
 
 const ROUTES = {
-  analytics: '/dashboard',
-  users: '/users',
-  drivers: '/drivers',
-  vehicles: '/vehicles',
-  verification: '/verification',
-  rides: '/rides',
-  'live-operations': '/live-operations',
-  finance: '/finance',
-  payments: '/payments',
-  sos: '/sos',
-  support: '/support',
-  reports: '/reports',
+  analytics: '/admin/dashboard',
+  users: '/admin/users',
+  drivers: '/admin/drivers',
+  vehicles: '/admin/vehicles',
+  verification: '/admin/verification',
+  rides: '/admin/rides',
+  'live-operations': '/admin/live-operations',
+  finance: '/admin/finance',
+  payments: '/admin/payments',
+  sos: '/admin/sos',
+  support: '/admin/support',
+  reports: '/admin/reports',
   notifications: '/admin/notifications',
-  roles: '/roles',
-  pricing: '/pricing',
-  settings: '/settings',
+  roles: '/admin/roles',
+  pricing: '/admin/pricing',
+  settings: '/admin/settings',
 }
 
 const getFrontendAdminRole = () => {

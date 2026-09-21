@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef, useContext } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { adminApi } from '../services/adminApi'
+import { formatApiError } from '../utils/apiError'
 import { displayName } from '../admin/adminUtils'
 import { SocketContext } from '../context/SocketContext'
 import { RIDE_STARTED, RIDE_OTP_VERIFIED } from '../constants/rideSocketEvents'
@@ -31,6 +32,30 @@ const AdminDashboard = ({ initialTab = null }) => {
   const { socket } = useContext(SocketContext)
   const navigate = useNavigate()
   const location = useLocation()
+
+  const navigateToTab = useCallback((nextTab) => {
+    const tabPathMap = {
+      analytics: '/admin/dashboard',
+      users: '/admin/users',
+      drivers: '/admin/drivers',
+      rides: '/admin/rides',
+      payments: '/admin/payments',
+      sos: '/admin/sos',
+      support: '/admin/support',
+      reports: '/admin/reports',
+      services: '/admin/services',
+      pricing: '/admin/pricing',
+      settings: '/admin/settings',
+    }
+
+    setTab(nextTab)
+
+    const path = tabPathMap[nextTab]
+    if (path && location.pathname !== path) {
+      navigate(path)
+    }
+  }, [location.pathname, navigate])
+
   const dataLoadedRef = useRef(new Set())
   const [statsNonce, setStatsNonce] = useState(0)
 
@@ -54,9 +79,28 @@ const [fareError, setFareError] = useState('')
   const [pricingJson, setPricingJson] = useState('')
   const [emergencyAlerts, setEmergencyAlerts] = useState([])
   const [policeStations, setPoliceStations] = useState([])
-  const [tab, setTab] = useState(
-  () => initialTab || location.state?.tab || 'analytics'
-  )
+  const [tab, setTab] = useState(() => {
+    const pathTabMap = {
+      '/admin/dashboard': 'analytics',
+      '/admin/users': 'users',
+      '/admin/drivers': 'drivers',
+      '/admin/rides': 'rides',
+      '/admin/payments': 'payments',
+      '/admin/sos': 'sos',
+      '/admin/support': 'support',
+      '/admin/reports': 'reports',
+      '/admin/services': 'services',
+      '/admin/pricing': 'pricing',
+      '/admin/settings': 'settings',
+    }
+
+    return (
+      location.state?.tab ||
+      initialTab ||
+      pathTabMap[location.pathname] ||
+      'analytics'
+    )
+  })
   const [reportView, setReportView] = useState(null)
   useEffect(() => {
   if (initialTab) {
@@ -66,6 +110,10 @@ const [fareError, setFareError] = useState('')
   const [highlightedEmergencyAlertId] = useState(() => location.state?.alertId || '')
   const [tabError, setTabError] = useState('')
   const [rideStatusFilter, setRideStatusFilter] = useState('all')
+  const [rideDateFilter, setRideDateFilter] = useState('')
+  const [rideDriverFilter, setRideDriverFilter] = useState('all')
+  const [rideUserFilter, setRideUserFilter] = useState('all')
+  const [driverStatusFilter, setDriverStatusFilter] = useState('all')
   const [tableSearch, setTableSearch] = useState('')
   const [selectedIds, setSelectedIds] = useState([])
   const [usersLoading, setUsersLoading] = useState(false)
@@ -392,10 +440,10 @@ const [fareError, setFareError] = useState('')
   }, [socket])
 
   useEffect(() => {
-    if (initialTab) {
-      setTab(initialTab)
-    } else if (location.state?.tab) {
+    if (location.state?.tab) {
       setTab(location.state.tab)
+    } else if (initialTab) {
+      setTab(initialTab)
     }
   }, [initialTab, location.state?.tab])
 
@@ -424,7 +472,7 @@ const [fareError, setFareError] = useState('')
       window.removeEventListener('online', handleOnline)
     }
   }, [tab])
-  const fmtErr = (e) => e?.response?.data?.message || e?.message || 'Request failed'
+  const fmtErr = (e) => formatApiError(e)
   const loadPaymentDetail = async (paymentId) => {
     if (!paymentId) return
 
@@ -795,27 +843,105 @@ const [d, usersResult, driversResult, ridesResult, paymentsResult, alertsResult]
   const filteredDrivers = useMemo(() => {
     const q = tableSearch.trim().toLowerCase()
     const base = drivers.filter((d) => d && d._id)
-    if (!q) return base
-    return base.filter((d) => {
-      const blob = [displayName(d.name), d.email, d.phone, d.city, d.vehicleType, d.vehicleNumber, String(d._id)]
-        .filter(Boolean).join(' ').toLowerCase()
+
+    const statusFiltered = base.filter((driver) => {
+      if (driverStatusFilter === 'all') return true
+
+      if (driverStatusFilter === 'online') {
+        return driver.isOnline === true ||
+          ['online', 'active'].includes(String(driver.status || '').toLowerCase())
+      }
+
+      if (driverStatusFilter === 'busy') {
+        return String(driver.status || '').toLowerCase() === 'busy'
+      }
+
+      if (driverStatusFilter === 'offline') {
+        return !(
+          driver.isOnline === true ||
+          ['online', 'active', 'busy'].includes(
+            String(driver.status || '').toLowerCase()
+          )
+        )
+      }
+
+      return true
+    })
+
+    if (!q) return statusFiltered
+
+    return statusFiltered.filter((d) => {
+      const blob = [
+        displayName(d.name),
+        d.email,
+        d.phone,
+        d.city,
+        d.vehicleType,
+        d.vehicleNumber,
+        String(d._id),
+      ]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase()
+
       return blob.includes(q)
     })
-  }, [drivers, tableSearch])
+  }, [drivers, tableSearch, driverStatusFilter])
 
   const filteredRides = useMemo(() => {
     const q = tableSearch.trim().toLowerCase()
-    const base = rides.filter((r) => r && r._id)
-    if (!q) return base
-    return base.filter((r) => {
+
+    return rides.filter((r) => {
+      if (!r || !r._id) return false
+
+      const rideDate = r.createdAt || r.bookedAt || r.updatedAt
+      const matchesDate =
+        !rideDateFilter ||
+        (rideDate &&
+          new Date(rideDate).toISOString().slice(0, 10) === rideDateFilter)
+
+      const driverId = String(r.captain?._id || r.captain?.id || '')
+      const userId = String(r.user?._id || r.user?.id || '')
+
+      const matchesDriver =
+        rideDriverFilter === 'all' ||
+        driverId === String(rideDriverFilter)
+
+      const matchesUser =
+        rideUserFilter === 'all' ||
+        userId === String(rideUserFilter)
+
       const blob = [
-        r.city, r.status, r.pickupLocation, r.dropLocation,
-        displayName(r.user?.name), r.user?.phone, displayName(r.captain?.name), r.captain?.phone, r.captain?.vehicleNumber,
-        String(r._id), String(r.price),
-      ].filter(Boolean).join(' ').toLowerCase()
-      return blob.includes(q)
+        r.city,
+        r.status,
+        r.pickupLocation,
+        r.dropLocation,
+        displayName(r.user?.name),
+        r.user?.phone,
+        displayName(r.captain?.name),
+        r.captain?.phone,
+        r.captain?.vehicleNumber,
+        String(r._id),
+        String(r.price),
+      ]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase()
+
+      return (
+        matchesDate &&
+        matchesDriver &&
+        matchesUser &&
+        (!q || blob.includes(q))
+      )
     })
-  }, [rides, tableSearch])
+  }, [
+    rides,
+    tableSearch,
+    rideDateFilter,
+    rideDriverFilter,
+    rideUserFilter,
+  ])
 
   const filteredPayments = useMemo(() => {
     const q = tableSearch.trim().toLowerCase()
@@ -974,7 +1100,7 @@ const [d, usersResult, driversResult, ridesResult, paymentsResult, alertsResult]
   return (
     <AdminLayout
       tab={tab}
-      setTab={setTab}
+      setTab={navigateToTab}
       onRefresh={refreshStats}
       onLogout={logout}
       emergencyAlerts={emergencyAlerts}
@@ -1176,7 +1302,7 @@ const [d, usersResult, driversResult, ridesResult, paymentsResult, alertsResult]
             drivers={drivers}
             rides={rides}
             payments={payments}
-            onNavigate={setTab}
+            onNavigate={navigateToTab}
             emergencyAlerts={emergencyAlerts}
           />
         )}
@@ -1189,6 +1315,8 @@ const [d, usersResult, driversResult, ridesResult, paymentsResult, alertsResult]
             users={users}
             tableSearch={tableSearch}
             setTableSearch={setTableSearch}
+            driverStatusFilter={driverStatusFilter}
+            setDriverStatusFilter={setDriverStatusFilter}
             selectedIds={selectedIds}
             toggleSelect={toggleSelect}
             selectAllVisible={selectAllVisible}
@@ -1232,8 +1360,16 @@ const [d, usersResult, driversResult, ridesResult, paymentsResult, alertsResult]
             rideAuditError={rideAuditError}
             onViewRide={setSelectedRide}
             rides={rides}
+            users={users}
+            drivers={drivers}
             rideStatusFilter={rideStatusFilter}
             setRideStatusFilter={setRideStatusFilter}
+            rideDateFilter={rideDateFilter}
+            setRideDateFilter={setRideDateFilter}
+            rideDriverFilter={rideDriverFilter}
+            setRideDriverFilter={setRideDriverFilter}
+            rideUserFilter={rideUserFilter}
+            setRideUserFilter={setRideUserFilter}
             tableSearch={tableSearch}
             setTableSearch={setTableSearch}
             selectedIds={selectedIds}
@@ -1257,6 +1393,7 @@ const [d, usersResult, driversResult, ridesResult, paymentsResult, alertsResult]
           <AdminFinance
             payments={payments}
             paymentsLoading={paymentsLoading}
+            error={tabError}
           />
         )}
 
@@ -1310,7 +1447,7 @@ const [d, usersResult, driversResult, ridesResult, paymentsResult, alertsResult]
         {/* SETTINGS */}
         {tab === 'settings' && (
           <SettingsTab
-            setTab={setTab}
+            setTab={navigateToTab}
             onProfile={() => navigate('/admin/profile')}
             onChangePassword={() => navigate('/admin/change-password')}
             onAppSettings={() => navigate('/admin/app-settings')}
@@ -1326,13 +1463,21 @@ const [d, usersResult, driversResult, ridesResult, paymentsResult, alertsResult]
 )}
         {/* REPORTS */}
         {tab === 'reports' && !reportView && (
-          <ReportsTab onReportSelect={setReportView} />
+          <ReportsTab
+            onReportSelect={setReportView}
+            rides={rides}
+            payments={payments}
+            drivers={drivers}
+            users={users}
+          />
         )}
 
         {tab === 'reports' && reportView === 'earnings' && (
           <EarningsReport
             rides={rides}
             payments={payments}
+            ridesLoading={ridesLoading}
+            paymentsLoading={paymentsLoading}
             onBack={() => setReportView(null)}
           />
         )}
@@ -1340,6 +1485,7 @@ const [d, usersResult, driversResult, ridesResult, paymentsResult, alertsResult]
         {tab === 'reports' && reportView === 'bookings' && (
           <BookingsReport
             rides={rides}
+            ridesLoading={ridesLoading}
             onBack={() => setReportView(null)}
           />
         )}
@@ -1348,6 +1494,8 @@ const [d, usersResult, driversResult, ridesResult, paymentsResult, alertsResult]
           <DriversReport
             drivers={drivers}
             rides={rides}
+            driversLoading={driversLoading}
+            ridesLoading={ridesLoading}
             onBack={() => setReportView(null)}
           />
         )}
@@ -1357,6 +1505,8 @@ const [d, usersResult, driversResult, ridesResult, paymentsResult, alertsResult]
           <UsersReport
             users={users}
             rides={rides}
+            usersLoading={usersLoading}
+            ridesLoading={ridesLoading}
             onBack={() => setReportView(null)}
           />
         )}
