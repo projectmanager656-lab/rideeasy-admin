@@ -1,6 +1,5 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import AdminLayout from '../components/AdminLayout'
 import { adminApi } from '../services/adminApi'
 
 const AdminChangePassword = () => {
@@ -16,39 +15,6 @@ const AdminChangePassword = () => {
   const [success, setSuccess] = useState('')
   const [error, setError] = useState('')
 
-  const handleTabChange = (nextTab) => {
-    const routes = {
-      analytics: '/admin/dashboard',
-      users: '/admin/users',
-      drivers: '/admin/drivers',
-      vehicles: '/admin/vehicles',
-      verification: '/admin/verification',
-      rides: '/admin/rides',
-      'live-operations': '/admin/live-operations',
-      finance: '/admin/finance',
-      payments: '/admin/payments',
-      sos: '/admin/sos',
-      support: '/admin/support',
-      reports: '/admin/reports',
-      roles: '/admin/roles',
-      services: '/admin/services',
-      pricing: '/admin/pricing',
-      settings: '/admin/settings',
-      notifications: '/admin/notifications',
-      safety: '/admin/safety',
-    }
-
-    navigate(routes[nextTab] || '/admin/dashboard')
-  }
-
-  const handleLogout = () => {
-    localStorage.removeItem('adminToken')
-    localStorage.removeItem('adminRole')
-
-    navigate('/admin', {
-      replace: true,
-    })
-  }
 
   const handleSubmit = async (event) => {
     event.preventDefault()
@@ -98,13 +64,6 @@ const AdminChangePassword = () => {
   }
 
   return (
-    <AdminLayout
-      tab="settings"
-      setTab={handleTabChange}
-      onRefresh={() => {}}
-      onLogout={handleLogout}
-      emergencyAlerts={[]}
-    >
       <div className="space-y-5 pb-6 sm:space-y-6">
 
         {/* PAGE HEADER */}
@@ -302,7 +261,6 @@ const AdminChangePassword = () => {
           </form>
         </section>
       </div>
-    </AdminLayout>
   )
 }
 
