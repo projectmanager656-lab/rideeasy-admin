@@ -70,6 +70,14 @@
    ========================================================= */
 
 @layer components {
+
+  /* Theme-aware shared Admin card */
+  .admin-theme-card {
+    background: var(--color-surface) !important;
+    color: var(--color-text-primary) !important;
+    border-color: var(--color-border) !important;
+  }
+
   /* Sidebar */
 
   .admin-sidebar {
@@ -390,4 +398,80 @@
   .admin-mobile-nav {
     display: none;
   }
+}
+/* =========================================================
+   ADMIN THEME COMPATIBILITY LAYER
+   Keeps existing Admin UI components readable in dark mode.
+   ========================================================= */
+
+[data-theme="dark"] .admin-shell [class*="bg-white"] {
+  background-color: var(--color-surface) !important;
+}
+
+[data-theme="dark"] .admin-shell [class*="bg-[#F7F9FC]"] {
+  background-color: var(--color-surface-muted) !important;
+}
+
+[data-theme="dark"] .admin-shell [class*="text-[#152238]"],
+[data-theme="dark"] .admin-shell [class*="text-[#111827]"],
+[data-theme="dark"] .admin-shell [class*="text-[#071A2B]"] {
+  color: var(--color-text-primary) !important;
+}
+
+[data-theme="dark"] .admin-shell [class*="text-[#718096]"] {
+  color: var(--color-text-secondary) !important;
+}
+
+[data-theme="dark"] .admin-shell [class*="text-slate-900"],
+[data-theme="dark"] .admin-shell [class*="text-slate-800"],
+[data-theme="dark"] .admin-shell [class*="text-slate-700"] {
+  color: var(--color-text-primary) !important;
+}
+
+[data-theme="dark"] .admin-shell [class*="text-slate-600"],
+[data-theme="dark"] .admin-shell [class*="text-slate-500"] {
+  color: var(--color-text-secondary) !important;
+}
+
+[data-theme="dark"] .admin-shell [class*="border-[#E5E7EB]"],
+[data-theme="dark"] .admin-shell [class*="border-[#E6EBF2]"],
+[data-theme="dark"] .admin-shell [class*="border-slate-200"] {
+  border-color: var(--color-border) !important;
+}
+
+[data-theme="dark"] .admin-shell [class*="hover:bg-[#F7F9FC]"]:hover,
+[data-theme="dark"] .admin-shell [class*="hover:bg-slate-50"]:hover {
+  background-color: var(--color-surface-muted) !important;
+}
+
+/* Inputs / selects */
+[data-theme="dark"] .admin-shell input,
+[data-theme="dark"] .admin-shell select,
+[data-theme="dark"] .admin-shell textarea {
+  background-color: var(--color-surface) !important;
+  color: var(--color-text-primary) !important;
+  border-color: var(--color-border) !important;
+}
+
+[data-theme="dark"] .admin-shell input::placeholder,
+[data-theme="dark"] .admin-shell textarea::placeholder {
+  color: var(--color-text-muted) !important;
+}
+
+/* Tables */
+[data-theme="dark"] .admin-shell table {
+  color: var(--color-text-primary);
+}
+
+[data-theme="dark"] .admin-shell th {
+  color: var(--color-text-secondary) !important;
+}
+
+[data-theme="dark"] .admin-shell td {
+  color: var(--color-text-primary) !important;
+}
+
+/* Keep muted text readable */
+[data-theme="dark"] .admin-shell .text-muted {
+  color: var(--color-text-secondary) !important;
 }

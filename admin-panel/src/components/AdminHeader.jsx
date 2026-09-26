@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 const AdminHeader = ({
@@ -6,6 +6,14 @@ const AdminHeader = ({
   emergencyAlerts = [],
 }) => {
   const navigate = useNavigate()
+  const [theme, setTheme] = useState(() => {
+    return localStorage.getItem('adminTheme') || 'dark'
+  })
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme)
+    localStorage.setItem('adminTheme', theme)
+  }, [theme])
 
   const pendingAlerts = emergencyAlerts.filter(
     (alert) =>
@@ -58,6 +66,36 @@ const AdminHeader = ({
 
         {/* RIGHT SIDE CONTROLS */}
         <div className="flex shrink-0 items-center gap-3">
+
+          {/* THEME TOGGLE */}
+          <button
+            type="button"
+            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+            aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+            title={theme === 'dark' ? 'Light mode' : 'Dark mode'}
+            className="
+              grid
+              h-11
+              w-11
+              place-items-center
+              rounded-full
+              border
+              border-slate-200
+              bg-white
+              text-[#111827]
+              transition
+              hover:border-[#FFB21C]
+              hover:scale-105
+            "
+          >
+            <i
+              className={
+                theme === 'dark'
+                  ? 'ri-sun-line text-lg'
+                  : 'ri-moon-line text-lg'
+              }
+            />
+          </button>
 
           {/* REFRESH */}
           <button

@@ -300,7 +300,7 @@ const OverviewTab = ({
           icon="ri-steering-2-line"
         >
           <div className="flex min-w-0 items-center gap-3">
-            <div className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-[#0B1B2B] text-lg font-bold text-white">
+            <div className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-[var(--color-sidebar)] text-lg font-bold text-[var(--color-text-inverse)]">
               {String(
                 displayName(topDriver?.name) || 'D'
               )
@@ -361,7 +361,7 @@ const OverviewTab = ({
               className={[
                 'flex min-w-0 items-center gap-3',
                 'rounded-xl border border-[#EEF1F5]',
-                'bg-white p-3 text-left',
+                'bg-[var(--color-surface)] p-3 text-left',
                 'transition-all duration-200',
                 'hover:border-[#D7DEE8]',
                 'hover:bg-[#FAFBFC]',

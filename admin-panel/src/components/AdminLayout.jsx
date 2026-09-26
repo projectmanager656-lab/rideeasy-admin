@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import AdminSidebar from './AdminSidebar'
 import AdminHeader from './AdminHeader'
@@ -15,6 +15,13 @@ const AdminLayout = ({
 }) => {
   const navigate = useNavigate()
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
+
+  useEffect(() => {
+    document.getElementById('admin-main-content')?.scrollTo({
+      top: 0,
+      behavior: 'auto',
+    })
+  }, [tab])
 
   const requestLogout = () => {
     console.log('LOGOUT CONFIRMATION OPEN')
@@ -47,7 +54,7 @@ const AdminLayout = ({
 
   return (
     <>
-      <div className="admin-shell min-h-dvh min-h-screen w-full bg-[#F7F9FC] text-[#111827]">
+      <div className="admin-shell min-h-dvh min-h-screen w-full bg-[var(--color-background)] text-[var(--color-text-primary)]">
 
         {/* SIDEBAR */}
         <AdminSidebar
@@ -72,7 +79,8 @@ const AdminLayout = ({
             className="
               flex-1
               overflow-y-auto
-              bg-[#F7F9FC]
+              bg-[var(--color-background)]
+              pb-24 md:pb-0
             "
           >
             <div className="mx-auto w-full max-w-[1600px] px-4 py-4 sm:px-6 sm:py-6 lg:px-8">

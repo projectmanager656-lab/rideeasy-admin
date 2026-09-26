@@ -323,6 +323,13 @@ const App = () => {
           />
 
           <Route
+            path="/admin/audit-logs"
+            element={
+              <AdminDashboard initialTab="audit-logs" />
+            }
+          />
+
+          <Route
             path="/roles"
             element={
               <StandaloneAdminPage tab="roles">

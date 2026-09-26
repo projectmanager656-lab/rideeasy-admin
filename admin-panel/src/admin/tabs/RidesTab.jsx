@@ -67,14 +67,24 @@ export default function RidesTab ({
   }, [ridesPage, ridesPageCount])
   return (
     <div className="space-y-4">
-      <div className="flex flex-col gap-3 rounded-2xl border border-neutral-200 bg-white px-3 py-3 sm:px-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
-        <div className="flex flex-wrap items-center gap-3">
+      <div className="px-1">
+        <p className="text-sm font-medium text-[var(--color-text-secondary)]">Operations</p>
+        <h1 className="mt-1 text-3xl font-bold tracking-tight text-[var(--color-text-primary)]">
+          Rides
+        </h1>
+        <p className="mt-2 text-base text-[var(--color-text-secondary)]">
+          Manage and monitor all rides.
+        </p>
+      </div>
+
+      <div className="rounded-2xl border border-neutral-200 bg-white px-3 py-3 sm:px-4 dark:border-[#26384D] dark:bg-[#0B1B2B]">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <label className="text-sm text-neutral-600">
             Status
             <select
               value={rideStatusFilter}
               onChange={(e) => setRideStatusFilter(e.target.value)}
-              className="ml-2 rounded-lg border border-neutral-300 bg-white text-black px-3 py-2 text-sm"
+              className="ml-2 rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm text-black dark:border-[#3A4D63] dark:bg-[#0B1B2B] dark:text-white"
             >
               {RIDE_STATUSES.map((o) => (
                 <option key={o.value} value={o.value}>{o.label}</option>
@@ -88,7 +98,7 @@ export default function RidesTab ({
               type="date"
               value={rideDateFilter}
               onChange={(e) => setRideDateFilter(e.target.value)}
-              className="ml-2 rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm text-black"
+              className="ml-2 rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm text-black dark:border-[#3A4D63] dark:bg-[#0B1B2B] dark:text-white"
             />
           </label>
 
@@ -97,7 +107,7 @@ export default function RidesTab ({
             <select
               value={rideDriverFilter}
               onChange={(e) => setRideDriverFilter(e.target.value)}
-              className="ml-2 max-w-[180px] rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm text-black"
+              className="ml-2 rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm text-black dark:border-[#3A4D63] dark:bg-[#0B1B2B] dark:text-white"
             >
               <option value="all">All Drivers</option>
               {drivers.map((driver) => (
@@ -113,7 +123,7 @@ export default function RidesTab ({
             <select
               value={rideUserFilter}
               onChange={(e) => setRideUserFilter(e.target.value)}
-              className="ml-2 max-w-[180px] rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm text-black"
+              className="ml-2 rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm text-black dark:border-[#3A4D63] dark:bg-[#0B1B2B] dark:text-white"
             >
               <option value="all">All Users</option>
               {users.map((user) => (
@@ -124,22 +134,26 @@ export default function RidesTab ({
             </select>
           </label>
         </div>
-        <input
-          type="search"
-          placeholder="Search city, route, passenger, driver, id…"
-          value={tableSearch}
-          onChange={(e) => setTableSearch(e.target.value)}
-          className="w-full max-w-full sm:max-w-md rounded-lg border border-neutral-300 bg-white text-black px-3 py-2 text-sm placeholder:text-neutral-500 focus:border-black focus:outline-none focus:ring-1 focus:ring-black sm:ml-auto"
-        />
+
+        <div className="mt-3">
+          <input
+            type="search"
+            placeholder="Search city, route, passenger, driver, id…"
+            value={tableSearch}
+            onChange={(e) => setTableSearch(e.target.value)}
+            className="w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm text-black placeholder:text-neutral-500 focus:border-black focus:outline-none focus:ring-1 focus:ring-black dark:border-[#3A4D63] dark:bg-[#0B1B2B] dark:text-white dark:placeholder:text-[#7183A0] dark:focus:border-white dark:focus:ring-white"
+          />
+        </div>
+
         {selectedIds.length > 0 && (
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="mt-3 flex flex-wrap items-center gap-2">
             <span className="text-xs text-neutral-600">{selectedIds.length} selected</span>
             <button type="button" onClick={clearSelection} className="text-xs text-neutral-600 hover:text-black">Clear</button>
-            <button type="button" onClick={bulkDeleteRides} className="rounded-lg border border-black bg-black px-2 py-1.5 sm:px-3 text-xs font-medium text-white hover:bg-neutral-800">Delete selected</button>
+            <button type="button" onClick={bulkDeleteRides} className="rounded-lg border border-black bg-black px-2 py-1.5 text-xs font-medium text-white hover:bg-neutral-800 sm:px-3">Delete selected</button>
           </div>
         )}
       </div>
-      <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-xl">
+      <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-xl dark:border-[#26384D] dark:bg-[#0B1B2B]">
         {ridesLoading ? (
           <div className="p-12 text-center text-neutral-600">Loading rides…</div>
         ) : (
@@ -164,8 +178,8 @@ export default function RidesTab ({
           </div>
 
           <div className="hidden overflow-x-auto md:block">
-            <table className="w-full min-w-[1200px] text-left text-sm text-neutral-900">
-              <thead className="border-b border-neutral-200 bg-neutral-100 text-xs uppercase tracking-wide text-neutral-500">
+            <table className="w-full min-w-[1200px] text-left text-sm text-neutral-900 dark:text-white">
+              <thead className="border-b border-neutral-200 bg-neutral-100 text-xs uppercase tracking-wide text-neutral-500 dark:border-[#26384D] dark:bg-[#122437] dark:text-[#AAB8CC]">
                 <tr>
                   <th className="w-10 px-2 py-3">
                     <input
@@ -200,7 +214,7 @@ export default function RidesTab ({
                   </tr>
                 )}
                 {paginatedRides.map((r, idx) => (
-                  <tr key={rowStableKey(r, idx)} className="hover:bg-neutral-100">
+                  <tr key={rowStableKey(r, idx)} className="bg-white hover:bg-neutral-100 dark:bg-[#0B1B2B] dark:hover:bg-[#122437]">
                     <td className="px-2 py-3">
                       <input
                         type="checkbox"
@@ -209,19 +223,19 @@ export default function RidesTab ({
                         onChange={() => toggleSelect(r._id)}
                       />
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-neutral-500">
+                    <td className="px-4 py-3 whitespace-nowrap text-neutral-500 dark:text-[#AAB8CC]">
                       {r.createdAt ? new Date(r.createdAt).toLocaleString() : '—'}
                     </td>
-                    <td className="px-4 py-3 text-neutral-600">{r.city || '—'}</td>
-                    <td className="px-4 py-3 text-neutral-600">
+                    <td className="px-4 py-3 text-neutral-600 dark:text-[#D3DCE8]">{r.city || '—'}</td>
+                    <td className="px-4 py-3 text-neutral-600 dark:text-[#D3DCE8]">
                       {displayName(r.user?.name) || '—'}
-                      <span className="block text-xs text-neutral-500">{r.user?.phone || ''}</span>
+                      <span className="block text-xs text-neutral-500 dark:text-[#8FA1BA]">{r.user?.phone || ''}</span>
                     </td>
-                    <td className="px-4 py-3 text-neutral-600">
+                    <td className="px-4 py-3 text-neutral-600 dark:text-[#D3DCE8]">
                       {displayName(r.captain?.name) || '—'}
-                      <span className="block text-xs text-neutral-500">{r.captain?.vehicleNumber || r.captain?.phone || ''}</span>
+                      <span className="block text-xs text-neutral-500 dark:text-[#8FA1BA]">{r.captain?.vehicleNumber || r.captain?.phone || ''}</span>
                     </td>
-                    <td className="max-w-xs px-4 py-3 text-neutral-600">
+                    <td className="max-w-xs px-4 py-3 text-neutral-600 dark:text-[#D3DCE8] dark:text-[#D3DCE8]">
                       <div className="line-clamp-2">{r.pickupLocation ?? '—'}</div>
                       <div className="text-neutral-400">→</div>
                       <div className="line-clamp-2">{r.dropLocation ?? '—'}</div>

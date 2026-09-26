@@ -53,9 +53,9 @@ export function statusBadgeClass (status) {
 
 export function paymentStatusClass (st) {
   const s = String(st || '').toLowerCase()
-  if (s === 'success') return 'text-black font-medium'
-  if (s === 'failed') return 'text-neutral-500'
-  return 'text-neutral-600'
+  if (s === 'success') return 'bg-[var(--color-success-soft)] text-[var(--color-success)] border border-[var(--color-success)] font-medium'
+  if (s === 'failed') return 'bg-[var(--color-danger-soft)] text-[var(--color-danger)] border border-[var(--color-danger)] font-medium'
+  return 'text-[var(--color-text-secondary)] font-medium'
 }
 
 export const RIDE_STATUSES = [

@@ -206,6 +206,34 @@ export const adminApi = {
       .then((r) => unwrap(r.data))
   },
 
+  getAuditLogs(params = {}, signal) {
+    return client
+      .get('/admin/audit-logs', {
+        params,
+        signal,
+      })
+      .then((r) => unwrap(r.data))
+  },
+
+  // =========================================================
+  // SUPPORT
+  // =========================================================
+
+  getSupportCases(params = {}, signal) {
+    return client
+      .get('/admin/support', {
+        params,
+        signal,
+      })
+      .then((r) => normalizeListResponse(unwrap(r.data), 'cases'))
+  },
+
+  getSupportCase(id, signal) {
+    return client
+      .get(`/admin/support/${id}`, { signal })
+      .then((r) => unwrap(r.data))
+  },
+
   // =========================================================
   // SAFETY / SOS
   // =========================================================

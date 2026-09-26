@@ -863,7 +863,7 @@ const AdminVerification = () => {
             </p>
 
             <h1 className="mt-2 text-2xl font-bold tracking-[-0.03em] text-[#152238] sm:text-3xl">
-              Driver Verification
+              Document Verification
             </h1>
 
             <p className="mt-1 max-w-2xl text-sm text-[#718096]">

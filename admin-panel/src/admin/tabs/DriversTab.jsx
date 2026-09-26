@@ -13,6 +13,7 @@ import {
 
 export default function DriversTab({
   driversLoading,
+  error,
   filteredDrivers,
   drivers,
   tableSearch,
@@ -48,14 +49,16 @@ export default function DriversTab({
     (driver) =>
       driver.approved &&
       !driver.blocked &&
-      driver.online === false
+      String(driver.liveStatus || '').toUpperCase() === 'OFFLINE'
   ).length
 
   const activeCount = drivers.filter(
     (driver) =>
       driver.approved &&
       !driver.blocked &&
-      driver.online !== false
+      ['ONLINE', 'BUSY'].includes(
+        String(driver.liveStatus || '').toUpperCase()
+      )
   ).length
 
   const allVisibleSelected =
@@ -408,6 +411,16 @@ export default function DriversTab({
 
           <div className="flex min-h-[360px] items-center justify-center">
             <Loader text="Loading drivers…" />
+          </div>
+
+        ) : error ? (
+
+          <div className="p-6">
+            <EmptyState
+              icon="ri-error-warning-line"
+              title="Unable to load drivers"
+              message={error}
+            />
           </div>
 
         ) : filteredDrivers.length === 0 ? (

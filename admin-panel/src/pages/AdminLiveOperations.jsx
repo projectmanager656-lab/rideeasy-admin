@@ -140,6 +140,26 @@ export default function AdminLiveOperations() {
       await loadDrivers()
     }
 
+    const handleDriverStatusUpdate = (update) => {
+      if (!update?.driverId) return
+
+      const liveStatus = String(update.liveStatus || '').toUpperCase()
+      if (!['ONLINE', 'OFFLINE', 'BUSY'].includes(liveStatus)) return
+
+      setDrivers((currentDrivers) =>
+        currentDrivers.map((driver) =>
+          String(driver?._id) === String(update.driverId)
+            ? {
+                ...driver,
+                liveStatus,
+                isOnline: update.isOnline ?? liveStatus === 'ONLINE',
+                isBusy: update.isBusy ?? liveStatus === 'BUSY',
+              }
+            : driver
+        )
+      )
+    }
+
     const handleDriverLocationUpdate = (update) => {
       if (!update?.driverId) return
 
@@ -163,6 +183,7 @@ export default function AdminLiveOperations() {
     }
 
     socket.on('connect', joinRoom)
+    socket.on('driver:status-update', handleDriverStatusUpdate)
     socket.on('driver:location-update', handleDriverLocationUpdate)
 
     if (socket.connected) {
@@ -171,6 +192,7 @@ export default function AdminLiveOperations() {
 
     return () => {
       socket.off('connect', joinRoom)
+      socket.off('driver:status-update', handleDriverStatusUpdate)
       socket.off('driver:location-update', handleDriverLocationUpdate)
     }
   }, [socket, loadDrivers])

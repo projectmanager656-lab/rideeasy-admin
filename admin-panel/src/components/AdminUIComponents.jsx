@@ -3,7 +3,7 @@ import React from 'react'
 export const Card = ({ children, className = '', shadow = true, hover = false }) => (
   <div
     className={`
-      rounded-2xl border border-slate-200 bg-white p-5
+      admin-theme-card rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5
       ${shadow ? 'shadow-[0_10px_30px_rgba(17,24,39,0.04)]' : ''}
       ${hover ? 'transition-shadow duration-200 hover:shadow-[0_12px_32px_rgba(17,24,39,0.08)]' : ''}
       ${className}
@@ -18,7 +18,7 @@ export const CardHeader = ({ title, subtitle, icon, action, className = '' }) =>
     <div className="flex items-start gap-3">
       {icon && <div className="mt-0.5 text-2xl text-[#FFA726]">{icon}</div>}
       <div>
-        <h3 className="text-lg font-bold text-[#111827]">{title}</h3>
+        <h3 className="text-lg font-bold text-[var(--color-text-primary)]">{title}</h3>
         {subtitle && <p className="mt-1 text-sm text-[#6B7280]">{subtitle}</p>}
       </div>
     </div>
@@ -35,14 +35,14 @@ export const StatCard = ({ label, value, icon, trend, trendLabel, loading = fals
   }
 
   return (
-    <Card className="h-full border-slate-200 bg-white p-5 shadow-[0_10px_26px_rgba(17,24,39,0.04)]">
+    <Card className="h-full border-[var(--color-border)] bg-[var(--color-surface)] p-5 shadow-[0_10px_26px_rgba(17,24,39,0.04)]">
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0 flex-1">
           <p className="text-sm font-medium text-[#6B7280]">{label}</p>
           {loading ? (
             <div className="mt-3 h-8 w-20 animate-pulse rounded-lg bg-slate-200"></div>
           ) : (
-            <p className="mt-3 text-3xl font-bold tracking-tight text-[#111827]">{value}</p>
+            <p className="mt-3 text-3xl font-bold tracking-tight text-[var(--color-text-primary)]">{value}</p>
           )}
           {trend != null && (
             <div
@@ -126,7 +126,7 @@ export const TabButton = ({ active, onClick, children, icon }) => (
 
 export const SectionDivider = ({ label, className = '' }) => (
   <div className={`py-6 ${className}`}>
-    {label && <h2 className="text-lg font-bold text-[#111827]">{label}</h2>}
+    {label && <h2 className="text-lg font-bold text-[var(--color-text-primary)]">{label}</h2>}
   </div>
 )
 
@@ -452,7 +452,7 @@ export const Modal = ({
     >
       <div className={`w-full ${sizes[size]} overflow-hidden rounded-2xl bg-white shadow-2xl`}>
         <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
-          <h2 className="text-lg font-bold text-[#111827]">
+          <h2 className="text-lg font-bold text-[var(--color-text-primary)]">
             {title}
           </h2>
 

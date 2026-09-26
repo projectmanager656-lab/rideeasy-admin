@@ -1,59 +1,6 @@
-import React, { useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
+import { adminApi } from '../../services/adminApi'
 import { SecondaryPageShell, SecondarySection } from './SecondaryPageShell'
-
-const cases = [
-  {
-    id: 'SUP-1001',
-    type: 'User',
-    category: 'Ride Cancellation',
-    subject: 'Cancellation fee query',
-    description: 'User requested clarification about a cancellation fee applied after driver assignment.',
-    user: 'Demo User',
-    phone: '—',
-    rideId: 'RIDE-1001',
-    rideStatus: 'Cancelled',
-    cancellationReason: 'Selected wrong drop-off',
-    cancellationFee: '₹25',
-    priority: 'High',
-    status: 'Open',
-    owner: 'Unassigned',
-    createdAt: '18 Sep 2026, 10:12 AM',
-  },
-  {
-    id: 'SUP-1002',
-    type: 'Driver',
-    category: 'Lost Item',
-    subject: 'Passenger item reported missing',
-    description: 'Driver reported a possible item left inside the vehicle after a completed ride.',
-    user: 'Demo Driver',
-    phone: '—',
-    rideId: 'RIDE-1002',
-    rideStatus: 'Completed',
-    cancellationReason: '—',
-    cancellationFee: '₹0',
-    priority: 'Medium',
-    status: 'In Review',
-    owner: 'Support Team',
-    createdAt: '18 Sep 2026, 09:42 AM',
-  },
-  {
-    id: 'SUP-1003',
-    type: 'User',
-    category: 'Payment',
-    subject: 'Payment clarification',
-    description: 'User requested help understanding the final ride amount.',
-    user: 'Demo User',
-    phone: '—',
-    rideId: 'RIDE-1003',
-    rideStatus: 'Completed',
-    cancellationReason: '—',
-    cancellationFee: '₹0',
-    priority: 'Low',
-    status: 'Resolved',
-    owner: 'Support Team',
-    createdAt: '17 Sep 2026, 04:20 PM',
-  },
-]
 
 const filters = ['All', 'User', 'Driver', 'Open', 'In Review', 'Escalated', 'Resolved']
 
@@ -74,6 +21,71 @@ export default function ComplaintsTab () {
   const [filter, setFilter] = useState('All')
   const [search, setSearch] = useState('')
   const [selectedCase, setSelectedCase] = useState(null)
+  const [cases, setCases] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    const controller = new AbortController()
+
+    const loadSupportCases = async () => {
+      try {
+        setLoading(true)
+        setError('')
+
+        const response = await adminApi.getSupportCases({}, controller.signal)
+
+        const items = Array.isArray(response) ? response : []
+
+        const mappedCases = items.map((item) => ({
+          ...item,
+          id: item.caseId || item._id,
+          user:
+            item.type === 'Driver'
+              ? item.captain?.name || '—'
+              : item.user?.name || '—',
+          phone:
+            item.type === 'Driver'
+              ? item.captain?.phone || '—'
+              : item.user?.phone || '—',
+          rideId: item.ride?._id || '—',
+          rideStatus: item.ride?.status || '—',
+          cancellationReason: item.ride?.cancellationReason || '—',
+          cancellationFee:
+            item.ride?.cancellationFee != null
+              ? `₹${item.ride.cancellationFee}`
+              : '₹0',
+          owner: item.assignedTo?.email || 'Unassigned',
+          createdAt: item.createdAt
+            ? new Date(item.createdAt).toLocaleString('en-IN', {
+                day: '2-digit',
+                month: 'short',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+              })
+            : '—',
+        }))
+
+        setCases(mappedCases)
+      } catch (err) {
+        if (err?.name === 'CanceledError' || err?.name === 'AbortError') {
+          return
+        }
+
+        setError(err?.response?.data?.message || err?.message || 'Failed to load support cases')
+        setCases([])
+      } finally {
+        if (!controller.signal.aborted) {
+          setLoading(false)
+        }
+      }
+    }
+
+    loadSupportCases()
+
+    return () => controller.abort()
+  }, [])
 
   const filteredCases = useMemo(() => {
     const query = search.trim().toLowerCase()
@@ -106,7 +118,7 @@ export default function ComplaintsTab () {
     >
       <SecondarySection
         title="Support Cases"
-        subtitle={`${filteredCases.length} case${filteredCases.length === 1 ? '' : 's'} shown · Demo data`}
+        subtitle={`${filteredCases.length} case${filteredCases.length === 1 ? '' : 's'} shown`}
       >
         <div className="border-b border-[#E6EBF2] p-4 sm:p-5">
           <div className="flex flex-col gap-3">
@@ -179,7 +191,22 @@ export default function ComplaintsTab () {
             </button>
           ))}
 
-          {filteredCases.length === 0 && (
+          {loading && (
+            <div className="px-5 py-12 text-center">
+              <i className="ri-loader-4-line animate-spin text-3xl text-[#FFB21C]" />
+              <p className="mt-2 text-sm font-semibold text-[#152238]">Loading support cases...</p>
+            </div>
+          )}
+
+          {!loading && error && (
+            <div className="px-5 py-12 text-center">
+              <i className="ri-error-warning-line text-3xl text-[#DC2626]" />
+              <p className="mt-2 text-sm font-semibold text-[#152238]">Unable to load support cases</p>
+              <p className="mt-1 text-xs text-[#718096]">{error}</p>
+            </div>
+          )}
+
+          {!loading && !error && filteredCases.length === 0 && (
             <div className="px-5 py-12 text-center">
               <i className="ri-inbox-line text-3xl text-[#CBD5E1]" />
               <p className="mt-2 text-sm font-semibold text-[#152238]">No support cases found</p>

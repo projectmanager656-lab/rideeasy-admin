@@ -9,17 +9,17 @@ const Table = ({
   onRowClick,
 }) => {
   return (
-    <div className="w-full overflow-hidden rounded-2xl border border-[#E5E7EB] bg-white">
+    <div className="admin-theme-card w-full overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)]">
       <div className="w-full overflow-x-auto">
         <table className="min-w-full border-collapse">
           <thead>
-            <tr className="border-b border-[#E5E7EB] bg-[#F7F9FC]">
+            <tr className="border-b border-[var(--color-border)] bg-[var(--color-surface-muted)]">
               {columns.map((column) => (
                 <th
                   key={column.key}
                   className={[
                     'px-4 py-3 text-left text-xs font-bold',
-                    'uppercase tracking-wide text-[#718096]',
+                    'uppercase tracking-wide text-[var(--color-text-secondary)]',
                     column.className || '',
                   ].join(' ')}
                 >
@@ -36,7 +36,7 @@ const Table = ({
                   colSpan={columns.length || 1}
                   className="px-4 py-10 text-center"
                 >
-                  <div className="flex items-center justify-center gap-2 text-sm text-[#718096]">
+                  <div className="flex items-center justify-center gap-2 text-sm text-[var(--color-text-secondary)]">
                     <i className="ri-loader-4-line animate-spin text-lg" />
                     Loading...
                   </div>
@@ -46,7 +46,7 @@ const Table = ({
               <tr>
                 <td
                   colSpan={columns.length || 1}
-                  className="px-4 py-10 text-center text-sm text-[#718096]"
+                  className="px-4 py-10 text-center text-sm text-[var(--color-text-secondary)]"
                 >
                   {emptyMessage}
                 </td>
@@ -57,20 +57,22 @@ const Table = ({
                   key={row[rowKey] ?? index}
                   onClick={() => onRowClick?.(row)}
                   className={[
-                    'border-b border-[#E5E7EB] last:border-b-0',
-                    'transition-colors hover:bg-[#FFF9ED]',
-                    onRowClick ? 'cursor-pointer' : '',
+                    'border-b border-[var(--color-border)] last:border-b-0',
+                    'transition-colors',
+                    onRowClick
+                      ? 'cursor-pointer hover:bg-[var(--color-surface-muted)]'
+                      : '',
                   ].join(' ')}
                 >
                   {columns.map((column) => (
                     <td
                       key={column.key}
                       className={[
-                        'px-4 py-3 text-sm text-[#152238]',
+                        'px-4 py-3 text-sm text-[var(--color-text-primary)]',
                         column.cellClassName || '',
                       ].join(' ')}
                     >
-                      {column.render
+                      {typeof column.render === 'function'
                         ? column.render(row, index)
                         : row[column.key] ?? '—'}
                     </td>

@@ -8,7 +8,10 @@ const Ride = require('../models/rideCore.model');
 const Service = require('../models/service.model');
 const FareConfiguration = require('../models/fareConfiguration.model');
 const PaymentRecord = require('../models/paymentRecord.model');
+const AuditLog = require('../models/auditLog.model');
+const SupportCase = require('../models/supportCase.model');
 const pricingService = require('../services/pricing.service');
+const { recordAuditLog } = require('../services/auditLog.service');
 const { POLICE_STATIONS, getNearestPoliceStation, fetchNearbyPoliceStations } = require('../utils/rideAllocationRules');
 
 const FARE_CONFIG_ALLOWED_ROLES = ['SUPER_ADMIN'];
@@ -476,6 +479,19 @@ module.exports.approveDriver = async (req, res) => {
             'name email phone city vehicleType vehicleNumber approved blocked subscriptionStatus verificationStatus rejected rejectionReason rejectionCategory updatedAt'
         );
         if (!driver) return fail(res, req, 404, 'Driver not found');
+
+        await recordAuditLog({
+            action: 'DRIVER_APPROVED',
+            actor: req.admin?._id || req.user?._id || null,
+            actorType: 'admin',
+            targetType: 'Driver',
+            targetId: driver._id,
+            details: {
+                driverName: driver.name,
+                verificationStatus: driver.verificationStatus,
+            },
+        });
+
         return ok(res, req, 200, 'Driver approved', { driver });
     } catch (err) {
         return fail(res, req, 500, err.message || 'Approve failed');
@@ -507,6 +523,20 @@ module.exports.rejectDriver = async (req, res) => {
         if (!driver) {
             return fail(res, req, 404, 'Driver not found');
         }
+
+        await recordAuditLog({
+            action: 'DRIVER_REJECTED',
+            actor: req.admin?._id || req.user?._id || null,
+            actorType: 'admin',
+            targetType: 'Driver',
+            targetId: driver._id,
+            details: {
+                driverName: driver.name,
+                reason,
+                category,
+                verificationStatus: driver.verificationStatus,
+            },
+        });
 
         return ok(res, req, 200, 'Driver verification rejected', { driver });
     } catch (err) {
@@ -789,6 +819,19 @@ module.exports.blockDriver = async (req, res) => {
         const driver = await Captain.findByIdAndUpdate(id, { blocked }, { new: true })
             .select('name email blocked approved');
         if (!driver) return fail(res, req, 404, 'Driver not found');
+
+        await recordAuditLog({
+            action: blocked ? 'DRIVER_BLOCKED' : 'DRIVER_UNBLOCKED',
+            actor: req.admin?._id || req.user?._id || null,
+            actorType: 'admin',
+            targetType: 'Driver',
+            targetId: driver._id,
+            details: {
+                driverName: driver.name,
+                blocked: driver.blocked,
+            },
+        });
+
         return ok(res, req, 200, blocked ? 'Driver blocked' : 'Driver unblocked', { driver });
     } catch (err) {
         return fail(res, req, 500, err.message || 'Block driver failed');
@@ -803,6 +846,19 @@ module.exports.blockUser = async (req, res) => {
         const user = await User.findByIdAndUpdate(id, { blocked }, { new: true })
             .select('name email phone blocked');
         if (!user) return fail(res, req, 404, 'User not found');
+
+        await recordAuditLog({
+            action: blocked ? 'USER_BLOCKED' : 'USER_UNBLOCKED',
+            actor: req.admin?._id || req.user?._id || null,
+            actorType: 'admin',
+            targetType: 'User',
+            targetId: user._id,
+            details: {
+                userName: user.name,
+                blocked: user.blocked,
+            },
+        });
+
         return ok(res, req, 200, blocked ? 'User blocked' : 'User unblocked', { user });
     } catch (err) {
         return fail(res, req, 500, err.message || 'Block user failed');
@@ -1669,6 +1725,255 @@ module.exports.updateAppSettings = async (req, res) => {
             req,
             500,
             err.message || 'Failed to update app settings'
+        );
+    }
+};
+
+module.exports.getAuditLogs = async (req, res) => {
+    try {
+        const { action, actorType, targetType, limit = 100 } = req.query;
+
+        const query = {};
+
+        if (action) {
+            query.action = action;
+        }
+
+        if (actorType) {
+            query.actorType = actorType;
+        }
+
+        if (targetType) {
+            query.targetType = targetType;
+        }
+
+        const logs = await AuditLog.find(query)
+            .sort({ createdAt: -1 })
+            .limit(Math.min(Number(limit) || 100, 500))
+            .lean();
+
+        return ok(res, req, 200, 'Audit logs', { logs });
+    } catch (err) {
+        return fail(
+            res,
+            req,
+            500,
+            err.message || 'Audit logs failed'
+        );
+    }
+};
+
+module.exports.getSupportCases = async (req, res) => {
+    try {
+        const {
+            type,
+            status,
+            priority,
+            search,
+        } = req.query;
+
+        const query = {};
+
+        if (type) query.type = type;
+        if (status) query.status = status;
+        if (priority) query.priority = priority;
+
+        if (search) {
+            const searchRegex = new RegExp(String(search).trim(), 'i');
+            query.$or = [
+                { caseId: searchRegex },
+                { category: searchRegex },
+                { subject: searchRegex },
+                { description: searchRegex },
+            ];
+        }
+
+        const cases = await SupportCase.find(query)
+            .populate('user', 'name phone email')
+            .populate('captain', 'name phone vehicleNumber')
+            .populate('ride', 'status pickup destination price')
+            .populate('assignedTo', 'email role')
+            .sort({ createdAt: -1 })
+            .lean();
+
+        return ok(res, req, 200, 'Support cases', {
+            cases,
+            total: cases.length,
+        });
+    } catch (err) {
+        return fail(
+            res,
+            req,
+            500,
+            err.message || 'Failed to fetch support cases'
+        );
+    }
+};
+
+module.exports.getSupportCase = async (req, res) => {
+    try {
+        const supportCase = await SupportCase.findById(req.params.id)
+            .populate('user', 'name phone email')
+            .populate('captain', 'name phone vehicleNumber')
+            .populate('ride', 'status pickup destination price')
+            .populate('assignedTo', 'email role')
+            .lean();
+
+        if (!supportCase) {
+            return fail(res, req, 404, 'Support case not found');
+        }
+
+        return ok(res, req, 200, 'Support case', {
+            case: supportCase,
+        });
+    } catch (err) {
+        return fail(
+            res,
+            req,
+            500,
+            err.message || 'Failed to fetch support case'
+        );
+    }
+};
+
+module.exports.createSupportCase = async (req, res) => {
+    try {
+        const {
+            caseId,
+            type,
+            category,
+            subject,
+            description,
+            user,
+            captain,
+            ride,
+            priority,
+        } = req.body;
+
+        if (!type || !category || !subject) {
+            return fail(
+                res,
+                req,
+                400,
+                'Type, category and subject are required'
+            );
+        }
+
+        const generatedCaseId =
+            caseId ||
+            `SUP-${Date.now().toString().slice(-8)}`;
+
+        const supportCase = await SupportCase.create({
+            caseId: generatedCaseId,
+            type,
+            category,
+            subject,
+            description: description || '',
+            user: user || null,
+            captain: captain || null,
+            ride: ride || null,
+            priority: priority || 'Medium',
+        });
+
+        await recordAuditLog({
+            action: 'SUPPORT_CASE_CREATED',
+            actor: req.admin?._id || null,
+            actorType: 'admin',
+            targetType: 'support_case',
+            targetId: supportCase._id,
+            details: {
+                caseId: supportCase.caseId,
+                type: supportCase.type,
+                category: supportCase.category,
+            },
+        });
+
+        return ok(
+            res,
+            req,
+            201,
+            'Support case created successfully',
+            { case: supportCase }
+        );
+    } catch (err) {
+        if (err.code === 11000) {
+            return fail(res, req, 409, 'Support case ID already exists');
+        }
+
+        return fail(
+            res,
+            req,
+            500,
+            err.message || 'Failed to create support case'
+        );
+    }
+};
+
+module.exports.updateSupportCase = async (req, res) => {
+    try {
+        const {
+            status,
+            priority,
+            assignedTo,
+            resolution,
+        } = req.body;
+
+        const supportCase = await SupportCase.findById(req.params.id);
+
+        if (!supportCase) {
+            return fail(res, req, 404, 'Support case not found');
+        }
+
+        if (status !== undefined) {
+            supportCase.status = status;
+        }
+
+        if (priority !== undefined) {
+            supportCase.priority = priority;
+        }
+
+        if (assignedTo !== undefined) {
+            supportCase.assignedTo = assignedTo || null;
+        }
+
+        if (resolution !== undefined) {
+            supportCase.resolution = String(resolution);
+        }
+
+        if (status === 'Resolved') {
+            supportCase.resolvedAt = new Date();
+        } else if (status !== undefined && status !== 'Resolved') {
+            supportCase.resolvedAt = null;
+        }
+
+        await supportCase.save();
+
+        await recordAuditLog({
+            action: 'SUPPORT_CASE_UPDATED',
+            actor: req.admin?._id || null,
+            actorType: 'admin',
+            targetType: 'support_case',
+            targetId: supportCase._id,
+            details: {
+                caseId: supportCase.caseId,
+                status: supportCase.status,
+                priority: supportCase.priority,
+            },
+        });
+
+        return ok(
+            res,
+            req,
+            200,
+            'Support case updated successfully',
+            { case: supportCase }
+        );
+    } catch (err) {
+        return fail(
+            res,
+            req,
+            500,
+            err.message || 'Failed to update support case'
         );
     }
 };

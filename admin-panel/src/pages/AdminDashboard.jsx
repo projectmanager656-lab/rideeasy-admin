@@ -23,6 +23,7 @@ import {
   BookingsReport,
   DriversReport,
   UsersReport,
+  AuditLogsTab,
 } from '../admin/tabs'
 import AdminLiveOperations from './AdminLiveOperations'
 import AdminRoles from './AdminRoles'
@@ -46,6 +47,13 @@ const AdminDashboard = ({ initialTab = null }) => {
       services: '/admin/services',
       pricing: '/admin/pricing',
       settings: '/admin/settings',
+      vehicles: '/admin/vehicles',
+      verification: '/admin/verification',
+      'live-operations': '/admin/live-operations',
+      finance: '/admin/finance',
+      notifications: '/admin/notifications',
+      roles: '/admin/roles',
+      'audit-logs': '/admin/audit-logs',
     }
 
     setTab(nextTab)
@@ -92,6 +100,12 @@ const [fareError, setFareError] = useState('')
       '/admin/services': 'services',
       '/admin/pricing': 'pricing',
       '/admin/settings': 'settings',
+      '/admin/vehicles': 'vehicles',
+      '/admin/verification': 'verification',
+      '/admin/live-operations': 'live-operations',
+      '/admin/finance': 'finance',
+      '/admin/notifications': 'notifications',
+      '/admin/roles': 'roles',
     }
 
     return (
@@ -135,9 +149,7 @@ const [fareError, setFareError] = useState('')
   }, [])
 
   const refreshStats = useCallback(() => {
-    dataLoadedRef.current.delete('analytics')
-    setTab('analytics')
-    setStatsNonce((n) => n + 1)
+    window.location.reload()
   }, [])
 
   useEffect(() => {
@@ -232,6 +244,21 @@ const [fareError, setFareError] = useState('')
   useEffect(() => {
     if (!socket) return
 
+    const joinAdminRoom = () => {
+      socket.emit('admin:live-operations:join')
+    }
+
+    joinAdminRoom()
+    socket.on('connect', joinAdminRoom)
+
+    return () => {
+      socket.off('connect', joinAdminRoom)
+    }
+  }, [socket])
+
+  useEffect(() => {
+    if (!socket) return
+
     const handleRideStarted = (payload) => {
       const rideId = payload?.rideId || payload?.ride?._id
 
@@ -244,6 +271,11 @@ const [fareError, setFareError] = useState('')
           if (String(ride._id) !== String(rideId)) return ride
 
           const existingStartedAt = ride.startedAt
+          const currentStatus = String(ride.status || '').toLowerCase()
+
+          if (['completed', 'cancelled'].includes(currentStatus)) {
+            return ride
+          }
 
           if (
             existingStartedAt &&
@@ -266,6 +298,11 @@ const [fareError, setFareError] = useState('')
         if (!current || String(current._id) !== String(rideId)) return current
 
         const existingStartedAt = current.startedAt
+        const currentStatus = String(current.status || '').toLowerCase()
+
+        if (['completed', 'cancelled'].includes(currentStatus)) {
+          return current
+        }
 
         if (
           existingStartedAt &&
@@ -330,6 +367,18 @@ const [fareError, setFareError] = useState('')
 
       if (!driverId || !['ONLINE', 'OFFLINE'].includes(status)) return
 
+      setDrivers((currentDrivers) =>
+        currentDrivers.map((driver) =>
+          String(driver?._id) === String(driverId)
+            ? {
+                ...driver,
+                liveStatus: status,
+                isOnline: status === 'ONLINE',
+              }
+            : driver
+        )
+      )
+
       window.dispatchEvent(
         new CustomEvent('rideeasy:admin-notification', {
           detail: {
@@ -360,6 +409,52 @@ const [fareError, setFareError] = useState('')
 
       if (!rideId) return
 
+      setRides((current) =>
+        current.map((item) => {
+          if (String(item._id) !== String(rideId)) return item
+
+          const currentStatus = String(item.status || '').toLowerCase()
+
+          if (['started', 'completed', 'cancelled'].includes(currentStatus)) {
+            return item
+          }
+
+          return {
+            ...item,
+            ...ride,
+            status: 'accepted',
+            acceptedAt:
+              ride?.acceptedAt ||
+              item.acceptedAt ||
+              new Date().toISOString(),
+            captain: ride?.captain || item.captain,
+          }
+        })
+      )
+
+      setSelectedRide((current) => {
+        if (!current || String(current._id) !== String(rideId)) {
+          return current
+        }
+
+        const currentStatus = String(current.status || '').toLowerCase()
+
+        if (['started', 'completed', 'cancelled'].includes(currentStatus)) {
+          return current
+        }
+
+        return {
+          ...current,
+          ...ride,
+          status: 'accepted',
+          acceptedAt:
+            ride?.acceptedAt ||
+            current.acceptedAt ||
+            new Date().toISOString(),
+          captain: ride?.captain || current.captain,
+        }
+      })
+
       window.dispatchEvent(
         new CustomEvent('rideeasy:admin-notification', {
           detail: {
@@ -373,7 +468,6 @@ const [fareError, setFareError] = useState('')
         })
       )
     }
-
     socket.on('admin:ride:accepted', handleAdminRideAccepted)
 
     return () => {
@@ -385,7 +479,8 @@ const [fareError, setFareError] = useState('')
     if (!socket) return
 
     const handleAdminRideStarted = (payload) => {
-      const rideId = payload?.rideId || payload?.ride?._id
+      const ride = payload?.ride || payload
+      const rideId = payload?.rideId || ride?._id
 
       if (!rideId) return
 
@@ -402,7 +497,6 @@ const [fareError, setFareError] = useState('')
         })
       )
     }
-
     socket.on(RIDE_STARTED, handleAdminRideStarted)
 
     return () => {
@@ -414,14 +508,48 @@ const [fareError, setFareError] = useState('')
     if (!socket) return
 
     const handleAdminRideCompleted = (payload) => {
-      const rideId = payload?.rideId || payload?.ride?._id
+      console.log('[AdminDashboard] admin:ride:completed received', payload)
+      const ride = payload?.ride || payload
+      const rideId = payload?.rideId || ride?._id
+      console.log('[AdminDashboard] completed rideId:', rideId, 'open rideId:', selectedRide?._id)
 
       if (!rideId) return
+
+      const completedAt =
+        payload?.completedAt ||
+        ride?.completedAt ||
+        new Date().toISOString()
+
+      setRides((current) =>
+        current.map((item) =>
+          String(item._id) === String(rideId)
+            ? {
+                ...item,
+                ...ride,
+                status: 'completed',
+                completedAt,
+                captain: ride?.captain || item.captain,
+              }
+            : item
+        )
+      )
+
+      setSelectedRide((current) =>
+        current && String(current._id) === String(rideId)
+          ? {
+              ...current,
+              ...ride,
+              status: 'completed',
+              completedAt,
+              captain: ride?.captain || current.captain,
+            }
+          : current
+      )
 
       window.dispatchEvent(
         new CustomEvent('rideeasy:admin-notification', {
           detail: {
-            id: `ride-${rideId}-completed-${payload?.completedAt || payload?.at || Date.now()}`,
+            id: `ride-${rideId}-completed-${completedAt}`,
             type: 'ride',
             title: 'Ride Completed',
             message: 'A ride has been completed successfully.',
@@ -431,7 +559,6 @@ const [fareError, setFareError] = useState('')
         })
       )
     }
-
     socket.on('admin:ride:completed', handleAdminRideCompleted)
 
     return () => {
@@ -451,6 +578,21 @@ const [fareError, setFareError] = useState('')
     setSelectedIds([])
     setTableSearch('')
   }, [tab])
+
+  // Refresh rides immediately when Socket.IO reconnects
+  useEffect(() => {
+    if (!socket) return
+
+    const handleSocketReconnect = () => {
+      refreshRides()
+    }
+
+    socket.on('connect', handleSocketReconnect)
+
+    return () => {
+      socket.off('connect', handleSocketReconnect)
+    }
+  }, [socket, refreshRides])
 
   // Refresh driver data immediately when network reconnects
   useEffect(() => {
@@ -473,8 +615,24 @@ const [fareError, setFareError] = useState('')
     }
   }, [tab])
   const fmtErr = (e) => formatApiError(e)
-  const loadPaymentDetail = async (paymentId) => {
+  const loadPaymentDetail = async (paymentOrId) => {
+    const paymentId =
+      typeof paymentOrId === 'object'
+        ? paymentOrId?._id
+        : paymentOrId
+
     if (!paymentId) return
+
+    if (typeof paymentOrId === 'object') {
+      setSelectedPayment(paymentOrId)
+    }
+
+    requestAnimationFrame(() => {
+      document.getElementById('payment-details')?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+      })
+    })
 
     const ac = new AbortController()
     const { signal } = ac
@@ -485,7 +643,8 @@ const [fareError, setFareError] = useState('')
     try {
       const result = await adminApi.getPayment(paymentId, signal)
       if (signal.aborted) return
-      setSelectedPayment(result?.transaction || result || null)
+
+      setSelectedPayment(result?.transaction || result || paymentOrId || null)
     } catch (e) {
       if (signal.aborted) return
       setTabError(fmtErr(e))
@@ -580,22 +739,30 @@ const [d, usersResult, driversResult, ridesResult, paymentsResult, alertsResult]
         return
       }
 
-      if (tab === 'rides') {
-        setRidesLoading(true)
-        setTabError('')
-        try {
-          const list = await adminApi.getRides(rideStatusFilter, signal)
-          if (signal.aborted) return
-          setRides(list)
-        } catch (e) {
-          if (signal.aborted) return
-          setTabError(fmtErr(e))
-        } finally {
-          if (!signal.aborted) setRidesLoading(false)
-        }
-        return
-      }
+     if (tab === 'rides') {
+  setRidesLoading(true)
+  setTabError('')
 
+  try {
+    const [list, driverList] = await Promise.all([
+      adminApi.getRides(rideStatusFilter, signal),
+      adminApi.getDrivers(signal),
+    ])
+
+    if (signal.aborted) return
+
+    setRides(Array.isArray(list) ? list : [])
+    setDrivers(Array.isArray(driverList) ? driverList : [])
+    dataLoadedRef.current.add('drivers')
+  } catch (e) {
+    if (signal.aborted) return
+    setTabError(fmtErr(e))
+  } finally {
+    if (!signal.aborted) setRidesLoading(false)
+  }
+
+  return
+}
       if (tab === 'reports') {
         setTabError('')
 
@@ -734,7 +901,7 @@ const [d, usersResult, driversResult, ridesResult, paymentsResult, alertsResult]
 
     run()
     return () => ac.abort()
-  }, [tab, rideStatusFilter])
+  }, [tab, rideStatusFilter, statsNonce])
 
   const mergeDriver = (doc) => {
     if (!doc?._id) return
@@ -845,25 +1012,12 @@ const [d, usersResult, driversResult, ridesResult, paymentsResult, alertsResult]
     const base = drivers.filter((d) => d && d._id)
 
     const statusFiltered = base.filter((driver) => {
+      const liveStatus = String(driver.liveStatus || '').toLowerCase()
+
       if (driverStatusFilter === 'all') return true
-
-      if (driverStatusFilter === 'online') {
-        return driver.isOnline === true ||
-          ['online', 'active'].includes(String(driver.status || '').toLowerCase())
-      }
-
-      if (driverStatusFilter === 'busy') {
-        return String(driver.status || '').toLowerCase() === 'busy'
-      }
-
-      if (driverStatusFilter === 'offline') {
-        return !(
-          driver.isOnline === true ||
-          ['online', 'active', 'busy'].includes(
-            String(driver.status || '').toLowerCase()
-          )
-        )
-      }
+      if (driverStatusFilter === 'online') return liveStatus === 'online'
+      if (driverStatusFilter === 'busy') return liveStatus === 'busy'
+      if (driverStatusFilter === 'offline') return liveStatus === 'offline'
 
       return true
     })
@@ -900,6 +1054,11 @@ const [d, usersResult, driversResult, ridesResult, paymentsResult, alertsResult]
         (rideDate &&
           new Date(rideDate).toISOString().slice(0, 10) === rideDateFilter)
 
+      const normalizedStatus = String(r.status || '').toLowerCase()
+      const matchesStatus =
+        rideStatusFilter === 'all' ||
+        normalizedStatus === String(rideStatusFilter).toLowerCase()
+
       const driverId = String(r.captain?._id || r.captain?.id || '')
       const userId = String(r.user?._id || r.user?.id || '')
 
@@ -930,6 +1089,7 @@ const [d, usersResult, driversResult, ridesResult, paymentsResult, alertsResult]
 
       return (
         matchesDate &&
+        matchesStatus &&
         matchesDriver &&
         matchesUser &&
         (!q || blob.includes(q))
@@ -939,6 +1099,7 @@ const [d, usersResult, driversResult, ridesResult, paymentsResult, alertsResult]
     rides,
     tableSearch,
     rideDateFilter,
+    rideStatusFilter,
     rideDriverFilter,
     rideUserFilter,
   ])
@@ -1094,8 +1255,16 @@ const [d, usersResult, driversResult, ridesResult, paymentsResult, alertsResult]
   }
 
   const logout = () => {
-  dataLoadedRef.current.clear()
-}
+    dataLoadedRef.current.clear()
+    localStorage.removeItem('adminToken')
+    localStorage.removeItem('adminRole')
+    navigate('/admin', {
+      replace: true,
+      state: {
+        logoutSuccess: true,
+      },
+    })
+  }
 
   return (
     <AdminLayout
@@ -1252,7 +1421,7 @@ const [d, usersResult, driversResult, ridesResult, paymentsResult, alertsResult]
                   {group.title}
                 </h3>
 
-                <div className="overflow-hidden rounded-2xl border border-[#E5E7EB] bg-white shadow-sm">
+                <div className="overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-sm">
                   {group.items.map((item) => (
                     <button
                       key={item.label}
@@ -1267,9 +1436,9 @@ const [d, usersResult, driversResult, ridesResult, paymentsResult, alertsResult]
                           navigate(item.path)
                         }
                       }}
-                      className="flex w-full items-center gap-4 border-b border-[#E6EBF2] px-5 py-4 text-left last:border-b-0 hover:bg-[#F7F9FC]"
+                      className="flex w-full items-center gap-4 border-b border-[var(--color-border)] px-5 py-4 text-left last:border-b-0 hover:bg-[var(--color-surface-muted)]"
                     >
-                      <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-[#F7F9FC] text-lg text-[#071A2B]">
+                      <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-[var(--color-surface-muted)] text-lg text-[var(--color-text-primary)]">
                         <i className={item.icon} />
                       </span>
 
@@ -1332,10 +1501,13 @@ const [d, usersResult, driversResult, ridesResult, paymentsResult, alertsResult]
         {tab === 'drivers' && (
           <DriversTab
             driversLoading={driversLoading}
+            error={tabError}
             filteredDrivers={filteredDrivers}
             drivers={drivers}
             tableSearch={tableSearch}
             setTableSearch={setTableSearch}
+            driverStatusFilter={driverStatusFilter}
+            setDriverStatusFilter={setDriverStatusFilter}
             selectedIds={selectedIds}
             toggleSelect={toggleSelect}
             selectAllVisible={selectAllVisible}
@@ -1461,6 +1633,11 @@ const [d, usersResult, driversResult, ridesResult, paymentsResult, alertsResult]
 {(tab === 'support' || tab === 'complaints') && (
   <ComplaintsTab />
 )}
+        {/* AUDIT LOGS */}
+        {tab === 'audit-logs' && (
+          <AuditLogsTab />
+        )}
+
         {/* REPORTS */}
         {tab === 'reports' && !reportView && (
           <ReportsTab

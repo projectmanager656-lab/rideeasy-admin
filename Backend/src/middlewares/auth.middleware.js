@@ -99,6 +99,16 @@ module.exports.authCaptain = async (req, res, next) => {
     }
 };
 
+module.exports.requireAdminRoles = (...allowedRoles) => {
+    return (req, res, next) => {
+        const role = req.admin?.role;
+        if (!role || !allowedRoles.includes(role)) {
+            return fail(res, req, 403, 'Forbidden');
+        }
+        return next();
+    };
+};
+
 module.exports.authAdmin = async (req, res, next) => {
     try {
         const token = await extractToken(req);

@@ -13,3 +13,5 @@ export { default as EarningsReport } from './EarningsReport'
 export { default as BookingsReport } from './BookingsReport'
 export { default as DriversReport } from './DriversReport'
 export { default as UsersReport } from './UsersReport'
+
+export { default as AuditLogsTab } from './AuditLogsTab'

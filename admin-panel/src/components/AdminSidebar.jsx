@@ -81,6 +81,12 @@ const TAB_CONFIG = [
     permission: ADMIN_PERMISSIONS.REPORTS,
   },
   {
+    id: 'audit-logs',
+    label: 'Audit Logs',
+    icon: 'ri-file-list-3-line',
+    permission: ADMIN_PERMISSIONS.AUDIT_LOGS,
+  },
+  {
     id: 'notifications',
     label: 'Notifications',
     icon: 'ri-notification-3-line',
