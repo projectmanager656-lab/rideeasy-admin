@@ -223,17 +223,6 @@ const OverviewTab = ({
           </p>
         </div>
 
-        <Button
-          variant="secondary"
-          size="sm"
-          icon="ri-refresh-line"
-          onClick={onRefresh}
-          aria-label="Refresh dashboard"
-        >
-          <span className="hidden sm:inline">
-            Refresh
-          </span>
-        </Button>
       </div>
 
       {/* =====================================================

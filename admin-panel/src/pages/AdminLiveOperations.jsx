@@ -312,15 +312,6 @@ const mapDrivers = useMemo(() => {
             {socketStatus.label}
           </span>
 
-          <button
-            type="button"
-            onClick={loadDrivers}
-          disabled={loading}
-          className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#E5E7EB] bg-white px-4 py-2.5 text-sm font-semibold text-[#152238] shadow-sm transition hover:bg-[#F8FAFC] disabled:cursor-not-allowed disabled:opacity-60"
-        >
-            <i className="ri-refresh-line" />
-            Refresh
-          </button>
         </div>
       </div>
 
