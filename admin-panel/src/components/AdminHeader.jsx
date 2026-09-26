@@ -171,22 +171,30 @@ const AdminHeader = ({
           {/* SUPER ADMIN */}
           <button
             type="button"
+            onClick={() => navigate('/admin/roles')}
             aria-label="Super Admin"
             title="Super Admin"
             className="
-              grid
+              flex
               h-11
               w-11
-              place-items-center
+              shrink-0
+              items-center
+              justify-center
               rounded-full
+              border
+              border-slate-200
               bg-white
               text-[#0B1B2B]
+              opacity-100
+              visible
               transition
+              hover:border-[#FFB21C]
               hover:bg-slate-100
               hover:scale-105
             "
           >
-            <span className="text-xs font-bold">
+            <span className="super-admin-avatar text-xs font-bold text-white">
               SA
             </span>
           </button>
