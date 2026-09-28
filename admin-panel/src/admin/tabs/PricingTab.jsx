@@ -245,6 +245,7 @@ export default function PricingTab({
   }
 
   const handleHistory = async (configuration) => {
+
     const id = configuration._id || configuration.id
 
     setHistoryLoading(true)
