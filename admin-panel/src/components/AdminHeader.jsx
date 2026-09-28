@@ -35,34 +35,8 @@ const AdminHeader = ({
         shadow-sm
       "
     >
-      <div className="flex min-h-[72px] items-center justify-between gap-4 px-3 sm:px-6 lg:px-8">
+      <div className="flex min-h-[72px] items-center justify-end gap-4 px-3 sm:px-6 lg:px-8">
 
-        {/* SEARCH - LEFT SIDE */}
-        <div className="relative w-full max-w-[360px]">
-          <i className="ri-search-line absolute left-4 top-1/2 -translate-y-1/2 text-base text-slate-400" />
-
-          <input
-            type="search"
-            placeholder="Search..."
-            className="
-              w-full
-              rounded-full
-              border
-              border-slate-200
-              bg-white
-              py-2.5
-              pl-10
-              pr-4
-              text-sm
-              text-[#111827]
-              outline-none
-              placeholder:text-[#6B7280]
-              focus:border-[#FFB21C]
-              focus:ring-2
-              focus:ring-[#FFB21C]/20
-            "
-          />
-        </div>
 
         {/* RIGHT SIDE CONTROLS */}
         <div className="flex shrink-0 items-center gap-3">
@@ -194,7 +168,7 @@ const AdminHeader = ({
               hover:scale-105
             "
           >
-            <span className="super-admin-avatar text-xs font-bold text-white">
+            <span className="super-admin-avatar text-xs font-bold text-[#0B1B2B]">
               SA
             </span>
           </button>
