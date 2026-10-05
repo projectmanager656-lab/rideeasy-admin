@@ -9,11 +9,7 @@ const Service = require('../models/service.model');
 const FareConfiguration = require('../models/fareConfiguration.model');
 const PaymentRecord = require('../models/paymentRecord.model');
 const AuditLog = require('../models/auditLog.model');
-<<<<<<< HEAD
 const SupportCase = require('../models/supportCase.model');
-=======
-
->>>>>>> 307465a (fix(admin): add audit logs endpoint)
 const pricingService = require('../services/pricing.service');
 const { recordAuditLog } = require('../services/auditLog.service');
 const { POLICE_STATIONS, getNearestPoliceStation, fetchNearbyPoliceStations } = require('../utils/rideAllocationRules');
