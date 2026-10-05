@@ -1110,6 +1110,16 @@ module.exports.resolveEmergencyAlert = async (req, res) => {
         return fail(res, req, 500, err.message || 'Resolve emergency failed');
     }
 };
+module.exports.getSupportCases = async (req, res) => {
+    try {
+        return ok(res, req, 200, 'Support cases', {
+            cases: [],
+        });
+    } catch (err) {
+        return fail(res, req, 500, err.message || 'Failed to load support cases');
+    }
+};
+
 module.exports.getFareConfigurations = async (req, res) => {
     try {
         const configurations = await FareConfiguration.find()
