@@ -2,6 +2,7 @@ const express = require('express');
 const { body } = require('express-validator');
 const adminController = require('../controllers/admin.controller');
 const auth = require('../middlewares/auth.middleware');
+const { uploadComplianceDocument } = require('../middlewares/complianceUpload.middleware');
 
 const router = express.Router();
 
@@ -19,6 +20,9 @@ router.get('/users', auth.authAdmin, auth.requireAdminRoles('SUPER_ADMIN', 'SUPP
 router.get('/drivers', auth.authAdmin, auth.requireAdminRoles('SUPER_ADMIN', 'OPERATIONS', 'SUPPORT'), adminController.getDrivers);
 router.put('/drivers/:id/approve', auth.authAdmin, auth.requireAdminRoles('SUPER_ADMIN', 'OPERATIONS'), adminController.approveDriver);
 router.put('/drivers/:id/reject', auth.authAdmin, auth.requireAdminRoles('SUPER_ADMIN', 'OPERATIONS'), adminController.rejectDriver);
+router.put('/drivers/:id/compliance', auth.authAdmin, auth.requireAdminRoles('SUPER_ADMIN', 'OPERATIONS'), adminController.updateDriverCompliance);
+router.post('/drivers/:id/compliance/upload', auth.authAdmin, auth.requireAdminRoles('SUPER_ADMIN', 'OPERATIONS'), uploadComplianceDocument, adminController.uploadDriverComplianceDocument);
+router.get('/drivers/:id/compliance/:documentType', auth.authAdmin, auth.requireAdminRoles('SUPER_ADMIN', 'OPERATIONS', 'SUPPORT'), adminController.getDriverComplianceDocument);
 router.patch('/drivers/:id/block', auth.authAdmin, auth.requireAdminRoles('SUPER_ADMIN', 'OPERATIONS'), adminController.blockDriver);
 router.patch('/users/:id/block', auth.authAdmin, auth.requireAdminRoles('SUPER_ADMIN', 'SUPPORT'), adminController.blockUser);
 router.delete('/users/:id', auth.authAdmin, auth.requireAdminRoles('SUPER_ADMIN'), adminController.deleteUser);
@@ -39,9 +43,12 @@ router.get('/rides/:id/audit', auth.authAdmin, auth.requireAdminRoles('SUPER_ADM
 router.get('/rides', auth.authAdmin, auth.requireAdminRoles('SUPER_ADMIN', 'OPERATIONS', 'SUPPORT'), adminController.getRides);
 router.get('/payments', auth.authAdmin, auth.requireAdminRoles('SUPER_ADMIN'), adminController.getPayments);
 router.get('/audit-logs', auth.authAdmin, auth.requireAdminRoles('SUPER_ADMIN'), adminController.getAuditLogs);
+router.get('/coupons', auth.authAdmin, auth.requireAdminRoles('SUPER_ADMIN'), adminController.getCoupons);
 
 // Support / complaints
 router.get('/support', auth.authAdmin, auth.requireAdminRoles('SUPER_ADMIN', 'SUPPORT'), adminController.getSupportCases);
+router.get('/support/rideeasy', auth.authAdmin, auth.requireAdminRoles('SUPER_ADMIN', 'SUPPORT'), adminController.getRideEasySupport);
+router.put('/support/rideeasy', auth.authAdmin, auth.requireAdminRoles('SUPER_ADMIN', 'SUPPORT'), adminController.updateRideEasySupport);
 router.get('/support/:id', auth.authAdmin, auth.requireAdminRoles('SUPER_ADMIN', 'SUPPORT'), adminController.getSupportCase);
 router.post('/support', auth.authAdmin, auth.requireAdminRoles('SUPER_ADMIN', 'SUPPORT'), adminController.createSupportCase);
 router.patch('/support/:id', auth.authAdmin, auth.requireAdminRoles('SUPER_ADMIN', 'SUPPORT'), adminController.updateSupportCase);

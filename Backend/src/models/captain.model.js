@@ -52,6 +52,10 @@ const captainSchema = new mongoose.Schema({
                 'VEHICLE_RC',
                 'VEHICLE_INSURANCE',
                 'DRIVER_PHOTO',
+                'POLICE_VERIFICATION',
+                'MEDICAL_FITNESS',
+                'EYE_EXAMINATION',
+                'PSYCHOLOGICAL_ASSESSMENT',
                 'OTHER'
             ],
             default: 'OTHER',

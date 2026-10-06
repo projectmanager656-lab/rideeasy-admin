@@ -1,3 +1,4 @@
+const { getComplianceBucket } = require('../utils/complianceStorage');
 const mongoose = require('mongoose');
 const { validationResult } = require('express-validator');
 const { ok, fail } = require('../utils/apiResponse');
@@ -10,6 +11,8 @@ const FareConfiguration = require('../models/fareConfiguration.model');
 const PaymentRecord = require('../models/paymentRecord.model');
 const AuditLog = require('../models/auditLog.model');
 const SupportCase = require('../models/supportCase.model');
+const RideEasySupport = require('../models/rideEasySupport.model');
+const Coupon = require('../models/coupon.model');
 const pricingService = require('../services/pricing.service');
 const { recordAuditLog } = require('../services/auditLog.service');
 const { POLICE_STATIONS, getNearestPoliceStation, fetchNearbyPoliceStations } = require('../utils/rideAllocationRules');
@@ -458,6 +461,278 @@ module.exports.getDrivers = async (req, res) => {
             req,
             500,
             err.message || 'Drivers failed'
+        );
+    }
+};
+
+module.exports.updateDriverCompliance = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const documentType = String(req.body?.documentType || '').trim().toUpperCase();
+        const status = String(req.body?.status || '').trim().toUpperCase();
+        const documentUrl = String(req.body?.documentUrl || '').trim();
+        const rejectionReason = String(req.body?.rejectionReason || '').trim();
+
+        const allowedTypes = [
+            'POLICE_VERIFICATION',
+            'MEDICAL_FITNESS',
+            'EYE_EXAMINATION',
+            'PSYCHOLOGICAL_ASSESSMENT',
+        ];
+
+        const allowedStatuses = [
+            'PENDING',
+            'UNDER_REVIEW',
+            'APPROVED',
+            'REJECTED',
+            'EXPIRED',
+            'RE_UPLOAD_REQUIRED',
+        ];
+
+        if (!allowedTypes.includes(documentType)) {
+            return fail(res, req, 400, 'Invalid compliance document type');
+        }
+
+        if (!allowedStatuses.includes(status)) {
+            return fail(res, req, 400, 'Invalid compliance status');
+        }
+
+        const driver = await Captain.findById(id);
+        if (!driver) {
+            return fail(res, req, 404, 'Driver not found');
+        }
+
+        if (!Array.isArray(driver.documents)) {
+            driver.documents = [];
+        }
+
+        const existingIndex = driver.documents.findIndex(
+            (document) =>
+                String(document?.documentType || '').toUpperCase() === documentType
+        );
+
+        const complianceDocument = {
+            documentType,
+            title: documentType
+                .replace(/_/g, ' ')
+                .toLowerCase()
+                .replace(/\b\w/g, (char) => char.toUpperCase()),
+            status,
+            documentUrl,
+            rejectionReason,
+            uploadedAt: documentUrl
+                ? (
+                    existingIndex >= 0
+                        ? driver.documents[existingIndex]?.uploadedAt || new Date()
+                        : new Date()
+                )
+                : (
+                    existingIndex >= 0
+                        ? driver.documents[existingIndex]?.uploadedAt || null
+                        : null
+                ),
+            updatedAt: new Date(),
+        };
+
+        if (existingIndex >= 0) {
+            driver.documents[existingIndex] = {
+                ...driver.documents[existingIndex].toObject(),
+                ...complianceDocument,
+            };
+        } else {
+            driver.documents.push(complianceDocument);
+        }
+
+        await Captain.findByIdAndUpdate(
+            driver._id,
+            { $set: { documents: driver.documents } },
+            { new: true, runValidators: false }
+        );
+
+        await recordAuditLog({
+            action: 'DRIVER_COMPLIANCE_UPDATED',
+            actor: req.admin?._id || req.user?._id || null,
+            actorType: 'admin',
+            targetType: 'Driver',
+            targetId: driver._id,
+            details: {
+                driverName: driver.name,
+                documentType,
+                status,
+            },
+        });
+
+        return ok(res, req, 200, 'Driver compliance updated', {
+            driver,
+            compliance: driver.documents.find(
+                (document) =>
+                    String(document?.documentType || '').toUpperCase() === documentType
+            ),
+        });
+    } catch (err) {
+        return fail(res, req, 500, err.message || 'Compliance update failed');
+    }
+};
+
+
+module.exports.getDriverComplianceDocument = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const documentType = String(req.params?.documentType || '').trim().toUpperCase();
+
+        const allowedTypes = [
+            'POLICE_VERIFICATION',
+            'MEDICAL_FITNESS',
+            'EYE_EXAMINATION',
+            'PSYCHOLOGICAL_ASSESSMENT',
+        ];
+
+        if (!allowedTypes.includes(documentType)) {
+            return fail(res, req, 400, 'Invalid compliance document type');
+        }
+
+        const driver = await Captain.findById(id).select('documents');
+        if (!driver) {
+            return fail(res, req, 404, 'Driver not found');
+        }
+
+        const complianceDocument = (driver.documents || []).find(
+            (document) =>
+                String(document?.documentType || '').toUpperCase() === documentType
+        );
+
+        if (!complianceDocument?.uploadedAt) {
+            return fail(res, req, 404, 'Compliance document not found');
+        }
+
+        const bucket = getComplianceBucket();
+
+        const files = await bucket.find({
+            'metadata.driverId': String(driver._id),
+            'metadata.documentType': documentType,
+        }).sort({ uploadDate: -1 }).toArray();
+
+        if (!files.length) {
+            return fail(res, req, 404, 'Compliance document file not found');
+        }
+
+        const file = files[0];
+
+        res.set('Content-Type', file.contentType || 'application/octet-stream');
+        res.set('Content-Disposition', `inline; filename="${file.metadata?.originalName || file.filename}"`);
+
+        const downloadStream = bucket.openDownloadStream(file._id);
+
+        downloadStream.on('error', (error) => {
+            if (!res.headersSent) {
+                return fail(res, req, 500, error.message || 'Unable to read compliance document');
+            }
+
+            res.end();
+        });
+
+        downloadStream.pipe(res);
+    } catch (err) {
+        return fail(
+            res,
+            req,
+            500,
+            err.message || 'Unable to retrieve compliance document'
+        );
+    }
+};
+
+module.exports.uploadDriverComplianceDocument = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const documentType = String(req.body?.documentType || '').trim().toUpperCase();
+
+        const allowedTypes = [
+            'POLICE_VERIFICATION',
+            'MEDICAL_FITNESS',
+            'EYE_EXAMINATION',
+            'PSYCHOLOGICAL_ASSESSMENT',
+        ];
+
+        if (!allowedTypes.includes(documentType)) {
+            return fail(res, req, 400, 'Invalid compliance document type');
+        }
+
+        if (!req.file) {
+            return fail(res, req, 400, 'Compliance document file is required');
+        }
+
+        const driver = await Captain.findById(id);
+        if (!driver) {
+            return fail(res, req, 404, 'Driver not found');
+        }
+
+        const bucket = getComplianceBucket();
+        const safeName = String(req.file.originalname || 'compliance-document')
+            .replace(/[^a-zA-Z0-9._-]/g, '_');
+
+        const filename = `${driver._id}-${documentType}-${Date.now()}-${safeName}`;
+
+        const uploadStream = bucket.openUploadStream(filename, {
+            contentType: req.file.mimetype,
+            metadata: {
+                driverId: String(driver._id),
+                documentType,
+                originalName: req.file.originalname,
+            },
+        });
+
+        await new Promise((resolve, reject) => {
+            uploadStream.on('error', reject);
+            uploadStream.on('finish', resolve);
+            uploadStream.end(req.file.buffer);
+        });
+
+        if (!Array.isArray(driver.documents)) {
+            driver.documents = [];
+        }
+
+        const existingIndex = driver.documents.findIndex(
+            (document) =>
+                String(document?.documentType || '').toUpperCase() === documentType
+        );
+
+        const complianceDocument = {
+            documentType,
+            title: documentType
+                .replace(/_/g, ' ')
+                .toLowerCase()
+                .replace(/\b\w/g, (char) => char.toUpperCase()),
+            status: 'UNDER_REVIEW',
+            documentUrl: `/api/admin/drivers/${driver._id}/compliance/${documentType}`,
+            rejectionReason: '',
+            uploadedAt: new Date(),
+            updatedAt: new Date(),
+        };
+
+        if (existingIndex >= 0) {
+            driver.documents[existingIndex] = {
+                ...driver.documents[existingIndex].toObject(),
+                ...complianceDocument,
+            };
+        } else {
+            driver.documents.push(complianceDocument);
+        }
+
+        await driver.save();
+
+        return ok(res, req, 200, 'Compliance document uploaded', {
+            compliance: driver.documents.find(
+                (document) =>
+                    String(document?.documentType || '').toUpperCase() === documentType
+            ),
+        });
+    } catch (err) {
+        return fail(
+            res,
+            req,
+            500,
+            err.message || 'Compliance document upload failed'
         );
     }
 };
@@ -1120,6 +1395,77 @@ module.exports.getSupportCases = async (req, res) => {
     }
 };
 
+module.exports.getRideEasySupport = async (req, res) => {
+    try {
+        let support = await RideEasySupport.findOne()
+            .sort({ createdAt: -1 })
+            .lean();
+
+        if (!support) {
+            support = await RideEasySupport.create({
+                name: 'RideEasy Support',
+                phone: '',
+                description: 'RideEasy emergency and customer support',
+                isActive: true,
+            });
+
+            support = support.toObject();
+        }
+
+        return ok(res, req, 200, 'RideEasy Support', {
+            support,
+        });
+    } catch (err) {
+        return fail(
+            res,
+            req,
+            500,
+            err.message || 'Failed to load RideEasy Support'
+        );
+    }
+};
+
+module.exports.updateRideEasySupport = async (req, res) => {
+    try {
+        const {
+            name,
+            phone,
+            description,
+            isActive,
+        } = req.body || {};
+
+        const support = await RideEasySupport.findOneAndUpdate(
+            {},
+            {
+                $set: {
+                    name: String(name || 'RideEasy Support').trim(),
+                    phone: String(phone || '').trim(),
+                    description: String(
+                        description || 'RideEasy emergency and customer support'
+                    ).trim(),
+                    isActive: Boolean(isActive),
+                },
+            },
+            {
+                new: true,
+                upsert: true,
+                setDefaultsOnInsert: true,
+            }
+        ).lean();
+
+        return ok(res, req, 200, 'RideEasy Support updated successfully', {
+            support,
+        });
+    } catch (err) {
+        return fail(
+            res,
+            req,
+            500,
+            err.message || 'Failed to update RideEasy Support'
+        );
+    }
+};
+
 module.exports.getFareConfigurations = async (req, res) => {
     try {
         const configurations = await FareConfiguration.find()
@@ -1628,23 +1974,32 @@ module.exports.createFareConfiguration = async (req, res) => {
 
         const version = latest ? latest.version + 1 : 1;
 
-        const configuration = await FareConfiguration.create({
-            rideType: normalizedRideType,
-            cityZone: normalizedCityZone,
-            version,
-            baseFare: Number(baseFare),
-            distanceRate: Number(distanceRate),
-            timeRate: Number(timeRate),
-            minimumFare: Number(minimumFare),
-            fees: Number(fees),
-            registrationFee: Number(registrationFee),
-            minimumWalletBalance: Number(minimumWalletBalance),
-            tax: Number(tax),
-            effectiveFrom: fromDate,
-            effectiveTo: toDate,
-            status: 'DRAFT',
-            changedBy: req.admin._id,
-        });
+        let configuration;
+
+        try {
+            configuration = await FareConfiguration.create({
+                rideType: normalizedRideType,
+                cityZone: normalizedCityZone,
+                version,
+                baseFare: Number(baseFare),
+                distanceRate: Number(distanceRate),
+                timeRate: Number(timeRate),
+                minimumFare: Number(minimumFare),
+                fees: Number(fees),
+                registrationFee: Number(registrationFee),
+                minimumWalletBalance: Number(minimumWalletBalance),
+                tax: Number(tax),
+                effectiveFrom: fromDate,
+                effectiveTo: toDate,
+                status: 'DRAFT',
+                changedBy: req.admin._id,
+            });
+        } catch (createError) {
+            console.error('[FareConfiguration.create] Mongo error:', createError);
+            console.error('[FareConfiguration.create] Mongo error keyPattern:', createError?.keyPattern);
+            console.error('[FareConfiguration.create] Mongo error keyValue:', createError?.keyValue);
+            throw createError;
+        }
 
         return ok(
             res,
@@ -1665,6 +2020,8 @@ module.exports.createFareConfiguration = async (req, res) => {
 
 
 const AppSettings = require('../models/appSettings.model');
+
+
 
 module.exports.getAppSettings = async (req, res) => {
     try {
@@ -1984,6 +2341,25 @@ module.exports.updateSupportCase = async (req, res) => {
             req,
             500,
             err.message || 'Failed to update support case'
+        );
+    }
+};
+
+module.exports.getCoupons = async (req, res) => {
+    try {
+        const coupons = await Coupon.find()
+            .sort({ createdAt: -1 })
+            .lean();
+
+        return ok(res, req, 200, 'Coupons fetched successfully', {
+            coupons,
+        });
+    } catch (err) {
+        return fail(
+            res,
+            req,
+            500,
+            err.message || 'Failed to fetch coupons'
         );
     }
 };

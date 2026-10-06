@@ -14,6 +14,7 @@ const defaultLocalUri = 'mongodb://127.0.0.1:27017/rideeasy';
 const mongooseOptions = {
     serverSelectionTimeoutMS: Number(process.env.MONGO_SERVER_SELECTION_TIMEOUT_MS || 30_000),
     maxPoolSize: Number(process.env.MONGO_MAX_POOL_SIZE || 10),
+    autoIndex: false,
 };
 
 function sleep(ms) {
