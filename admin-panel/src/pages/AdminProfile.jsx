@@ -1,9 +1,11 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import AdminLayout from '../components/AdminLayout'
+import { useAdminLanguage } from '../context/AdminLanguageContext'
 
 const AdminProfile = () => {
   const navigate = useNavigate()
+  const { t } = useAdminLanguage()
 
   const [name, setName] = useState('Super Admin')
   const [email, setEmail] = useState('admin@rideeasyride.com')
@@ -71,22 +73,22 @@ const AdminProfile = () => {
               type="button"
               onClick={() => navigate('/admin/dashboard', { state: { tab: 'settings' } })}
               className="grid h-9 w-9 place-items-center rounded-xl border border-[#D9E0E8] bg-white text-[#475569] transition hover:bg-[#F7F9FC]"
-              aria-label="Back to settings"
+              aria-label={t.backToSettings}
             >
               <i className="ri-arrow-left-line text-lg" />
             </button>
 
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#718096]">
-                Admin / Settings
+                {t.adminSettings}
               </p>
 
               <h1 className="mt-1 text-[28px] font-bold tracking-[-0.04em] text-[#152238] sm:text-[32px]">
-                Profile Settings
+                {t.profileSettings}
               </h1>
 
               <p className="mt-1 text-sm text-[#718096]">
-                Manage your administrator profile.
+                {t.manageAdminProfile}
               </p>
             </div>
           </div>
@@ -109,7 +111,7 @@ const AdminProfile = () => {
                 </h2>
 
                 <p className="mt-0.5 text-sm text-[#718096]">
-                  Administration
+                  {t.administration}
                 </p>
               </div>
 
@@ -128,7 +130,7 @@ const AdminProfile = () => {
                 htmlFor="admin-profile-name"
                 className="mb-2 block text-sm font-semibold text-[#334155]"
               >
-                Full Name
+                {t.fullName}
               </label>
 
               <input
@@ -146,7 +148,7 @@ const AdminProfile = () => {
                 htmlFor="admin-profile-email"
                 className="mb-2 block text-sm font-semibold text-[#334155]"
               >
-                Email Address
+                {t.emailAddress}
               </label>
 
               <input
@@ -164,7 +166,7 @@ const AdminProfile = () => {
                 htmlFor="admin-profile-phone"
                 className="mb-2 block text-sm font-semibold text-[#334155]"
               >
-                Phone Number
+                {t.phoneNumber}
               </label>
 
               <input
@@ -180,7 +182,7 @@ const AdminProfile = () => {
             {/* ROLE */}
             <div>
               <label className="mb-2 block text-sm font-semibold text-[#334155]">
-                Admin Role
+                {t.adminRole}
               </label>
 
               <div className="flex min-h-11 items-center rounded-xl border border-[#E6EBF2] bg-[#F7F9FC] px-4">
@@ -189,7 +191,7 @@ const AdminProfile = () => {
                 </span>
 
                 <span className="ml-auto rounded-full bg-[#EAF4FF] px-2.5 py-1 text-xs font-semibold text-[#2563EB]">
-                  Administration
+                  {t.administration}
                 </span>
               </div>
             </div>
@@ -198,7 +200,7 @@ const AdminProfile = () => {
             {saved && (
               <div className="flex items-center gap-2 rounded-xl border border-[#BBF7D0] bg-[#F0FDF4] px-4 py-3 text-sm font-semibold text-[#15803D]">
                 <i className="ri-checkbox-circle-line text-lg" />
-                Profile changes saved successfully.
+                {t.profileChangesSaved}
               </div>
             )}
 
@@ -210,14 +212,14 @@ const AdminProfile = () => {
                 onClick={() => navigate('/admin/dashboard', { state: { tab: 'settings' } })}
                 className="h-11 rounded-xl border border-[#CBD5E1] bg-white px-5 text-sm font-semibold text-[#475569] transition hover:bg-[#F8FAFC]"
               >
-                Cancel
+                {t.cancel}
               </button>
 
               <button
                 type="submit"
                 className="h-11 rounded-xl bg-[#FFA726] px-5 text-sm font-bold text-[#0B1B2B] shadow-[0_5px_12px_rgba(255,167,38,0.16)] transition hover:bg-[#FFB74D] active:translate-y-px"
               >
-                Save Changes
+                {t.saveChanges}
               </button>
 
             </div>

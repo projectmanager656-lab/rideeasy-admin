@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import rideEasyAdminLogo from '../assets/rideeasy-admin-logo-reference.png'
+import { useAdminLanguage } from '../context/AdminLanguageContext'
 import {
   ADMIN_ROLES,
   ADMIN_PERMISSIONS,
@@ -55,6 +56,12 @@ const TAB_CONFIG = [
     label: 'Finance',
     icon: 'ri-money-rupee-circle-line',
     permission: ADMIN_PERMISSIONS.FINANCE,
+  },
+  {
+    id: 'coupons',
+    label: 'Coupons',
+    icon: 'ri-coupon-3-line',
+    permission: ADMIN_PERMISSIONS.COUPONS,
   },
   {
     id: 'payments',
@@ -121,6 +128,7 @@ const ROUTES = {
   rides: '/admin/rides',
   'live-operations': '/admin/live-operations',
   finance: '/admin/finance',
+  coupons: '/admin/coupons',
   payments: '/admin/payments',
   sos: '/admin/sos',
   support: '/admin/support',
@@ -147,13 +155,38 @@ const getFrontendAdminRole = () => {
 
 const AdminSidebar = ({ tab, setTab, onLogout }) => {
   const navigate = useNavigate()
+  const { t } = useAdminLanguage()
 
   const adminRole = getFrontendAdminRole()
 
   const allowedItems = useMemo(
-    () => getAllowedAdminNavigation(adminRole, TAB_CONFIG),
-    [adminRole]
+    () =>
+      getAllowedAdminNavigation(adminRole, TAB_CONFIG).map((item) => ({
+        ...item,
+        label:
+          item.id === 'analytics' ? t.dashboard :
+          item.id === 'users' ? t.users :
+          item.id === 'drivers' ? t.drivers :
+          item.id === 'vehicles' ? t.vehicles :
+          item.id === 'verification' ? t.verification :
+          item.id === 'rides' ? t.rides :
+          item.id === 'live-operations' ? t.liveOperations :
+          item.id === 'finance' ? t.finance :
+          item.id === 'coupons' ? t.coupons :
+          item.id === 'payments' ? t.payments :
+          item.id === 'sos' ? t.sos :
+          item.id === 'support' ? t.support :
+          item.id === 'reports' ? t.reports :
+          item.id === 'audit-logs' ? t.auditLogs :
+          item.id === 'notifications' ? t.notifications :
+          item.id === 'roles' ? t.rolesPermissions :
+          item.id === 'pricing' ? t.pricing :
+          item.id === 'settings' ? t.settings :
+          item.label,
+      })),
+    [adminRole, t]
   )
+
 
   const handleTabClick = (tabId) => {
     const route = ROUTES[tabId]
@@ -272,7 +305,26 @@ const AdminSidebar = ({ tab, setTab, onLogout }) => {
                 <i className={`${item.icon} shrink-0 text-base`} />
 
                 <span className="truncate">
-                  {item.label}
+                  {{
+                    analytics: t.dashboard,
+                    users: t.users,
+                    drivers: t.drivers,
+                    vehicles: t.vehicles,
+                    verification: t.verification,
+                    rides: t.rides,
+                    'live-operations': t.liveOperations,
+                    finance: t.finance,
+                    coupons: t.coupons,
+                    payments: t.payments,
+                    sos: t.sos,
+                    support: t.support,
+                    reports: t.reports,
+                    'audit-logs': t.auditLogs,
+                    notifications: t.notifications,
+                    roles: t.rolesPermissions,
+                    pricing: t.pricing,
+                    settings: t.settings,
+                  }[item.id] || item.label}
                 </span>
               </button>
             )

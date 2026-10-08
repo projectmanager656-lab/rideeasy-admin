@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react'
+import { useAdminLanguage } from '../../context/AdminLanguageContext'
 
 const formatAmount = (value) => {
   const amount = Number(value || 0)
@@ -29,6 +30,7 @@ export default function EarningsReport ({
   paymentsLoading = false,
   onBack,
 }) {
+  const { t } = useAdminLanguage()
   const [dateRange, setDateRange] = useState('all')
 
   const filteredRides = useMemo(() => {
@@ -131,11 +133,11 @@ export default function EarningsReport ({
           </button>
 
           <h1 className="text-[28px] font-bold tracking-[-0.04em] text-[#152238] sm:text-[32px]">
-            Earnings Report
+            {t.earningsReport}
           </h1>
 
           <p className="mt-1 text-sm text-[#718096]">
-            Revenue and earnings overview from completed rides
+            {t.revenueAndEarningsOverview}
           </p>
         </div>
 
@@ -144,52 +146,52 @@ export default function EarningsReport ({
           onChange={(event) => setDateRange(event.target.value)}
           className="rounded-xl border border-[#E6EBF2] bg-white px-4 py-2.5 text-sm font-medium text-[#152238] outline-none focus:border-[#2563EB]"
         >
-          <option value="all">All time</option>
-          <option value="7">Last 7 days</option>
-          <option value="30">Last 30 days</option>
-          <option value="90">Last 90 days</option>
+          <option value="all">{t.allTime}</option>
+          <option value="7">{t.last7Days}</option>
+          <option value="30">{t.last30Days}</option>
+          <option value="90">{t.last90Days}</option>
         </select>
       </div>
 
       {/* Summary */}
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <div className="rounded-2xl border border-[#E6EBF2] bg-white p-5 shadow-[0_2px_10px_rgba(15,23,42,0.05)]">
-          <p className="text-xs font-medium text-[#718096]">Total Revenue</p>
+          <p className="text-xs font-medium text-[#718096]">{t.totalRevenue}</p>
           <p className="mt-2 text-2xl font-bold text-[#152238]">
             {formatAmount(totalRevenue)}
           </p>
           <p className="mt-1 text-xs text-[#718096]">
-            From completed rides
+            {t.fromCompletedRides}
           </p>
         </div>
 
         <div className="rounded-2xl border border-[#E6EBF2] bg-white p-5 shadow-[0_2px_10px_rgba(15,23,42,0.05)]">
-          <p className="text-xs font-medium text-[#718096]">Driver Earnings</p>
+          <p className="text-xs font-medium text-[#718096]">{t.driverEarnings}</p>
           <p className="mt-2 text-2xl font-bold text-[#152238]">
             {formatAmount(driverEarnings)}
           </p>
           <p className="mt-1 text-xs text-[#718096]">
-            Recorded captain earnings
+            {t.recordedCaptainEarnings}
           </p>
         </div>
 
         <div className="rounded-2xl border border-[#E6EBF2] bg-white p-5 shadow-[0_2px_10px_rgba(15,23,42,0.05)]">
-          <p className="text-xs font-medium text-[#718096]">Platform Fee</p>
+          <p className="text-xs font-medium text-[#718096]">{t.platformFee}</p>
           <p className="mt-2 text-2xl font-bold text-[#152238]">
             {formatAmount(platformFee)}
           </p>
           <p className="mt-1 text-xs text-[#718096]">
-            Recorded platform fees
+            {t.recordedPlatformFees}
           </p>
         </div>
 
         <div className="rounded-2xl border border-[#E6EBF2] bg-white p-5 shadow-[0_2px_10px_rgba(15,23,42,0.05)]">
-          <p className="text-xs font-medium text-[#718096]">Discounts</p>
+          <p className="text-xs font-medium text-[#718096]">{t.discounts}</p>
           <p className="mt-2 text-2xl font-bold text-[#152238]">
             {formatAmount(totalDiscount)}
           </p>
           <p className="mt-1 text-xs text-[#718096]">
-            Applied to completed rides
+            {t.appliedToCompletedRides}
           </p>
         </div>
       </div>
@@ -198,10 +200,10 @@ export default function EarningsReport ({
       <section className="overflow-hidden rounded-2xl border border-[#E6EBF2] bg-white shadow-[0_2px_10px_rgba(15,23,42,0.05)]">
         <div className="border-b border-[#E6EBF2] px-5 py-4">
           <h2 className="text-base font-bold text-[#152238]">
-            Ride Earnings
+            {t.rideEarnings}
           </h2>
           <p className="mt-1 text-xs text-[#718096]">
-            Completed rides included in this report
+            {t.completedRidesIncluded}
           </p>
         </div>
 
@@ -209,10 +211,10 @@ export default function EarningsReport ({
           <div className="px-5 py-12 text-center">
             <i className="ri-bar-chart-box-line text-3xl text-[#A0AEC0]" />
             <p className="mt-3 text-sm font-medium text-[#152238]">
-              No completed ride earnings found
+              {t.noCompletedRideEarnings}
             </p>
             <p className="mt-1 text-xs text-[#718096]">
-              Try another date range.
+              {t.tryAnotherDateRange}
             </p>
           </div>
         ) : (
@@ -221,22 +223,22 @@ export default function EarningsReport ({
               <thead>
                 <tr className="border-b border-[#E6EBF2] bg-[#FAFBFC] text-left">
                   <th className="px-5 py-3 text-xs font-semibold text-[#718096]">
-                    Ride
+                    {t.ride}
                   </th>
                   <th className="px-5 py-3 text-xs font-semibold text-[#718096]">
-                    Date
+                    {t.date}
                   </th>
                   <th className="px-5 py-3 text-xs font-semibold text-[#718096]">
-                    Fare
+                    {t.fare}
                   </th>
                   <th className="px-5 py-3 text-xs font-semibold text-[#718096]">
-                    Discount
+                    {t.discount}
                   </th>
                   <th className="px-5 py-3 text-xs font-semibold text-[#718096]">
-                    Platform Fee
+                    {t.platformFee}
                   </th>
                   <th className="px-5 py-3 text-xs font-semibold text-[#718096]">
-                    Driver Earnings
+                    {t.driverEarnings}
                   </th>
                 </tr>
               </thead>

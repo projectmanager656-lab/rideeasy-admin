@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { Card } from '../../components/AdminUIComponents'
+import { useAdminLanguage } from '../../context/AdminLanguageContext'
 
 const EMPTY_FORM = {
   rideType: 'AUTO',
@@ -23,10 +24,10 @@ const toInputDate = (value) => {
   return date.toISOString().slice(0, 16)
 }
 
-const formatDate = (value) => {
-  if (!value) return 'Open ended'
+const formatDate = (value, t) => {
+  if (!value) return t.openEnded
   const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return '—'
+  if (Number.isNaN(date.getTime())) return t.invalidDate
   return date.toLocaleString()
 }
 
@@ -46,6 +47,7 @@ export default function PricingTab({
   onLoadHistory,
   onPreviewFare,
 }) {
+  const { t } = useAdminLanguage()
   const [form, setForm] = useState(EMPTY_FORM)
   const [editingId, setEditingId] = useState(null)
   const [formError, setFormError] = useState('')
@@ -92,18 +94,18 @@ export default function PricingTab({
 
   const validateForm = () => {
     const requiredNumbers = [
-      ['baseFare', 'Base fare'],
-      ['distanceRate', 'Distance rate'],
-      ['timeRate', 'Time rate'],
-      ['minimumFare', 'Minimum fare'],
-      ['fees', 'Fees'],
-      ['registrationFee', 'Registration fee'],
-      ['minimumWalletBalance', 'Minimum wallet balance'],
-      ['tax', 'Tax'],
+      ['baseFare', t.baseFare],
+      ['distanceRate', t.distanceRate],
+      ['timeRate', t.timeRate],
+      ['minimumFare', t.minimumFare],
+      ['fees', t.fees],
+      ['registrationFee', t.registrationFee],
+      ['minimumWalletBalance', t.minimumWalletBalance],
+      ['tax', t.tax],
     ]
 
     if (!form.cityZone.trim()) {
-      return 'City / zone is required.'
+      return t.cityZoneRequired
     }
 
     for (const [field, label] of requiredNumbers) {
@@ -114,33 +116,33 @@ export default function PricingTab({
       const value = Number(form[field])
 
       if (!Number.isFinite(value)) {
-        return `${label} must be a valid number.`
+        return `${label} ${t.validNumber}`
       }
 
       if (value < 0) {
-        return `${label} cannot be negative.`
+        return `${label} ${t.cannotBeNegative}`
       }
     }
 
     if (!form.effectiveFrom) {
-      return 'Effective from is required.'
+      return t.effectiveFromRequired
     }
 
     const from = new Date(form.effectiveFrom)
 
     if (Number.isNaN(from.getTime())) {
-      return 'Effective from is invalid.'
+      return t.effectiveFromInvalid
     }
 
     if (form.effectiveTo) {
       const to = new Date(form.effectiveTo)
 
       if (Number.isNaN(to.getTime())) {
-        return 'Effective to is invalid.'
+        return t.effectiveToInvalid
       }
 
       if (to <= from) {
-        return 'Effective to must be after effective from.'
+        return t.effectiveToAfterFrom
       }
     }
 
@@ -188,7 +190,7 @@ export default function PricingTab({
       setFormError(
         error?.response?.data?.message ||
           error?.message ||
-          'Unable to save fare configuration.',
+          t.unableToSaveFareConfiguration,
       )
     }
   }
@@ -196,7 +198,7 @@ export default function PricingTab({
   const handleEdit = (configuration) => {
     if (configuration.status !== 'DRAFT') {
       setFormError(
-        'Only draft configurations can be edited. Active and historical versions remain unchanged.',
+        t.draftOnlyEdit,
       )
       return
     }
@@ -226,12 +228,39 @@ export default function PricingTab({
   const handleStatusChange = async (configuration, nextStatus) => {
     const id = configuration._id || configuration.id
 
-    const message =
-      nextStatus === 'ACTIVE'
-        ? `Activate ${configuration.rideType} / ${configuration.cityZone} version ${configuration.version}?`
-        : `Deactivate ${configuration.rideType} / ${configuration.cityZone} version ${configuration.version}?`
+    if (nextStatus === 'ACTIVE') {
+      const activeMatch = [...fareConfigurations]
+        .filter(
+          (item) =>
+            item?.rideType === configuration.rideType &&
+            item?.cityZone === configuration.cityZone &&
+            item?.status === 'ACTIVE',
+        )
+        .sort((a, b) => Number(b.version || 0) - Number(a.version || 0))[0]
 
-    if (!window.confirm(message)) return
+      const oldBaseFare = Number(activeMatch?.baseFare ?? 0)
+      const oldDistanceRate = Number(activeMatch?.distanceRate ?? 0)
+      const oldMinimumFare = Number(activeMatch?.minimumFare ?? 0)
+      const newBaseFare = Number(configuration.baseFare ?? 0)
+      const newDistanceRate = Number(configuration.distanceRate ?? 0)
+      const newMinimumFare = Number(configuration.minimumFare ?? 0)
+
+      const message = [
+        `Publish new ${configuration.rideType} fare for ${configuration.cityZone}?`,
+        '',
+        `${t.oldBaseFare}: ₹${oldBaseFare.toFixed(2)}`,
+        `${t.newBaseFare}: ₹${newBaseFare.toFixed(2)}`,
+        `${t.oldDistanceRate}: ₹${oldDistanceRate.toFixed(2)}`,
+        `${t.newDistanceRate}: ₹${newDistanceRate.toFixed(2)}`,
+        `${t.oldMinimumFare}: ₹${oldMinimumFare.toFixed(2)}`,
+        `${t.newMinimumFare}: ₹${newMinimumFare.toFixed(2)}`,
+      ].join('\n')
+
+      if (!window.confirm(message)) return
+    } else {
+      const message = `${t.deactivateFare} ${configuration.rideType} / ${configuration.cityZone} ${t.version.toLowerCase()} ${configuration.version}?`
+      if (!window.confirm(message)) return
+    }
 
     try {
       await onUpdateFareStatus(id, nextStatus)
@@ -239,7 +268,7 @@ export default function PricingTab({
       setFormError(
         error?.response?.data?.message ||
           error?.message ||
-          'Unable to update fare status.',
+          t.unableToUpdateFareStatus,
       )
     }
   }
@@ -259,7 +288,7 @@ export default function PricingTab({
       setFormError(
         error?.response?.data?.message ||
           error?.message ||
-          'Unable to load fare history.',
+          t.unableToLoadFareHistory,
       )
     } finally {
       setHistoryLoading(false)
@@ -275,11 +304,11 @@ export default function PricingTab({
     }
 
     const distance = Number(
-      window.prompt('Sample distance in km:', '5') || '0',
+      window.prompt(t.sampleDistance, '5') || '0',
     )
 
     const time = Number(
-      window.prompt('Sample ride time in minutes:', '15') || '0',
+      window.prompt(t.sampleRideTime, '15') || '0',
     )
 
     if (
@@ -288,7 +317,7 @@ export default function PricingTab({
       !Number.isFinite(time) ||
       time < 0
     ) {
-      setFormError('Sample distance and time must be valid non-negative numbers.')
+      setFormError(t.sampleDistanceTimeInvalid)
       return
     }
 
@@ -312,7 +341,7 @@ export default function PricingTab({
       setFormError(
         error?.response?.data?.message ||
           error?.message ||
-          'Unable to calculate fare preview.',
+          t.unableToCalculateFarePreview,
       )
     } finally {
       setPreviewLoading(false)
@@ -331,7 +360,7 @@ export default function PricingTab({
             <div className="grid h-10 w-10 place-items-center rounded-xl bg-[#FFF4DF] text-[#FFB21C]">
               <i className="ri-loader-4-line animate-spin text-xl" />
             </div>
-            Loading fare configurations…
+            {t.loadingFareConfigurations}
           </div>
         </Card>
       </div>
@@ -344,7 +373,7 @@ export default function PricingTab({
         <div className="flex flex-col justify-between gap-5 lg:flex-row lg:items-center">
           <div>
             <h2 className="text-2xl font-bold tracking-tight text-[#111827]">
-              Fare Configuration
+              {t.fareConfigurationTitle}
             </h2>
 
             <p className="mt-1 max-w-3xl text-sm text-[#6B7280]">
@@ -359,7 +388,7 @@ export default function PricingTab({
             </div>
 
             <div>
-              <p className="text-xs text-[#6B7280]">Fare versions</p>
+              <p className="text-xs text-[#6B7280]">{t.fareVersions}</p>
               <p className="font-bold text-[#15803D]">
                 {fareConfigurations.length}
               </p>
@@ -390,11 +419,11 @@ export default function PricingTab({
 
               <div>
                 <h3 className="font-bold text-[#111827]">
-                  {editingId ? 'Edit Draft Fare' : 'Create Fare Configuration'}
+                  {editingId ? t.editDraftFare : t.createFareConfiguration}
                 </h3>
 
                 <p className="mt-0.5 text-xs text-[#6B7280]">
-                  Active and historical versions cannot be silently rewritten.
+                  {t.activeHistoricalVersions}
                 </p>
               </div>
             </div>
@@ -405,7 +434,7 @@ export default function PricingTab({
                 onClick={resetForm}
                 className="rounded-xl border border-[#D9DEE7] px-4 py-2 text-sm font-semibold text-[#475569] hover:bg-[#F7F9FC]"
               >
-                Cancel Edit
+                {t.cancelEdit}
               </button>
             )}
           </div>
@@ -414,7 +443,7 @@ export default function PricingTab({
         <form onSubmit={handleSubmit} className="p-5 sm:p-6">
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             <label className="text-sm font-semibold text-[#334155]">
-              Ride Type
+              {t.rideTypeLabel}
               <select
                 name="rideType"
                 value={form.rideType}
@@ -428,25 +457,25 @@ export default function PricingTab({
             </label>
 
             <label className="text-sm font-semibold text-[#334155]">
-              City / Zone
+              {t.cityZoneLabel}
               <input
                 name="cityZone"
                 value={form.cityZone}
                 onChange={handleChange}
-                placeholder="e.g. Pune / Zone 1"
+                placeholder={t.cityZonePlaceholder}
                 className="mt-2 w-full rounded-xl border border-[#D9DEE7] px-3 py-2.5 text-sm outline-none focus:border-[#FFB21C]"
               />
             </label>
 
             {[
-              ['baseFare', 'Base Fare'],
-              ['distanceRate', 'Distance Rate / km'],
-              ['timeRate', 'Time Rate / min'],
-              ['minimumFare', 'Minimum Fare'],
-              ['fees', 'Fees'],
-              ['registrationFee', 'Registration Fee'],
-              ['minimumWalletBalance', 'Minimum Wallet Balance'],
-              ['tax', 'Tax (%)'],
+              ['baseFare', t.baseFare],
+              ['distanceRate', t.distanceRate],
+              ['timeRate', t.timeRate],
+              ['minimumFare', t.minimumFare],
+              ['fees', t.fees],
+              ['registrationFee', t.registrationFee],
+              ['minimumWalletBalance', t.minimumWalletBalance],
+              ['tax', t.taxPercentage],
             ].map(([name, label]) => (
               <label
                 key={name}
@@ -467,7 +496,7 @@ export default function PricingTab({
             ))}
 
             <label className="text-sm font-semibold text-[#334155]">
-              Effective From
+              {t.effectiveFrom}
               <input
                 type="datetime-local"
                 name="effectiveFrom"
@@ -478,7 +507,7 @@ export default function PricingTab({
             </label>
 
             <label className="text-sm font-semibold text-[#334155]">
-              Effective To
+              {t.effectiveTo}
               <input
                 type="datetime-local"
                 name="effectiveTo"
@@ -492,12 +521,11 @@ export default function PricingTab({
           <div className="mt-5 flex flex-col gap-3 rounded-2xl border border-[#E5E7EB] bg-[#F7F9FC] p-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <p className="text-sm font-bold text-[#111827]">
-                Save as Draft
+                {t.saveAsDraft}
               </p>
 
               <p className="mt-1 text-xs text-[#6B7280]">
-                Activation is a separate confirmed action and is validated
-                against overlapping active periods.
+                {t.activationDescription}
               </p>
             </div>
 
@@ -509,7 +537,7 @@ export default function PricingTab({
                 className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#D9DEE7] bg-white px-4 py-2.5 text-sm font-bold text-[#334155] hover:bg-[#F8FAFC] disabled:opacity-60"
               >
                 <i className="ri-calculator-line" />
-                {previewLoading ? 'Calculating…' : 'Preview Fare'}
+                {previewLoading ? t.calculating : t.previewFare}
               </button>
 
               <button
@@ -517,14 +545,14 @@ export default function PricingTab({
                 className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#FFB21C] px-5 py-2.5 text-sm font-bold text-[#0B1B2B] shadow-sm transition hover:bg-[#FFC34D]"
               >
                 <i className="ri-save-line" />
-                {editingId ? 'Update Draft' : 'Create Draft'}
+                {editingId ? t.updateDraft : t.createDraft}
               </button>
             </div>
           </div>
 
           {preview && (
             <div className="mt-5 rounded-2xl border border-[#BBE7C9] bg-[#EAFBF2] p-5">
-              <h4 className="font-bold text-[#166534]">Fare Preview</h4>
+              <h4 className="font-bold text-[#166534]">{t.farePreview}</h4>
 
               <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {Object.entries(preview).map(([key, value]) => (
@@ -551,11 +579,11 @@ export default function PricingTab({
       <Card className="overflow-hidden rounded-2xl border border-[#E5E7EB] bg-white p-0 shadow-sm">
         <div className="border-b border-[#E5E7EB] px-5 py-4 sm:px-6">
           <h3 className="font-bold text-[#111827]">
-            Fare Configuration List
+            {t.fareConfigurationList}
           </h3>
 
           <p className="mt-0.5 text-xs text-[#6B7280]">
-            Ride type, city / zone, version, status and effective period.
+            {t.fareConfigurationListSubtitle}
           </p>
         </div>
 
@@ -563,13 +591,13 @@ export default function PricingTab({
           <table className="min-w-full text-left text-sm">
             <thead className="bg-[#F7F9FC] text-xs uppercase tracking-wide text-[#64748B]">
               <tr>
-                <th className="px-5 py-3">Ride Type</th>
-                <th className="px-5 py-3">City / Zone</th>
-                <th className="px-5 py-3">Version</th>
-                <th className="px-5 py-3">Status</th>
-                <th className="px-5 py-3">Effective From</th>
-                <th className="px-5 py-3">Effective To</th>
-                <th className="px-5 py-3">Actions</th>
+                <th className="px-5 py-3">{t.rideTypeLabel}</th>
+                <th className="px-5 py-3">{t.cityZoneLabel}</th>
+                <th className="px-5 py-3">{t.version}</th>
+                <th className="px-5 py-3">{t.status}</th>
+                <th className="px-5 py-3">{t.effectiveFrom}</th>
+                <th className="px-5 py-3">{t.effectiveTo}</th>
+                <th className="px-5 py-3">{t.actions}</th>
               </tr>
             </thead>
 
@@ -580,7 +608,7 @@ export default function PricingTab({
                     colSpan="7"
                     className="px-5 py-10 text-center text-sm text-[#6B7280]"
                   >
-                    No fare configurations found.
+                    {t.noFareConfigurations}
                   </td>
                 </tr>
               ) : (
@@ -613,11 +641,11 @@ export default function PricingTab({
                       </td>
 
                       <td className="px-5 py-4 text-[#475569]">
-                        {formatDate(configuration.effectiveFrom)}
+                        {formatDate(configuration.effectiveFrom, t)}
                       </td>
 
                       <td className="px-5 py-4 text-[#475569]">
-                        {formatDate(configuration.effectiveTo)}
+                        {formatDate(configuration.effectiveTo, t)}
                       </td>
 
                       <td className="px-5 py-4">
@@ -629,7 +657,7 @@ export default function PricingTab({
                                 onClick={() => handleEdit(configuration)}
                                 className="rounded-lg border border-[#D9DEE7] px-3 py-1.5 text-xs font-bold text-[#334155] hover:bg-[#F7F9FC]"
                               >
-                                Edit
+                                {t.edit}
                               </button>
 
                               <button
@@ -639,7 +667,7 @@ export default function PricingTab({
                                 }
                                 className="rounded-lg bg-[#16A34A] px-3 py-1.5 text-xs font-bold text-white hover:bg-[#15803D]"
                               >
-                                Activate
+                                {t.activate}
                               </button>
                             </>
                           )}
@@ -652,7 +680,7 @@ export default function PricingTab({
                               }
                               className="rounded-lg border border-[#FECACA] px-3 py-1.5 text-xs font-bold text-[#B91C1C] hover:bg-[#FEF2F2]"
                             >
-                              Deactivate
+                              {t.deactivate}
                             </button>
                           )}
 
@@ -661,7 +689,7 @@ export default function PricingTab({
                             onClick={() => handleHistory(configuration)}
                             className="rounded-lg border border-[#D9DEE7] px-3 py-1.5 text-xs font-bold text-[#4F46E5] hover:bg-[#EEF2FF]"
                           >
-                            History
+                            {t.history}
                           </button>
                         </div>
                       </td>
@@ -683,7 +711,7 @@ export default function PricingTab({
       {history.length > 0 && (
         <Card className="rounded-2xl border border-[#E5E7EB] bg-white p-0 shadow-sm">
           <div className="border-b border-[#E5E7EB] px-5 py-4">
-            <h3 className="font-bold text-[#111827]">Version History</h3>
+            <h3 className="font-bold text-[#111827]">{t.history}</h3>
             <p className="mt-0.5 text-xs text-[#6B7280]">
               Version, status, changed by and changed time.
             </p>
@@ -716,7 +744,7 @@ export default function PricingTab({
                   </span>
 
                   <p className="mt-1 text-xs text-[#6B7280]">
-                    {formatDate(item.updatedAt || item.createdAt)}
+                    {formatDate(item.updatedAt || item.createdAt, t)}
                   </p>
                 </div>
               </div>

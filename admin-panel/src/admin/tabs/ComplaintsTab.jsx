@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { adminApi } from '../../services/adminApi'
 import { SecondaryPageShell, SecondarySection } from './SecondaryPageShell'
+import { useAdminLanguage } from '../../context/AdminLanguageContext'
 
 const filters = ['All', 'User', 'Driver', 'Open', 'In Review', 'Escalated', 'Resolved']
 
@@ -18,6 +19,7 @@ const priorityClasses = {
 }
 
 export default function ComplaintsTab () {
+  const { t } = useAdminLanguage()
   const [filter, setFilter] = useState('All')
   const [search, setSearch] = useState('')
   const [selectedCase, setSelectedCase] = useState(null)
@@ -110,15 +112,34 @@ export default function ComplaintsTab () {
     })
   }, [filter, search])
 
+  const filterLabels = {
+    All: t.supportAll,
+    User: t.supportUser,
+    Driver: t.supportDriver,
+    Open: t.supportOpen,
+    'In Review': t.supportInReview,
+    Escalated: t.supportEscalated,
+    Resolved: t.supportResolved,
+  }
+
+  const priorityLabels = {
+    High: t.supportHigh,
+    Medium: t.supportMedium,
+    Low: t.supportLow,
+  }
+
+  const getStatusLabel = (value) => filterLabels[value] || value
+  const getPriorityLabel = (value) => priorityLabels[value] || value
+
   return (
     <SecondaryPageShell
-      title="Support"
-      subtitle="Review and investigate user & driver support cases"
+      title={t.helpSupport}
+      subtitle={t.supportCasesSubtitle}
       rows={[]}
     >
       <SecondarySection
-        title="Support Cases"
-        subtitle={`${filteredCases.length} case${filteredCases.length === 1 ? '' : 's'} shown`}
+        title={t.supportCases}
+        subtitle={`${filteredCases.length} ${filteredCases.length === 1 ? t.caseShown : t.casesShown}`}
       >
         <div className="border-b border-[#E6EBF2] p-4 sm:p-5">
           <div className="flex flex-col gap-3">
@@ -127,7 +148,7 @@ export default function ComplaintsTab () {
               <input
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
-                placeholder="Search case, ride, user or category..."
+                placeholder={t.searchSupportCases}
                 className="h-10 w-full rounded-xl border border-[#E6EBF2] bg-[#FAFBFC] pl-9 pr-3 text-sm text-[#152238] outline-none focus:border-[#FFB21C]"
               />
             </div>
@@ -144,7 +165,7 @@ export default function ComplaintsTab () {
                       : 'bg-[#F3F5F8] text-[#718096]'
                   }`}
                 >
-                  {item}
+                  {filterLabels[item] || item}
                 </button>
               ))}
             </div>
@@ -167,10 +188,10 @@ export default function ComplaintsTab () {
                 <span className="flex flex-wrap items-center gap-2">
                   <span className="text-sm font-bold text-[#152238]">{item.id}</span>
                   <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${statusClasses[item.status]}`}>
-                    {item.status}
+                    {getStatusLabel(item.status)}
                   </span>
                   <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${priorityClasses[item.priority]}`}>
-                    {item.priority}
+                    {getPriorityLabel(item.priority)}
                   </span>
                 </span>
 
@@ -179,7 +200,7 @@ export default function ComplaintsTab () {
                 </span>
 
                 <span className="mt-1 block truncate text-xs text-[#718096]">
-                  {item.category} · {item.rideId} · {item.type}
+                  {item.category} · {item.rideId} · {getStatusLabel(item.type)}
                 </span>
 
                 <span className="mt-1 block text-[11px] text-[#94A3B8]">
@@ -194,14 +215,14 @@ export default function ComplaintsTab () {
           {loading && (
             <div className="px-5 py-12 text-center">
               <i className="ri-loader-4-line animate-spin text-3xl text-[#FFB21C]" />
-              <p className="mt-2 text-sm font-semibold text-[#152238]">Loading support cases...</p>
+              <p className="mt-2 text-sm font-semibold text-[#152238]">{t.loadingSupportCases}</p>
             </div>
           )}
 
           {!loading && error && (
             <div className="px-5 py-12 text-center">
               <i className="ri-error-warning-line text-3xl text-[#DC2626]" />
-              <p className="mt-2 text-sm font-semibold text-[#152238]">Unable to load support cases</p>
+              <p className="mt-2 text-sm font-semibold text-[#152238]">{t.unableLoadSupportCases}</p>
               <p className="mt-1 text-xs text-[#718096]">{error}</p>
             </div>
           )}
@@ -209,8 +230,8 @@ export default function ComplaintsTab () {
           {!loading && !error && filteredCases.length === 0 && (
             <div className="px-5 py-12 text-center">
               <i className="ri-inbox-line text-3xl text-[#CBD5E1]" />
-              <p className="mt-2 text-sm font-semibold text-[#152238]">No support cases found</p>
-              <p className="mt-1 text-xs text-[#718096]">Try another search or filter.</p>
+              <p className="mt-2 text-sm font-semibold text-[#152238]">{t.noSupportCases}</p>
+              <p className="mt-1 text-xs text-[#718096]">{t.tryAnotherSearchFilter}</p>
             </div>
           )}
         </div>
@@ -228,7 +249,7 @@ export default function ComplaintsTab () {
             <div className="sticky top-0 z-10 flex items-center justify-between border-b border-[#E6EBF2] bg-white px-5 py-4">
               <div>
                 <h2 className="text-lg font-bold text-[#152238]">
-                  Case {selectedCase.id}
+                  {t.caseLabel} {selectedCase.id}
                 </h2>
                 <p className="mt-1 text-xs text-[#718096]">
                   {selectedCase.category} · {selectedCase.type}
@@ -239,7 +260,7 @@ export default function ComplaintsTab () {
                 type="button"
                 onClick={() => setSelectedCase(null)}
                 className="grid h-9 w-9 place-items-center rounded-full bg-[#F3F5F8] text-[#64748B] transition hover:bg-[#E6EBF2]"
-                aria-label="Close case details"
+                aria-label={t.closeCaseDetails}
               >
                 <i className="ri-close-line text-lg" />
               </button>
@@ -248,27 +269,27 @@ export default function ComplaintsTab () {
             <div className="p-5">
               <div className="flex flex-wrap items-center gap-2">
                 <span className={`rounded-full px-3 py-1 text-xs font-bold ${statusClasses[selectedCase.status]}`}>
-                  {selectedCase.status}
+                  {getStatusLabel(selectedCase.status)}
                 </span>
                 <span className={`rounded-full px-3 py-1 text-xs font-bold ${priorityClasses[selectedCase.priority]}`}>
-                  {selectedCase.priority} Priority
+                  {getPriorityLabel(selectedCase.priority)} {t.supportPriority}
                 </span>
               </div>
 
               <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                <Info label="Subject" value={selectedCase.subject} />
-                <Info label="User / Driver" value={selectedCase.user} />
-                <Info label="Ride ID" value={selectedCase.rideId} />
-                <Info label="Ride Status" value={selectedCase.rideStatus} />
-                <Info label="Cancellation Reason" value={selectedCase.cancellationReason} />
-                <Info label="Cancellation Fee" value={selectedCase.cancellationFee} />
-                <Info label="Assigned Owner" value={selectedCase.owner} />
-                <Info label="Created" value={selectedCase.createdAt} />
+                <Info label={t.subject} value={selectedCase.subject} />
+                <Info label={t.userDriver} value={selectedCase.user} />
+                <Info label={t.rideIdLabel} value={selectedCase.rideId} />
+                <Info label={t.rideStatus} value={selectedCase.rideStatus} />
+                <Info label={t.cancellationReason} value={selectedCase.cancellationReason} />
+                <Info label={t.cancellationFee} value={selectedCase.cancellationFee} />
+                <Info label={t.assignedOwner} value={selectedCase.owner} />
+                <Info label={t.created} value={selectedCase.createdAt} />
               </div>
 
               <div className="mt-5 rounded-xl border border-[#E6EBF2] bg-[#FAFBFC] p-4">
                 <p className="text-xs font-semibold uppercase tracking-wide text-[#718096]">
-                  Investigation Context
+                  {t.investigationContext}
                 </p>
                 <p className="mt-2 text-sm leading-6 text-[#152238]">
                   {selectedCase.description}
@@ -277,16 +298,16 @@ export default function ComplaintsTab () {
 
               <div className="mt-5 rounded-xl border border-[#E6EBF2] p-4">
                 <p className="text-xs font-semibold uppercase tracking-wide text-[#718096]">
-                  Status History
+                  {t.statusHistory}
                 </p>
 
                 <div className="mt-4 space-y-4">
-                  <HistoryItem label="Case created" time={selectedCase.createdAt} />
+                  <HistoryItem label={t.caseCreated} time={selectedCase.createdAt} />
 
                   {selectedCase.status !== 'Open' && (
                     <HistoryItem
-                      label={`Current status: ${selectedCase.status}`}
-                      time="Status transition timestamp unavailable"
+                      label={`${t.currentStatus}: ${getStatusLabel(selectedCase.status)}`}
+                      time={t.statusTransitionUnavailable}
                     />
                   )}
                 </div>

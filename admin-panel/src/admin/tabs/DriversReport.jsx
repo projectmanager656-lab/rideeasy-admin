@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react'
+import { useAdminLanguage } from '../../context/AdminLanguageContext'
 
 const money = (value) =>
   `₹${Number(value || 0).toLocaleString('en-IN')}`
@@ -45,6 +46,8 @@ export default function DriversReport ({
   ridesLoading = false,
   onBack,
 }) {
+  const { t } = useAdminLanguage()
+
   const [dateRange, setDateRange] = useState('all')
   const [statusFilter, setStatusFilter] = useState('all')
   const [search, setSearch] = useState('')
@@ -168,7 +171,7 @@ export default function DriversReport ({
         <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center shadow-sm">
           <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-slate-200 border-t-blue-600" />
           <p className="mt-3 text-sm font-medium text-slate-500">
-            Loading drivers report…
+            {t.loadingDriversReport}
           </p>
         </div>
       ) : (
@@ -178,16 +181,16 @@ export default function DriversReport ({
         onClick={onBack}
         className="mb-6 text-sm font-medium text-blue-600 hover:text-blue-700"
       >
-        ← Back to Reports
+        ← {t.backToReports}
       </button>
 
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <h1 className="text-3xl font-bold text-slate-900">
-            Drivers Report
+            {t.driversReport}
           </h1>
           <p className="mt-1 text-slate-500">
-            Driver activity and performance overview
+            {t.driversActivitySubtitle}
           </p>
         </div>
 
@@ -197,10 +200,10 @@ export default function DriversReport ({
             onChange={(e) => setDateRange(e.target.value)}
             className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm text-slate-700 outline-none"
           >
-            <option value="all">All time</option>
-            <option value="7">Last 7 days</option>
-            <option value="30">Last 30 days</option>
-            <option value="90">Last 90 days</option>
+            <option value="all">{t.allTime}</option>
+            <option value="7">{t.last7Days}</option>
+            <option value="30">{t.last30Days}</option>
+            <option value="90">{t.last90Days}</option>
           </select>
 
           <select
@@ -208,21 +211,21 @@ export default function DriversReport ({
             onChange={(e) => setStatusFilter(e.target.value)}
             className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm text-slate-700 outline-none"
           >
-            <option value="all">All statuses</option>
-            <option value="online">Online</option>
-            <option value="offline">Offline</option>
-            <option value="busy">Busy</option>
+            <option value="all">{t.allStatuses}</option>
+            <option value="online">{t.online}</option>
+            <option value="offline">{t.offline}</option>
+            <option value="busy">{t.busy}</option>
           </select>
         </div>
       </div>
 
       <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
         {[
-          ['Total Drivers', drivers.length],
-          ['Online Drivers', onlineDrivers],
-          ['Offline Drivers', offlineDrivers],
-          ['Approved Drivers', approvedDrivers],
-          ['Completed Rides', completedRides],
+           [t.totalDrivers, drivers.length],
+           [t.onlineDrivers, onlineDrivers],
+           [t.offlineDrivers, offlineDrivers],
+           [t.approvedDrivers, approvedDrivers],
+           [t.completedRides, completedRides],
         ].map(([label, value]) => (
           <div
             key={label}
@@ -237,7 +240,7 @@ export default function DriversReport ({
       </div>
 
       <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_2px_10px_rgba(15,23,42,0.05)]">
-        <p className="text-sm text-slate-500">Driver Earnings</p>
+        <p className="text-sm text-slate-500">{t.driverEarnings}</p>
         <p className="mt-2 text-2xl font-bold text-slate-900">
           {money(totalDriverEarnings)}
         </p>
@@ -248,10 +251,10 @@ export default function DriversReport ({
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <h2 className="text-lg font-semibold text-slate-900">
-                Driver Performance
+                {t.driverPerformance}
               </h2>
               <p className="mt-1 text-sm text-slate-500">
-                Driver activity, completed rides and earnings
+                {t.driverPerformanceSubtitle}
               </p>
             </div>
 
@@ -261,7 +264,7 @@ export default function DriversReport ({
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search driver, phone, vehicle or city..."
+                placeholder={t.searchDriver}
                 className="w-full rounded-lg border border-slate-200 bg-white py-2.5 pl-9 pr-4 text-sm text-slate-700 outline-none focus:border-blue-400"
               />
             </div>
@@ -273,31 +276,31 @@ export default function DriversReport ({
             <thead>
               <tr className="border-b border-slate-200 bg-slate-50">
                 <th className="px-6 py-4 text-xs font-semibold uppercase text-slate-500">
-                  Driver
+                  {t.driver}
                 </th>
                 <th className="px-6 py-4 text-xs font-semibold uppercase text-slate-500">
-                  Phone
+                  {t.phone}
                 </th>
                 <th className="px-6 py-4 text-xs font-semibold uppercase text-slate-500">
-                  Vehicle
+                  {t.vehicle}
                 </th>
                 <th className="px-6 py-4 text-xs font-semibold uppercase text-slate-500">
-                  City
+                  {t.city}
                 </th>
                 <th className="px-6 py-4 text-xs font-semibold uppercase text-slate-500">
-                  Status
+                  {t.status}
                 </th>
                 <th className="px-6 py-4 text-xs font-semibold uppercase text-slate-500">
-                  Approval
+                  {t.approval}
                 </th>
                 <th className="px-6 py-4 text-xs font-semibold uppercase text-slate-500">
-                  Completed
+                  {t.completed}
                 </th>
                 <th className="px-6 py-4 text-xs font-semibold uppercase text-slate-500">
-                  Cancelled
+                  {t.cancelled}
                 </th>
                 <th className="px-6 py-4 text-xs font-semibold uppercase text-slate-500">
-                  Earnings
+                  {t.earnings}
                 </th>
               </tr>
             </thead>
@@ -309,7 +312,7 @@ export default function DriversReport ({
                     colSpan="9"
                     className="px-6 py-10 text-center text-sm text-slate-500"
                   >
-                    No driver records found.
+                    {t.noDriverRecords}
                   </td>
                 </tr>
               ) : (
@@ -338,13 +341,13 @@ export default function DriversReport ({
 
                     <td className="px-6 py-5">
                       <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700">
-                        {row.status}
+                        {t[row.status.toLowerCase()] || row.status}
                       </span>
                     </td>
 
                     <td className="px-6 py-5">
                       <span className="text-sm text-slate-700">
-                        {row.approved ? 'Approved' : 'Pending'}
+                        {row.approved ? t.approved : t.pending}
                       </span>
                     </td>
 

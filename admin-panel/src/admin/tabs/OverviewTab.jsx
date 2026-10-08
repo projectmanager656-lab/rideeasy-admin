@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react'
+import { useAdminLanguage } from '../../context/AdminLanguageContext'
 import { displayName } from '../adminUtils'
 import {
   Button,
@@ -25,6 +26,8 @@ const OverviewTab = ({
   rides = [],
   payments = [],
 }) => {
+  const { t } = useAdminLanguage()
+
   const totalUsers = Number(analytics?.totalUsers || 0)
   const totalDrivers = Number(analytics?.totalDrivers || 0)
   const totalRides = Number(analytics?.totalRides || 0)
@@ -35,12 +38,12 @@ const OverviewTab = ({
     `₹${Number(value || 0).toLocaleString('en-IN')}`
 
   const relativeTime = (value) => {
-    if (!value) return 'Recently'
+    if (!value) return t.recently
 
     const timestamp = new Date(value).getTime()
 
     if (Number.isNaN(timestamp)) {
-      return 'Recently'
+      return t.recently
     }
 
     const minutes = Math.max(
@@ -48,11 +51,11 @@ const OverviewTab = ({
       Math.round((Date.now() - timestamp) / 60000)
     )
 
-    if (minutes < 1) return 'Just now'
-    if (minutes < 60) return `${minutes} min ago`
-    if (minutes < 1440) return `${Math.round(minutes / 60)} hr ago`
+    if (minutes < 1) return t.justNow
+    if (minutes < 60) return `${minutes} ${t.minAgo}`
+    if (minutes < 1440) return `${Math.round(minutes / 60)} ${t.hrAgo}`
 
-    return `${Math.round(minutes / 1440)} d ago`
+    return `${Math.round(minutes / 1440)} ${t.dAgo}`
   }
 
   const topDriver = useMemo(
@@ -78,28 +81,28 @@ const OverviewTab = ({
 
   const pendingActions = [
     {
-      label: 'Driver Verification',
+      label: t.driverVerification,
       count: drivers.filter((driver) => !driver.approved).length,
       icon: 'ri-steering-2-line',
       tone: 'orange',
       tab: 'drivers',
     },
     {
-      label: 'Documents Pending',
+      label: t.documentsPending,
       count: pendingDocuments,
       icon: 'ri-file-list-3-line',
       tone: 'purple',
       tab: 'drivers',
     },
     {
-      label: 'Complaints to Review',
+      label: t.complaintsToReview,
       count: 0,
       icon: 'ri-chat-1-line',
       tone: 'blue',
       tab: 'safety',
     },
     {
-      label: 'Failed Payments',
+      label: t.failedPayments,
       count: payments.filter(
         (payment) =>
           String(payment.paymentStatus).toLowerCase() === 'failed'
@@ -112,7 +115,7 @@ const OverviewTab = ({
 
   const recentActivity = [
     {
-      label: 'New Driver Registered',
+      label: t.newDriverRegistered,
       detail:
         displayName(drivers[0]?.name) ||
         drivers[0]?.email ||
@@ -122,7 +125,7 @@ const OverviewTab = ({
       tone: 'green',
     },
     {
-      label: 'Document Submitted',
+      label: t.documentSubmitted,
       detail:
         displayName(drivers[0]?.name) ||
         'Driver documents',
@@ -133,16 +136,16 @@ const OverviewTab = ({
       tone: 'purple',
     },
     {
-      label: 'Ride Completed',
-      detail: completedRide?.city || 'Completed ride',
+      label: t.rideCompleted,
+      detail: completedRide?.city || t.completedRideFallback,
       time: completedRide?.completedAt,
       icon: 'ri-road-map-line',
       tone: 'blue',
     },
     {
-      label: 'Payment Received',
+      label: t.paymentReceived,
       detail:
-        payments[0]?.summary || 'Ride payment',
+        payments[0]?.summary || t.ridePayment,
       time:
         payments[0]?.completedAt ||
         payments[0]?.createdAt,
@@ -158,7 +161,7 @@ const OverviewTab = ({
     return (
       <div className="flex min-h-[400px] items-center justify-center">
         <Loader
-          text="Loading dashboard..."
+          text={t.loadingDashboard}
           size="lg"
         />
       </div>
@@ -171,35 +174,35 @@ const OverviewTab = ({
   if (analyticsError) {
     return (
       <ErrorState
-        title="Unable to load dashboard"
+        title={t.unableToLoadDashboard}
         message={analyticsError}
         onRetry={onRefresh}
-        retryLabel="Try again"
+        retryLabel={t.tryAgain}
       />
     )
   }
 
   const stats = [
     {
-      label: 'Total Users',
+      label: t.totalUsers,
       value: totalUsers.toLocaleString('en-IN'),
       icon: 'ri-user-3-line',
       tone: 'blue',
     },
     {
-      label: 'Total Drivers',
+      label: t.totalDrivers,
       value: totalDrivers.toLocaleString('en-IN'),
       icon: 'ri-steering-2-line',
       tone: 'green',
     },
     {
-      label: 'Total Bookings',
+      label: t.totalBookings,
       value: totalRides.toLocaleString('en-IN'),
       icon: 'ri-road-map-line',
       tone: 'orange',
     },
     {
-      label: 'Total Revenue',
+      label: t.totalRevenue,
       value: money(totalRevenue),
       icon: 'ri-money-rupee-circle-line',
       tone: 'purple',
@@ -215,11 +218,11 @@ const OverviewTab = ({
       <div className="flex items-center justify-between gap-4">
         <div className="min-w-0">
           <h1 className="truncate text-2xl font-bold tracking-tight text-[#152238] sm:text-[28px]">
-            Dashboard
+            {t.dashboard}
           </h1>
 
           <p className="mt-1 text-sm text-[#718096]">
-            Overview of your platform
+            {t.overviewPlatform}
           </p>
         </div>
 
@@ -229,9 +232,9 @@ const OverviewTab = ({
           STAT CARDS
           ===================================================== */}
       <section className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        {stats.map((stat) => (
+        {stats.map((stat, index) => (
           <Card
-            key={stat.label}
+            key={`stat-${stat.label}-${index}`}
             padding="sm"
             className="min-w-0"
           >
@@ -265,14 +268,14 @@ const OverviewTab = ({
 
         {/* Completed rides */}
         <Card
-          title="Completed Rides"
-          subtitle="Successfully finished trips"
+          title={t.completedRides}
+          subtitle={t.successfullyFinishedTrips}
           icon="ri-road-map-line"
         >
           <div className="flex items-center justify-between gap-4">
             <div>
               <p className="text-sm text-[#718096]">
-                Total completed
+                {t.totalCompleted}
               </p>
             </div>
 
@@ -284,8 +287,8 @@ const OverviewTab = ({
 
         {/* Top driver */}
         <Card
-          title="Top Driver"
-          subtitle="Driver with most completed rides"
+          title={t.topDriver}
+          subtitle={t.topDriverSubtitle}
           icon="ri-steering-2-line"
         >
           <div className="flex min-w-0 items-center gap-3">
@@ -304,7 +307,7 @@ const OverviewTab = ({
               </h3>
 
               <p className="mt-1 truncate text-sm text-[#718096]">
-                Rating{' '}
+                {t.rating}{' '}
                 {topDriver?.rating ??
                   topDriver?.averageRating ??
                   '—'}{' '}
@@ -312,7 +315,7 @@ const OverviewTab = ({
                 {Number(
                   topDriver?.completedRides || 0
                 ).toLocaleString('en-IN')}{' '}
-                completed rides
+                {t.completedRides}
               </p>
             </div>
 
@@ -333,16 +336,16 @@ const OverviewTab = ({
           PENDING ACTIONS
           ===================================================== */}
       <Card
-        title="Pending Actions"
-        subtitle="Items that may require your attention"
+        title={t.pendingActions}
+        subtitle={t.pendingActionsSubtitle}
         action={
           <i className="ri-arrow-right-up-line text-lg text-[#718096]" />
         }
       >
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          {pendingActions.map((action) => (
+          {pendingActions.map((action, index) => (
             <button
-              key={action.label}
+              key={`action-${action.label}-${index}`}
               type="button"
               onClick={() =>
                 onNavigate?.(action.tab)
@@ -373,7 +376,7 @@ const OverviewTab = ({
                 </span>
 
                 <span className="mt-0.5 block text-xs text-[#718096]">
-                  Review now
+                  {t.reviewNow}
                 </span>
               </span>
 
@@ -389,7 +392,7 @@ const OverviewTab = ({
           RECENT ACTIVITY
           ===================================================== */}
       <Card
-        title="Recent Activity"
+        title={t.recentActivity}
         action={
           <Badge
             variant="success"
@@ -401,9 +404,9 @@ const OverviewTab = ({
         }
       >
         <div className="divide-y divide-[#E6EBF2]">
-          {recentActivity.map((activity) => (
+          {recentActivity.map((activity, index) => (
             <div
-              key={activity.label}
+              key={`${activity.label}-${index}`}
               className="flex min-w-0 items-center gap-3 py-3 first:pt-0 last:pb-0"
             >
               <span

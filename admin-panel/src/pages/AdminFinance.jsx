@@ -1,10 +1,12 @@
 import React, { useMemo, useState } from 'react'
+import { useAdminLanguage } from '../context/AdminLanguageContext'
 
 export default function AdminFinance ({
   payments = [],
   paymentsLoading = false,
   error = '',
 }) {
+  const { t } = useAdminLanguage()
   const [search, setSearch] = useState('')
   const [selectedInvoice, setSelectedInvoice] = useState(null)
 
@@ -75,7 +77,7 @@ export default function AdminFinance ({
     return payments
       .filter((payment) => {
         /*
-         * Invoices are generated from ride-fare payment records.
+         * {t.invoicesPageTitle} are generated from ride-fare payment records.
          * Subscription/referral/other payment records are not ride invoices.
          */
         return (payment.paymentType || 'ride_fare') === 'ride_fare'
@@ -163,11 +165,11 @@ export default function AdminFinance ({
         </p>
 
         <h1 className="mt-1 text-2xl font-bold tracking-tight text-[#152238] sm:text-3xl">
-          Invoices
+          {t.invoicesPageTitle}
         </h1>
 
         <p className="mt-1 text-sm text-[#718096]">
-          View ride invoices, fare totals and linked payment information.
+          {t.invoicesPageSubtitle}
         </p>
       </div>
 
@@ -180,49 +182,49 @@ export default function AdminFinance ({
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <div className="rounded-2xl border border-[#E5E7EB] bg-white p-5 shadow-sm">
           <p className="text-sm font-medium text-[#718096]">
-            Platform Revenue
+            {t.platformRevenue}
           </p>
           <p className="mt-2 text-2xl font-bold text-[#152238]">
             {formatAmount(financeSummary.revenue)}
           </p>
           <p className="mt-1 text-xs text-[#718096]">
-            Total paid amount
+            {t.totalPaidAmount}
           </p>
         </div>
 
         <div className="rounded-2xl border border-[#E5E7EB] bg-white p-5 shadow-sm">
           <p className="text-sm font-medium text-[#718096]">
-            Platform Commission
+            {t.platformCommission}
           </p>
           <p className="mt-2 text-2xl font-bold text-[#152238]">
             {formatAmount(financeSummary.platformFee)}
           </p>
           <p className="mt-1 text-xs text-[#718096]">
-            Platform fee earned
+            {t.platformFeeEarned}
           </p>
         </div>
 
         <div className="rounded-2xl border border-[#E5E7EB] bg-white p-5 shadow-sm">
           <p className="text-sm font-medium text-[#718096]">
-            Driver Share
+            {t.driverShare}
           </p>
           <p className="mt-2 text-2xl font-bold text-[#152238]">
             {formatAmount(financeSummary.driverEarning)}
           </p>
           <p className="mt-1 text-xs text-[#718096]">
-            Driver earnings
+            {t.driverEarnings}
           </p>
         </div>
 
         <div className="rounded-2xl border border-[#E5E7EB] bg-white p-5 shadow-sm">
           <p className="text-sm font-medium text-[#718096]">
-            Pending Payouts
+            {t.pendingPayouts}
           </p>
           <p className="mt-2 text-2xl font-bold text-[#152238]">
             {formatAmount(financeSummary.pendingPayout)}
           </p>
           <p className="mt-1 text-xs text-[#718096]">
-            Driver settlements pending
+            {t.driverSettlementsPending}
           </p>
         </div>
       </div>
@@ -232,7 +234,7 @@ export default function AdminFinance ({
           <div className="flex items-center justify-between border-b border-[#E5E7EB] px-4 py-4">
             <div>
               <h2 className="font-semibold text-[#152238]">
-                Invoice Detail
+                {t.invoiceDetail}
               </h2>
               <p className="mt-1 text-xs text-[#718096]">
                 {selectedInvoice.invoiceNumber}
@@ -244,40 +246,40 @@ export default function AdminFinance ({
               onClick={() => setSelectedInvoice(null)}
               className="rounded-lg border border-[#D1D5DB] px-3 py-2 text-sm font-medium text-[#152238] hover:bg-[#F8FAFC]"
             >
-              Close
+              {t.close}
             </button>
           </div>
 
           <div className="grid gap-6 p-5 lg:grid-cols-2">
             <div>
               <h3 className="text-sm font-semibold text-[#152238]">
-                Invoice Information
+                {t.invoiceInformation}
               </h3>
 
               <div className="mt-3 space-y-3 text-sm">
                 <div className="flex justify-between gap-4">
-                  <span className="text-[#718096]">Invoice</span>
+                  <span className="text-[#718096]">{t.invoice}</span>
                   <span className="font-medium">
                     {selectedInvoice.invoiceNumber}
                   </span>
                 </div>
 
                 <div className="flex justify-between gap-4">
-                  <span className="text-[#718096]">Ride ID</span>
+                  <span className="text-[#718096]">{t.rideId}</span>
                   <span className="break-all text-right font-medium">
                     {selectedInvoice.rideIdLabel}
                   </span>
                 </div>
 
                 <div className="flex justify-between gap-4">
-                  <span className="text-[#718096]">Customer</span>
+                  <span className="text-[#718096]">{t.customer}</span>
                   <span className="text-right font-medium">
                     {selectedInvoice.customerLabel}
                   </span>
                 </div>
 
                 <div className="flex justify-between gap-4">
-                  <span className="text-[#718096]">Created</span>
+                  <span className="text-[#718096]">{t.created}</span>
                   <span className="text-right font-medium">
                     {formatDate(selectedInvoice.createdAt)}
                   </span>
@@ -287,33 +289,33 @@ export default function AdminFinance ({
 
             <div>
               <h3 className="text-sm font-semibold text-[#152238]">
-                Payment Linkage
+                {t.paymentLinkage}
               </h3>
 
               <div className="mt-3 space-y-3 text-sm">
                 <div className="flex justify-between gap-4">
-                  <span className="text-[#718096]">Payment ID</span>
+                  <span className="text-[#718096]">{t.paymentId}</span>
                   <span className="break-all text-right font-medium">
                     {selectedInvoice._id || '—'}
                   </span>
                 </div>
 
                 <div className="flex justify-between gap-4">
-                  <span className="text-[#718096]">Payment Method</span>
+                  <span className="text-[#718096]">{t.paymentMethod}</span>
                   <span className="text-right font-medium">
                     {selectedInvoice.paymentMode || '—'}
                   </span>
                 </div>
 
                 <div className="flex justify-between gap-4">
-                  <span className="text-[#718096]">Payment Status</span>
+                  <span className="text-[#718096]">{t.paymentStatus}</span>
                   <span className="text-right font-medium">
                     {selectedInvoice.paymentStatus || 'pending'}
                   </span>
                 </div>
 
                 <div className="flex justify-between gap-4">
-                  <span className="text-[#718096]">Provider Reference</span>
+                  <span className="text-[#718096]">{t.providerReference}</span>
                   <span className="break-all text-right font-medium">
                     {selectedInvoice.providerReference || '—'}
                   </span>
@@ -324,19 +326,19 @@ export default function AdminFinance ({
 
           <div className="border-t border-[#E5E7EB] bg-[#F8FAFC] p-5">
             <h3 className="text-sm font-semibold text-[#152238]">
-              Fare & Total
+              {t.fareAndTotal}
             </h3>
 
             <div className="mt-4 space-y-3 text-sm">
               <div className="flex justify-between gap-4">
-                <span className="text-[#718096]">Base Fare</span>
+                <span className="text-[#718096]">{t.baseFare}</span>
                 <span className="font-medium">
                   {formatAmount(selectedInvoice.ride?.price)}
                 </span>
               </div>
 
               <div className="flex justify-between gap-4">
-                <span className="text-[#718096]">Discount</span>
+                <span className="text-[#718096]">{t.discount}</span>
                 <span className="font-medium">
                   {formatAmount(selectedInvoice.ride?.discountAmount)}
                 </span>
@@ -344,7 +346,7 @@ export default function AdminFinance ({
 
               <div className="flex justify-between gap-4 border-t border-[#E5E7EB] pt-3">
                 <span className="font-semibold text-[#152238]">
-                  Authoritative Invoice Total
+                  {t.authoritativeInvoiceTotal}
                 </span>
                 <span className="text-lg font-bold text-[#152238]">
                   {formatAmount(selectedInvoice.invoiceTotal)}
@@ -352,7 +354,7 @@ export default function AdminFinance ({
               </div>
 
               <div className="flex justify-between gap-4">
-                <span className="text-[#718096]">Payment Amount</span>
+                <span className="text-[#718096]">{t.paymentAmount}</span>
                 <span className="font-medium">
                   {formatAmount(selectedInvoice.amount)}
                 </span>
@@ -366,11 +368,11 @@ export default function AdminFinance ({
         <div className="flex flex-col gap-3 border-b border-[#E5E7EB] px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h2 className="font-semibold text-[#152238]">
-              Invoice List
+              {t.invoiceList}
             </h2>
 
             <p className="mt-1 text-xs text-[#718096]">
-              Invoice total is sourced from the authoritative ride amount.
+              {t.invoiceTotalSource}
             </p>
           </div>
 
@@ -378,14 +380,14 @@ export default function AdminFinance ({
             type="search"
             value={search}
             onChange={(event) => setSearch(event.target.value)}
-            placeholder="Search invoice, ride, customer, amount…"
+            placeholder={t.searchInvoice}
             className="w-full rounded-lg border border-[#D1D5DB] bg-white px-3 py-2 text-sm text-[#152238] outline-none focus:border-[#152238] sm:max-w-sm"
           />
         </div>
 
         {paymentsLoading ? (
           <div className="p-12 text-center text-sm text-[#718096]">
-            Loading invoices…
+            {t.loadingInvoices}
           </div>
         ) : (
           <>
@@ -394,8 +396,8 @@ export default function AdminFinance ({
               {filteredInvoices.length === 0 && (
                 <div className="py-10 text-center text-sm text-[#718096]">
                   {invoices.length === 0
-                    ? 'No ride invoices available.'
-                    : 'No invoices match your search.'}
+                    ? t.noRideInvoices
+                    : t.noInvoicesMatch}
                 </div>
               )}
 
@@ -411,7 +413,7 @@ export default function AdminFinance ({
                       </p>
 
                       <p className="mt-1 break-all text-xs text-[#718096]">
-                        Ride: {invoice.rideIdLabel}
+                        {t.ride}: {invoice.rideIdLabel}
                       </p>
                     </div>
 
@@ -430,28 +432,28 @@ export default function AdminFinance ({
 
                   <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
                     <div>
-                      <p className="text-xs text-[#718096]">Customer</p>
+                      <p className="text-xs text-[#718096]">{t.customer}</p>
                       <p className="mt-1 text-[#152238]">
                         {invoice.customerLabel}
                       </p>
                     </div>
 
                     <div>
-                      <p className="text-xs text-[#718096]">Date</p>
+                      <p className="text-xs text-[#718096]">{t.date}</p>
                       <p className="mt-1 text-[#152238]">
                         {formatDate(invoice.createdAt)}
                       </p>
                     </div>
 
                     <div>
-                      <p className="text-xs text-[#718096]">Payment</p>
+                      <p className="text-xs text-[#718096]">{t.payment}</p>
                       <p className="mt-1 text-[#152238]">
                         {invoice.paymentMode || '—'}
                       </p>
                     </div>
 
                     <div>
-                      <p className="text-xs text-[#718096]">Total</p>
+                      <p className="text-xs text-[#718096]">{t.total}</p>
                       <p className="mt-1 font-semibold text-[#152238]">
                         {formatAmount(invoice.invoiceTotal)}
                       </p>
@@ -466,14 +468,14 @@ export default function AdminFinance ({
               <table className="w-full min-w-[1050px] text-left text-sm text-[#152238]">
                 <thead className="border-b border-[#E5E7EB] bg-[#F8FAFC] text-xs uppercase tracking-wide text-[#718096]">
                   <tr>
-                    <th className="px-4 py-3">Invoice</th>
-                    <th className="px-4 py-3">Ride</th>
-                    <th className="px-4 py-3">Customer</th>
-                    <th className="px-4 py-3">Date</th>
-                    <th className="px-4 py-3 text-right">Total</th>
-                    <th className="px-4 py-3">Payment</th>
-                    <th className="px-4 py-3">Status</th>
-                    <th className="px-4 py-3">Action</th>
+                    <th className="px-4 py-3">{t.invoice}</th>
+                    <th className="px-4 py-3">{t.ride}</th>
+                    <th className="px-4 py-3">{t.customer}</th>
+                    <th className="px-4 py-3">{t.date}</th>
+                    <th className="px-4 py-3 text-right">{t.total}</th>
+                    <th className="px-4 py-3">{t.payment}</th>
+                    <th className="px-4 py-3">{t.status}</th>
+                    <th className="px-4 py-3">{t.action}</th>
                   </tr>
                 </thead>
 
@@ -485,8 +487,8 @@ export default function AdminFinance ({
                         className="px-4 py-10 text-center text-[#718096]"
                       >
                         {invoices.length === 0
-                          ? 'No ride invoices available.'
-                          : 'No invoices match your search.'}
+                          ? t.noRideInvoices
+                          : t.noInvoicesMatch}
                       </td>
                     </tr>
                   )}
@@ -502,7 +504,7 @@ export default function AdminFinance ({
                         </div>
 
                         <div className="mt-1 break-all font-mono text-[10px] text-[#718096]">
-                          Payment: {String(invoice._id)}
+                          {t.payment}: {String(invoice._id)}
                         </div>
                       </td>
 

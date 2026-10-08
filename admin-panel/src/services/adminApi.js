@@ -111,6 +111,22 @@ export const adminApi = {
       )
   },
 
+  updateDriverCompliance(id, payload) {
+    return client
+      .put(`/admin/drivers/${id}/compliance`, payload)
+      .then((r) => unwrap(r.data))
+  },
+
+  uploadDriverComplianceDocument(id, formData) {
+    return client
+      .post(`/admin/drivers/${id}/compliance/upload`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      })
+      .then((r) => unwrap(r.data))
+  },
+
   approveDriver(id) {
     return client
       .put(`/admin/drivers/${id}/approve`, {})
@@ -195,9 +211,28 @@ export const adminApi = {
   getPayments(signal) {
     return client
       .get('/admin/payments', { signal })
-      .then((r) =>
-        normalizeListResponse(unwrap(r.data), 'payments')
-      )
+      .then((r) => {
+        console.log('[AdminAPI] raw payments response:', r.data)
+        const result = normalizeListResponse(unwrap(r.data), 'payments')
+        console.log('[AdminAPI] normalized payments:', result)
+        return result
+      })
+  },
+
+  getCoupons(signal) {
+    return client.get('/admin/coupons', { signal }).then((r) => unwrap(r.data))
+  },
+
+  createCoupon(payload, signal) {
+    return client.post('/admin/coupons', payload, { signal }).then((r) => unwrap(r.data))
+  },
+
+  updateCoupon(id, payload, signal) {
+    return client.put(`/admin/coupons/${id}`, payload, { signal }).then((r) => unwrap(r.data))
+  },
+
+  deleteCoupon(id, signal) {
+    return client.delete(`/admin/coupons/${id}`, { signal }).then((r) => unwrap(r.data))
   },
 
   getPayment(id, signal) {
@@ -237,6 +272,18 @@ export const adminApi = {
   // =========================================================
   // SAFETY / SOS
   // =========================================================
+  getRideEasySupport(signal) {
+    return client
+      .get('/admin/support/rideeasy', { signal })
+      .then((r) => unwrap(r.data))
+  },
+
+  updateRideEasySupport(payload, signal) {
+    return client
+      .put('/admin/support/rideeasy', payload, { signal })
+      .then((r) => unwrap(r.data))
+  },
+
 
   getEmergencyAlerts(signal) {
     return client
@@ -347,6 +394,12 @@ export const adminApi = {
       .then((r) => unwrap(r.data))
   },
 
+  publishFareConfiguration(id) {
+    return client
+      .post(`/admin/fare-configurations/${id}/publish`)
+      .then((r) => unwrap(r.data))
+  },
+
   getFareConfigurationHistory(id, signal) {
     return client
       .get(`/admin/fare-configurations/${id}/history`, { signal })
@@ -357,5 +410,13 @@ export const adminApi = {
     return client
       .post('/admin/fare-configurations/preview', payload)
       .then((r) => unwrap(r.data))
+  },
+
+  getDriverComplianceDocument(id, documentType) {
+    return client
+      .get(`/admin/drivers/${id}/compliance/${documentType}`, {
+        responseType: 'blob',
+      })
+      .then((r) => r.data)
   },
 }

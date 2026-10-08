@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { useAdminLanguage } from '../../context/AdminLanguageContext'
 import { displayName, rowStableKey } from '../adminUtils'
 import {
   Button,
@@ -31,6 +32,7 @@ export default function DriversTab({
   deleteDriver,
   bulkDeleteDrivers,
 }) {
+  const { t } = useAdminLanguage()
   const [selectedDriver, setSelectedDriver] = useState(null)
 
   const approvedCount = drivers.filter(
@@ -78,16 +80,14 @@ export default function DriversTab({
           className="h-4 w-4 cursor-pointer rounded border-slate-300 accent-[#FFB21C]"
           checked={selectedIds.includes(String(driver._id))}
           onChange={() => toggleSelect(driver._id)}
-          aria-label={`Select ${
-            displayName(driver.name) || 'driver'
-          }`}
+          aria-label={`${t.selectDriver} ${displayName(driver.name) || t.driver}`}
         />
       ),
     },
 
     {
       key: 'driver',
-      label: 'Driver',
+      label: t.driver,
       render: (driver) => (
         <div className="flex items-center gap-3">
           <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#0B1B2B] text-sm font-bold text-white">
@@ -98,7 +98,7 @@ export default function DriversTab({
 
           <div className="min-w-0">
             <p className="truncate font-semibold text-[#111827]">
-              {displayName(driver.name) || 'Unnamed Driver'}
+              {displayName(driver.name) || t.unnamedDriver}
             </p>
 
             <p className="text-xs text-[#9CA3AF]">
@@ -111,7 +111,7 @@ export default function DriversTab({
 
     {
       key: 'email',
-      label: 'Email',
+      label: t.email,
       render: (driver) => (
         <span className="text-sm text-[#6B7280]">
           {driver.email || '—'}
@@ -121,7 +121,7 @@ export default function DriversTab({
 
     {
       key: 'vehicle',
-      label: 'Vehicle',
+      label: t.vehicle,
       render: (driver) => (
         <div className="flex items-center gap-2">
           <div className="grid h-8 w-8 place-items-center rounded-lg bg-[#FFF4DF] text-[#B86B00]">
@@ -137,7 +137,7 @@ export default function DriversTab({
 
     {
       key: 'city',
-      label: 'City',
+      label: t.city,
       render: (driver) => (
         <div className="flex items-center gap-1.5 text-sm text-[#6B7280]">
           <i className="ri-map-pin-line text-[#9CA3AF]" />
@@ -148,21 +148,21 @@ export default function DriversTab({
 
     {
       key: 'approval',
-      label: 'Approval',
+      label: t.approved,
       render: (driver) =>
         driver.approved ? (
           <Badge
             variant="success"
             icon="ri-checkbox-circle-line"
           >
-            Approved
+            {t.approved}
           </Badge>
         ) : (
           <Badge
             variant="warning"
             icon="ri-time-line"
           >
-            Pending
+            {t.pending}
           </Badge>
         ),
     },
@@ -176,21 +176,21 @@ export default function DriversTab({
             variant="danger"
             icon="ri-lock-line"
           >
-            Blocked
+            {t.blocked}
           </Badge>
         ) : (
           <Badge
             variant="success"
             icon="ri-checkbox-circle-line"
           >
-            Active
+            {t.active}
           </Badge>
         ),
     },
 
     {
       key: 'actions',
-      label: 'Actions',
+      label: t.actions,
       className: 'text-right',
       cellClassName: 'text-right',
       render: (driver) => {
@@ -238,7 +238,7 @@ export default function DriversTab({
                   : 'bg-[#FFF4DF] text-[#B86B00] hover:bg-[#FFE9B8]'
               }
             >
-              {blocked ? 'Unblock' : 'Block'}
+              {blocked ? t.unblock : t.block}
             </Button>
 
             <Button
@@ -275,11 +275,11 @@ export default function DriversTab({
 
           <div>
             <h2 className="text-2xl font-bold tracking-tight text-[#111827]">
-              Drivers
+              {t.drivers}
             </h2>
 
             <p className="mt-1 text-sm text-[#6B7280]">
-              Manage driver approvals, vehicles and account status.
+              {t.driversPageSubtitle}
             </p>
           </div>
 
@@ -288,28 +288,28 @@ export default function DriversTab({
 
             <StatCard
               icon="ri-steering-2-line"
-              label="Active"
+              label={t.active}
               value={activeCount}
               iconClass="bg-[#EAF4FF] text-[#2563EB]"
             />
 
             <StatCard
               icon="ri-checkbox-circle-line"
-              label="Approved"
+              label={t.approved}
               value={approvedCount}
               iconClass="bg-[#EAFBF2] text-[#16A34A]"
             />
 
             <StatCard
               icon="ri-time-line"
-              label="Pending"
+              label={t.pending}
               value={pendingCount}
               iconClass="bg-[#FFF4DF] text-[#B86B00]"
             />
 
             <StatCard
               icon="ri-user-off-line"
-              label="Offline"
+              label={t.offline}
               value={offlineCount}
               iconClass="bg-[#F1F5F9] text-[#64748B]"
             />
@@ -326,7 +326,7 @@ export default function DriversTab({
               onChange={(event) =>
                 setTableSearch(event.target.value)
               }
-              placeholder="Search by driver name, email, vehicle or city…"
+              placeholder={t.searchDrivers}
             />
           </div>
 
@@ -341,10 +341,10 @@ export default function DriversTab({
               }
               className="w-full rounded-lg border border-[#D1D5DB] bg-white px-3 py-2 text-sm text-[#152238] outline-none focus:border-[#152238]"
             >
-              <option value="all">All Statuses</option>
-              <option value="online">Online</option>
-              <option value="busy">Busy</option>
-              <option value="offline">Offline</option>
+              <option value="all">{t.allStatuses}</option>
+              <option value="online">{t.online}</option>
+              <option value="busy">{t.busy}</option>
+              <option value="offline">{t.offline}</option>
             </select>
           </div>
 
@@ -372,7 +372,7 @@ export default function DriversTab({
                 icon="ri-delete-bin-line"
                 onClick={bulkDeleteDrivers}
               >
-                Delete ({selectedIds.length})
+                {t.delete} ({selectedIds.length})
               </Button>
 
             </div>
@@ -387,12 +387,11 @@ export default function DriversTab({
 
           <div>
             <h3 className="font-bold text-[#111827]">
-              All Drivers
+              {t.allDrivers}
             </h3>
 
             <p className="mt-0.5 text-xs text-[#6B7280]">
-              {filteredDrivers.length} driver
-              {filteredDrivers.length === 1 ? '' : 's'} shown
+              {filteredDrivers.length} {filteredDrivers.length === 1 ? t.driverShown : t.driversShown}
             </p>
           </div>
 
@@ -401,7 +400,7 @@ export default function DriversTab({
               variant="danger"
               icon="ri-lock-line"
             >
-              {blockedCount} blocked
+              {blockedCount} {t.blocked}
             </Badge>
           )}
 
@@ -410,7 +409,7 @@ export default function DriversTab({
         {driversLoading ? (
 
           <div className="flex min-h-[360px] items-center justify-center">
-            <Loader text="Loading drivers…" />
+            <Loader text={t.loadingDrivers} />
           </div>
 
         ) : error ? (
@@ -418,7 +417,7 @@ export default function DriversTab({
           <div className="p-6">
             <EmptyState
               icon="ri-error-warning-line"
-              title="Unable to load drivers"
+              title={t.unableToLoadDrivers}
               message={error}
             />
           </div>
@@ -428,11 +427,11 @@ export default function DriversTab({
           <div className="p-6">
             <EmptyState
               icon="ri-steering-2-line"
-              title="No drivers found"
+              title={t.noDriversFound}
               message={
                 tableSearch
-                  ? 'No drivers match your current search.'
-                  : 'There are currently no registered drivers.'
+                  ? t.noDriversMatchSearch
+                  : t.noRegisteredDrivers
               }
             />
           </div>
@@ -474,7 +473,7 @@ export default function DriversTab({
         <Modal
           open={Boolean(selectedDriver)}
           onClose={() => setSelectedDriver(null)}
-          title="Driver Details"
+          title={t.driverDetails}
         >
           <div className="space-y-5">
             <div className="flex items-center gap-4 rounded-xl bg-[#F7F9FC] p-4">
@@ -489,31 +488,31 @@ export default function DriversTab({
                   {displayName(selectedDriver.name) || 'Unnamed Driver'}
                 </h3>
                 <p className="text-sm text-[#6B7280]">
-                  Driver ID: {selectedDriver._id || '—'}
+                  {t.driverId}: {selectedDriver._id || '—'}
                 </p>
               </div>
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
-              <DetailItem label="Email" value={selectedDriver.email} />
-              <DetailItem label="Phone" value={selectedDriver.phone} />
-              <DetailItem label="City" value={selectedDriver.city} />
-              <DetailItem label="Vehicle Type" value={selectedDriver.vehicleType} />
-              <DetailItem label="Vehicle Number" value={selectedDriver.vehicleNumber} />
+              <DetailItem label={t.email} value={selectedDriver.email} />
+              <DetailItem label={t.phone} value={selectedDriver.phone} />
+              <DetailItem label={t.city} value={selectedDriver.city} />
+              <DetailItem label={t.vehicleType} value={selectedDriver.vehicleType} />
+              <DetailItem label={t.vehicleNumber} value={selectedDriver.vehicleNumber} />
               <DetailItem
-                label="Approval"
-                value={selectedDriver.approved ? 'Approved' : 'Pending'}
+                label={t.approved}
+                value={selectedDriver.approved ? t.approved : t.pending}
               />
               <DetailItem
-                label="Account Status"
-                value={selectedDriver.blocked ? 'Blocked' : 'Active'}
+                label={t.accountStatus}
+                value={selectedDriver.blocked ? t.blocked : t.active}
               />
               <DetailItem
-                label="Live Status"
+                label={t.liveStatus}
                 value={
                   selectedDriver.online === true
                     ? 'Online'
-                    : selectedDriver.status || 'Offline'
+                    : selectedDriver.status || t.offline
                 }
               />
             </div>

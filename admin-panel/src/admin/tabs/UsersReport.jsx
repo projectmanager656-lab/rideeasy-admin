@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react'
+import { useAdminLanguage } from '../../context/AdminLanguageContext'
 
 const money = (value) =>
   `₹${Number(value || 0).toLocaleString('en-IN')}`
@@ -33,6 +34,8 @@ export default function UsersReport ({
   ridesLoading = false,
   onBack,
 }) {
+  const { t } = useAdminLanguage()
+
   const [dateFilter, setDateFilter] = useState('all')
   const [statusFilter, setStatusFilter] = useState('all')
   const [search, setSearch] = useState('')
@@ -79,7 +82,7 @@ export default function UsersReport ({
         email: user?.email || '—',
         phone: user?.phone || '—',
         city: user?.city || '—',
-        status: user?.blocked ? 'Blocked' : 'Active',
+        status: user?.blocked ? '{t.blocked}' : '{t.active}',
         totalRides: userRides.length,
         completed: completedRides.length,
         cancelled: cancelledRides.length,
@@ -160,7 +163,7 @@ export default function UsersReport ({
         <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center shadow-sm">
           <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-slate-200 border-t-blue-600" />
           <p className="mt-3 text-sm font-medium text-slate-500">
-            Loading users report…
+            {t.loadingUsersReport}
           </p>
         </div>
       ) : (
@@ -170,16 +173,16 @@ export default function UsersReport ({
         onClick={onBack}
         className="text-sm font-medium text-blue-600 hover:text-blue-700"
       >
-        ← Back to Reports
+        ← {t.backToReports}
       </button>
 
       <div>
         <h1 className="text-3xl font-bold text-slate-900">
-          Users Report
+          {t.usersReport}
         </h1>
 
         <p className="mt-1 text-slate-500">
-          User activity and platform usage overview
+          {t.usersActivitySubtitle}
         </p>
       </div>
 
@@ -191,7 +194,7 @@ export default function UsersReport ({
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search user, email, phone or city..."
+            placeholder={t.usersReportSearch}
             className="w-full rounded-lg border border-slate-200 bg-white py-2.5 pl-9 pr-4 text-sm text-slate-700 outline-none focus:border-blue-400"
           />
         </div>
@@ -202,10 +205,10 @@ export default function UsersReport ({
             onChange={(e) => setDateFilter(e.target.value)}
             className="rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none"
           >
-            <option value="all">All time</option>
-            <option value="7">Last 7 days</option>
-            <option value="30">Last 30 days</option>
-            <option value="90">Last 90 days</option>
+            <option value="all">{t.allTime}</option>
+            <option value="7">{t.last7Days}</option>
+            <option value="30">{t.last30Days}</option>
+            <option value="90">{t.last90Days}</option>
           </select>
 
           <select
@@ -213,21 +216,21 @@ export default function UsersReport ({
             onChange={(e) => setStatusFilter(e.target.value)}
             className="rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none"
           >
-            <option value="all">All users</option>
-            <option value="active">Active</option>
-            <option value="blocked">Blocked</option>
+            <option value="all">{t.allUsers}</option>
+            <option value="active">{t.active}</option>
+            <option value="blocked">{t.blocked}</option>
           </select>
         </div>
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-6">
         {[
-          ['Total Users', users.length, 'ri-user-3-line'],
-          ['Active Users', activeUsers, 'ri-user-follow-line'],
-          ['Blocked Users', blockedUsers, 'ri-user-forbid-line'],
-          ['Total Rides', totalRides, 'ri-route-line'],
-          ['Completed Rides', completedRides, 'ri-checkbox-circle-line'],
-          ['User Spending', money(totalSpending), 'ri-wallet-3-line'],
+          [t.totalUsers, users.length, 'ri-user-3-line'],
+          [t.activeUsers, activeUsers, 'ri-user-follow-line'],
+          [t.blockedUsers, blockedUsers, 'ri-user-forbid-line'],
+          [t.totalRides, totalRides, 'ri-route-line'],
+          [t.completedRides, completedRides, 'ri-checkbox-circle-line'],
+          [t.userSpending, money(totalSpending), 'ri-wallet-3-line'],
         ].map(([label, value, icon]) => (
           <div
             key={label}
@@ -251,11 +254,11 @@ export default function UsersReport ({
       <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
         <div className="border-b border-slate-200 px-5 py-4">
           <h2 className="text-lg font-semibold text-slate-900">
-            User Activity
+            {t.userActivity}
           </h2>
 
           <p className="mt-1 text-sm text-slate-500">
-            Ride activity and spending by user
+            {t.userActivitySubtitle}
           </p>
         </div>
 
@@ -264,15 +267,15 @@ export default function UsersReport ({
             <thead>
               <tr className="border-b border-slate-200 bg-slate-50 text-left">
                 {[
-                  'User',
-                  'Phone',
-                  'City',
-                  'Status',
-                  'Rides',
-                  'Completed',
-                  'Cancelled',
-                  'Spending',
-                  'Registered',
+                  t.userReportUser,
+                  t.phone,
+                  t.city,
+                  t.status,
+                  t.rides,
+                  t.completed,
+                  t.cancelled,
+                  t.spending,
+                  t.registered,
                 ].map((heading) => (
                   <th
                     key={heading}
@@ -322,12 +325,12 @@ export default function UsersReport ({
                     <td className="px-5 py-4">
                       <span
                         className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${
-                          user.status === 'Blocked'
+                          user.status === '{t.blocked}'
                             ? 'bg-red-50 text-red-600'
                             : 'bg-green-50 text-green-600'
                         }`}
                       >
-                        {user.status}
+                        {t[user.status.toLowerCase()] || user.status}
                       </span>
                     </td>
 
@@ -358,7 +361,7 @@ export default function UsersReport ({
                     colSpan="9"
                     className="px-5 py-12 text-center text-sm text-slate-500"
                   >
-                    No users match the selected filters.
+                    {t.noUsersMatch}
                   </td>
                 </tr>
               )}
@@ -368,7 +371,7 @@ export default function UsersReport ({
       </div>
 
       <div className="text-sm text-slate-500">
-        Cancelled rides in selected period: {cancelledRides}
+        {t.cancelledRidesInSelectedPeriod}: {cancelledRides}
       </div>
         </>
       )}

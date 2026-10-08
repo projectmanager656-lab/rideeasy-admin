@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react'
+import { useAdminLanguage } from '../../context/AdminLanguageContext'
 
 const money = (value) => {
   if (value == null || value === '') return '—'
@@ -19,6 +20,7 @@ export default function BookingsReport ({
   ridesLoading = false,
   onBack,
 }) {
+  const { t } = useAdminLanguage()
   const [dateRange, setDateRange] = useState('all')
   const [statusFilter, setStatusFilter] = useState('all')
 
@@ -76,7 +78,7 @@ export default function BookingsReport ({
         <div className="rounded-2xl border border-[#E5E7EB] bg-white p-10 text-center shadow-sm">
           <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-[#E5E7EB] border-t-[#2563EB]" />
           <p className="mt-3 text-sm font-medium text-[#718096]">
-            Loading bookings report…
+            {t.loadingBookingsReport}
           </p>
         </div>
       ) : (
@@ -94,11 +96,11 @@ export default function BookingsReport ({
           </button>
 
           <h1 className="text-[28px] font-bold tracking-[-0.04em] text-[#152238] sm:text-[32px]">
-            Bookings Report
+            {t.bookingsReport}
           </h1>
 
           <p className="mt-1 text-sm text-[#718096]">
-            Booking activity and ride status overview
+            {t.bookingsActivitySubtitle}
           </p>
         </div>
 
@@ -108,10 +110,10 @@ export default function BookingsReport ({
             onChange={(e) => setDateRange(e.target.value)}
             className="rounded-xl border border-[#E6EBF2] bg-white px-4 py-2.5 text-sm font-medium text-[#152238] outline-none focus:border-[#2563EB]"
           >
-            <option value="all">All time</option>
-            <option value="7">Last 7 days</option>
-            <option value="30">Last 30 days</option>
-            <option value="90">Last 90 days</option>
+            <option value="all">{t.allTime}</option>
+            <option value="7">{t.last7Days}</option>
+            <option value="30">{t.last30Days}</option>
+            <option value="90">{t.last90Days}</option>
           </select>
 
           <select
@@ -119,12 +121,12 @@ export default function BookingsReport ({
             onChange={(e) => setStatusFilter(e.target.value)}
             className="rounded-xl border border-[#E6EBF2] bg-white px-4 py-2.5 text-sm font-medium text-[#152238] outline-none focus:border-[#2563EB]"
           >
-            <option value="all">All statuses</option>
-            <option value="completed">Completed</option>
-            <option value="cancelled">Cancelled</option>
-            <option value="started">Started</option>
-            <option value="accepted">Accepted</option>
-            <option value="pending">Pending</option>
+            <option value="all">{t.allStatuses}</option>
+            <option value="completed">{t.completed}</option>
+            <option value="cancelled">{t.cancelled}</option>
+            <option value="started">{t.started}</option>
+            <option value="accepted">{t.accepted}</option>
+            <option value="pending">{t.pending}</option>
           </select>
         </div>
       </div>
@@ -132,35 +134,35 @@ export default function BookingsReport ({
       {/* Summary */}
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
         <div className="rounded-2xl border border-[#E6EBF2] bg-white p-5 shadow-[0_2px_10px_rgba(15,23,42,0.05)]">
-          <p className="text-xs font-medium text-[#718096]">Total Bookings</p>
+          <p className="text-xs font-medium text-[#718096]">{t.totalBookings}</p>
           <p className="mt-2 text-2xl font-bold text-[#152238]">
             {filteredRides.length}
           </p>
         </div>
 
         <div className="rounded-2xl border border-[#E6EBF2] bg-white p-5 shadow-[0_2px_10px_rgba(15,23,42,0.05)]">
-          <p className="text-xs font-medium text-[#718096]">Completed</p>
+          <p className="text-xs font-medium text-[#718096]">{t.completed}</p>
           <p className="mt-2 text-2xl font-bold text-[#152238]">
             {completedCount}
           </p>
         </div>
 
         <div className="rounded-2xl border border-[#E6EBF2] bg-white p-5 shadow-[0_2px_10px_rgba(15,23,42,0.05)]">
-          <p className="text-xs font-medium text-[#718096]">Ongoing</p>
+          <p className="text-xs font-medium text-[#718096]">{t.ongoing}</p>
           <p className="mt-2 text-2xl font-bold text-[#152238]">
             {ongoingCount}
           </p>
         </div>
 
         <div className="rounded-2xl border border-[#E6EBF2] bg-white p-5 shadow-[0_2px_10px_rgba(15,23,42,0.05)]">
-          <p className="text-xs font-medium text-[#718096]">Cancelled</p>
+          <p className="text-xs font-medium text-[#718096]">{t.cancelled}</p>
           <p className="mt-2 text-2xl font-bold text-[#152238]">
             {cancelledCount}
           </p>
         </div>
 
         <div className="rounded-2xl border border-[#E6EBF2] bg-white p-5 shadow-[0_2px_10px_rgba(15,23-42,0.05)]">
-          <p className="text-xs font-medium text-[#718096]">Booking Value</p>
+          <p className="text-xs font-medium text-[#718096]">{t.bookingValue}</p>
           <p className="mt-2 text-2xl font-bold text-[#152238]">
             {money(totalBookingValue)}
           </p>
@@ -171,10 +173,10 @@ export default function BookingsReport ({
       <section className="overflow-hidden rounded-2xl border border-[#E6EBF2] bg-white shadow-[0_2px_10px_rgba(15,23,42,0.05)]">
         <div className="border-b border-[#E6EBF2] px-5 py-4">
           <h2 className="text-base font-bold text-[#152238]">
-            Booking Details
+            {t.bookingDetails}
           </h2>
           <p className="mt-1 text-xs text-[#718096]">
-            Ride, rider, driver and fare information
+            {t.bookingDetailsSubtitle}
           </p>
         </div>
 
@@ -182,7 +184,7 @@ export default function BookingsReport ({
           <div className="px-5 py-12 text-center">
             <i className="ri-calendar-close-line text-3xl text-[#A0AEC0]" />
             <p className="mt-3 text-sm font-medium text-[#152238]">
-              No bookings found
+              {t.noBookingsFound}
             </p>
             <p className="mt-1 text-xs text-[#718096]">
               Try changing the date or status filter.
@@ -193,14 +195,14 @@ export default function BookingsReport ({
             <table className="min-w-[1300px] w-full text-left">
               <thead>
                 <tr className="border-b border-[#E6EBF2] bg-[#FAFBFC]">
-                  <th className="px-5 py-3 text-xs font-semibold text-[#718096]">Ride</th>
-                  <th className="px-5 py-3 text-xs font-semibold text-[#718096]">Date</th>
-                  <th className="px-5 py-3 text-xs font-semibold text-[#718096]">Rider</th>
-                  <th className="px-5 py-3 text-xs font-semibold text-[#718096]">Driver</th>
-                  <th className="px-5 py-3 text-xs font-semibold text-[#718096]">Vehicle</th>
-                  <th className="px-5 py-3 text-xs font-semibold text-[#718096]">Route</th>
-                  <th className="px-5 py-3 text-xs font-semibold text-[#718096]">Fare</th>
-                  <th className="px-5 py-3 text-xs font-semibold text-[#718096]">Status</th>
+                  <th className="px-5 py-3 text-xs font-semibold text-[#718096]">{t.ride}</th>
+                  <th className="px-5 py-3 text-xs font-semibold text-[#718096]">{t.date}</th>
+                  <th className="px-5 py-3 text-xs font-semibold text-[#718096]">{t.rider}</th>
+                  <th className="px-5 py-3 text-xs font-semibold text-[#718096]">{t.driver}</th>
+                  <th className="px-5 py-3 text-xs font-semibold text-[#718096]">{t.vehicle}</th>
+                  <th className="px-5 py-3 text-xs font-semibold text-[#718096]">{t.route}</th>
+                  <th className="px-5 py-3 text-xs font-semibold text-[#718096]">{t.fare}</th>
+                  <th className="px-5 py-3 text-xs font-semibold text-[#718096]">{t.status}</th>
                 </tr>
               </thead>
 
@@ -228,7 +230,7 @@ export default function BookingsReport ({
 
                     <td className="px-5 py-4 text-sm text-[#152238]">
                       <span className="font-medium">
-                        {ride.captain?.name || 'Unassigned'}
+                        {ride.captain?.name || t.unassigned}
                       </span>
                       <span className="block text-xs text-[#718096]">
                         {ride.captain?.vehicleNumber || ride.captain?.phone || ''}

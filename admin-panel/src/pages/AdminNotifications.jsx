@@ -4,12 +4,14 @@ import { SocketContext } from '../context/SocketContext'
 import { AlertCard, Card } from '../components/AdminUIComponents'
 import { adminApi } from '../services/adminApi'
 import { getReadAlertIds, isAlertUnread, markAlertRead, markAlertsRead } from '../admin/notificationReadState'
+import { useAdminLanguage } from '../context/AdminLanguageContext'
 
 const FILTERS = [ 'All', 'Emergency', 'Rides', 'Drivers', 'System' ]
 const formatTime = (value) => value ? new Date(value).toLocaleString('en-IN') : 'Not available'
 
 export default function AdminNotifications () {
   const { socket } = useContext(SocketContext)
+  const { t } = useAdminLanguage()
   const [selectedEmergency, setSelectedEmergency] = useState(null)
 
   useEffect(() => {
@@ -256,7 +258,7 @@ export default function AdminNotifications () {
             <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4">
               <div>
                 <h2 className="text-xl font-bold text-[#111827]">
-                  Emergency Details
+                  {t.emergencyDetails}
                 </h2>
                 <p className="mt-1 text-sm text-[#6B7280]">
                   Emergency alert information
@@ -296,10 +298,10 @@ export default function AdminNotifications () {
                     Passenger / User
                   </p>
                   <p className="mt-2 font-semibold text-[#111827]">
-                    {selectedEmergency.riderName || 'Not available'}
+                    {selectedEmergency.riderName || t.notAvailable}
                   </p>
                   <p className="mt-1 text-sm text-slate-600">
-                    {selectedEmergency.phone || 'Not available'}
+                    {selectedEmergency.phone || t.notAvailable}
                   </p>
                 </div>
 
@@ -308,22 +310,22 @@ export default function AdminNotifications () {
                     Driver
                   </p>
                   <p className="mt-2 font-semibold text-[#111827]">
-                    {selectedEmergency.driverName || 'Not available'}
+                    {selectedEmergency.driverName || t.notAvailable}
                   </p>
                   <p className="mt-1 text-sm text-slate-600">
-                    Vehicle: {selectedEmergency.vehicleNumber || 'Not available'}
+                    {t.vehicleNumber}: {selectedEmergency.vehicleNumber || t.notAvailable}
                   </p>
                   <p className="mt-1 text-sm text-slate-600">
-                    Type: {selectedEmergency.vehicleType || 'Not available'}
+                    {t.vehicleType}: {selectedEmergency.vehicleType || t.notAvailable}
                   </p>
                 </div>
 
                 <div className="rounded-xl border border-slate-200 p-4">
                   <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                    Location
+                    {t.location}
                   </p>
                   <p className="mt-2 font-semibold text-[#111827]">
-                    {selectedEmergency.city || 'Not available'}
+                    {selectedEmergency.city || t.notAvailable}
                   </p>
                   <p className="mt-1 text-sm text-slate-600">
                     {selectedEmergency.location?.address ||
@@ -350,7 +352,7 @@ export default function AdminNotifications () {
                   onClick={() => setSelectedEmergency(null)}
                   className="rounded-lg border border-slate-200 px-4 py-2.5 text-sm font-semibold text-[#111827] hover:bg-slate-50"
                 >
-                  Close
+                  {t.close}
                 </button>
               </div>
 
@@ -361,33 +363,41 @@ export default function AdminNotifications () {
 
     <div className="space-y-6">
       <div className="flex flex-col gap-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:flex-row sm:items-end sm:justify-between sm:p-6">
-        <div><h1 className="text-2xl font-bold text-[#111827]">Notifications</h1><p className="mt-1 text-sm text-[#6B7280]">Stay updated about important RideEasy activity.</p></div>
-        <button type="button" onClick={markAllRead} className="rounded-lg border border-[#FFA726] px-4 py-2.5 text-sm font-semibold text-[#B86B00] hover:bg-[#FFF3E0]">Mark all as read</button>
+        <div><h1 className="text-2xl font-bold text-[#111827]">{t.notifications}</h1><p className="mt-1 text-sm text-[#6B7280]">{t.notificationsSubtitle}</p></div>
+        <button type="button" onClick={markAllRead} className="rounded-lg border border-[#FFA726] px-4 py-2.5 text-sm font-semibold text-[#B86B00] hover:bg-[#FFF3E0]">{t.markAllAsRead}</button>
       </div>
 
       <Card className="p-4">
         <div className="flex gap-2 overflow-x-auto pb-1">
-          {FILTERS.map((item) => <button key={item} type="button" onClick={() => setFilter(item)} className={`shrink-0 rounded-full px-3 py-2 text-sm font-semibold ${filter === item ? 'bg-[#FFA726] text-[#111827]' : 'bg-slate-100 text-[#6B7280] hover:bg-[#FFF3E0]'}`}>{item}</button>)}
+          {FILTERS.map((item) => <button key={item} type="button" onClick={() => setFilter(item)} className={`shrink-0 rounded-full px-3 py-2 text-sm font-semibold ${filter === item ? 'bg-[#FFA726] text-[#111827]' : 'bg-slate-100 text-[#6B7280] hover:bg-[#FFF3E0]'}`}>{item === 'All'
+  ? t.allNotifications
+  : item === 'Emergency'
+    ? t.emergencyNotifications
+    : item === 'Rides'
+      ? t.rideNotifications
+      : item === 'Drivers'
+        ? t.driverNotifications
+        : t.systemNotifications}</button>)}
         </div>
-        <label className="relative mt-4 block"><span className="sr-only">Search notifications</span><i className="ri-search-line absolute left-3 top-1/2 -translate-y-1/2 text-[#6B7280]" /><input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search notifications…" className="w-full rounded-lg border border-slate-200 bg-[#FAFAFA] py-2.5 pl-10 pr-3 text-sm text-[#111827] focus:border-[#FFA726] focus:outline-none focus:ring-2 focus:ring-[#FFA726]/20" /></label>
+        <label className="relative mt-4 block"><span className="sr-only">{t.searchNotifications}</span><i className="ri-search-line absolute left-3 top-1/2 -translate-y-1/2 text-[#6B7280]" /><input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder={t.searchNotifications} className="w-full rounded-lg border border-slate-200 bg-[#FAFAFA] py-2.5 pl-10 pr-3 text-sm text-[#111827] focus:border-[#FFA726] focus:outline-none focus:ring-2 focus:ring-[#FFA726]/20" /></label>
       </Card>
 
-      {error && <AlertCard type="error" title="Unable to load notifications" message="Unable to load notifications" />}
-      {loading ? <Card><div className="py-12 text-center text-sm text-[#6B7280]"><i className="ri-loader-4-line mr-2 inline-block animate-spin text-xl text-[#FFA726]" />Loading notifications…</div></Card> : !error && (visibleNotifications.length ? <div className="space-y-3">{visibleNotifications.map((item) => item.kind === 'emergency' ? <EmergencyNotification key={item.id} alert={item.alert} unread={isAlertUnread(item.alert, getReadAlertIds())} working={workingId === item.alert._id} onRead={markRead} onView={viewEmergency} onAcknowledge={acknowledge} onResolve={resolve} /> : <RealtimeNotification key={item.id} notification={item.notification} />)}</div> : <EmptyState filter={filter} />)}
+      {error && <AlertCard type="error" title={t.unableToLoadNotifications} message={t.unableToLoadNotifications} />}
+      {loading ? <Card><div className="py-12 text-center text-sm text-[#6B7280]"><i className="ri-loader-4-line mr-2 inline-block animate-spin text-xl text-[#FFA726]" />{t.loadingNotifications}</div></Card> : !error && (visibleNotifications.length ? <div className="space-y-3">{visibleNotifications.map((item) => item.kind === 'emergency' ? <EmergencyNotification key={item.id} alert={item.alert} unread={isAlertUnread(item.alert, getReadAlertIds())} working={workingId === item.alert._id} onRead={markRead} onView={viewEmergency} onAcknowledge={acknowledge} onResolve={resolve} t={t} /> : <RealtimeNotification key={item.id} notification={item.notification} t={t} />)}</div> : <EmptyState filter={filter} t={t} />)}
     </div>
     </>
   )
 }
 
-function EmergencyNotification ({ alert, unread, working, onRead, onView, onAcknowledge, onResolve }) {
+function EmergencyNotification ({ alert, unread, working, onRead, onView, onAcknowledge, onResolve, t }) {
   const status = String(alert.status || 'pending').toLowerCase()
   const rideId = alert.rideId || alert.ride?._id || alert.ride
   const location = alert.city || alert.location?.address || alert.location?.name
-  const unavailable = 'Not available'
-  return <Card className={`border-l-4 p-4 sm:p-5 ${unread ? 'border-l-[#E5484D] bg-[#FFF8F8]' : 'border-l-slate-200'}`}><button type="button" onClick={() => onRead(alert)} className="block w-full text-left"><div className="flex gap-3"><div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#FEE2E2] text-[#E5484D]"><i className="ri-alarm-warning-line text-lg" /></div><div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><h2 className="font-bold text-[#111827]">Emergency Alert</h2><span className="rounded-full bg-[#FEE2E2] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[#E5484D]">High priority</span>{unread && <span className="h-2 w-2 rounded-full bg-[#E5484D]" />}</div><div className="mt-4 grid gap-4 text-sm sm:grid-cols-3"><NotificationGroup title="Passenger / User" rows={[[ 'Name', alert.riderName ], [ 'Phone', alert.phone ]]} fallback={unavailable} /><NotificationGroup title="Driver" rows={[[ 'Name', alert.driverName ], [ 'Vehicle number', alert.vehicleNumber ], [ 'Vehicle type', alert.vehicleType ]]} fallback={unavailable} /><NotificationGroup title="Ride" rows={[[ 'Ride ID', rideId && `#${String(rideId)}` ], [ 'Location', location ], [ 'City', alert.city ], [ 'Emergency time', formatTime(alert.createdAt) ]]} fallback={unavailable} /></div></div></div></button><div className="mt-4 flex flex-col gap-3 border-t border-slate-200 pt-3 sm:flex-row sm:items-center sm:justify-between"><span className={`inline-flex w-fit rounded-full px-2.5 py-1 text-xs font-semibold ${status === 'pending' ? 'bg-[#FFF3E0] text-[#B86B00]' : status === 'acknowledged' ? 'bg-[#EAFBF2] text-[#1FAA59]' : 'bg-slate-100 text-[#6B7280]'}`}>Status: {status}</span><div className="flex flex-wrap gap-2"><button type="button" onClick={() => onView(alert)} className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-[#111827] hover:bg-slate-50">{status === 'resolved' ? 'View Details' : 'View Emergency'}</button>{status === 'pending' && <button disabled={working} type="button" onClick={() => onAcknowledge(alert)} className="rounded-lg bg-[#FFA726] px-3 py-2 text-xs font-semibold text-[#111827] disabled:opacity-50">Acknowledge</button>}{status !== 'resolved' && <button disabled={working} type="button" onClick={() => onResolve(alert)} className="rounded-lg bg-[#E5484D] px-3 py-2 text-xs font-semibold text-white disabled:opacity-50">Resolve & Call Police</button>}</div></div></Card>
+  const unavailable = t.notAvailable
+  return <Card className={`border-l-4 p-4 sm:p-5 ${unread ? 'border-l-[#E5484D] bg-[#FFF8F8]' : 'border-l-slate-200'}`}><button type="button" onClick={() => onRead(alert)} className="block w-full text-left"><div className="flex gap-3"><div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#FEE2E2] text-[#E5484D]"><i className="ri-alarm-warning-line text-lg" /></div><div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><h2 className="font-bold text-[#111827]">{t.emergencyAlert}</h2><span className="rounded-full bg-[#FEE2E2] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[#E5484D]">{t.highPriority}</span>{unread && <span className="h-2 w-2 rounded-full bg-[#E5484D]" />}</div><div className="mt-4 grid gap-4 text-sm sm:grid-cols-3"><NotificationGroup title={t.passengerUser} rows={[[t.name, alert.riderName], [t.phone, alert.phone]]} fallback={unavailable} /><NotificationGroup title={t.driver} rows={[[t.name, alert.driverName], [t.vehicleNumber, alert.vehicleNumber], [t.vehicleType, alert.vehicleType]]} fallback={unavailable} /><NotificationGroup title={t.ride} rows={[[t.rideId, rideId && `#${String(rideId)}`], [t.location, location], [t.city, alert.city], [t.emergencyTime, formatTime(alert.createdAt)]]} fallback={unavailable} /></div></div></div></button><div className="mt-4 flex flex-col gap-3 border-t border-slate-200 pt-3 sm:flex-row sm:items-center sm:justify-between"><span className={`inline-flex w-fit rounded-full px-2.5 py-1 text-xs font-semibold ${status === 'pending' ? 'bg-[#FFF3E0] text-[#B86B00]' : status === 'acknowledged' ? 'bg-[#EAFBF2] text-[#1FAA59]' : 'bg-slate-100 text-[#6B7280]'}`}>{t.status}: {status === 'pending' ? t.pending : status === 'acknowledged' ? t.acknowledged : t.resolved}</span><div className="flex flex-wrap gap-2"><button type="button" onClick={() => onView(alert)} className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-[#111827] hover:bg-slate-50">{status === 'resolved' ? t.viewDetails : t.viewEmergency}</button>{status === 'pending' && <button disabled={working} type="button" onClick={() => onAcknowledge(alert)} className="rounded-lg bg-[#FFA726] px-3 py-2 text-xs font-semibold text-[#111827] disabled:opacity-50">{t.acknowledge}</button>}{status !== 'resolved' && <button disabled={working} type="button" onClick={() => onResolve(alert)} className="rounded-lg bg-[#E5484D] px-3 py-2 text-xs font-semibold text-white disabled:opacity-50">{t.resolveAndCallPolice}</button>}</div></div></Card>
 }
 
-function RealtimeNotification ({ notification }) {
+function RealtimeNotification ({ notification, t }) {
   const type = notification?.type === 'driver' ? 'driver' : 'ride'
   const isDriver = type === 'driver'
 
@@ -401,16 +411,16 @@ function RealtimeNotification ({ notification }) {
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <h2 className="font-bold text-[#111827]">
-              {notification?.title || 'RideEasy Notification'}
+              {notification?.title || t.rideEasyNotification}
             </h2>
             <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[#6B7280]">
-              {type}
+              {type === 'driver' ? t.driver : t.ride}
             </span>
             <span className="h-2 w-2 rounded-full bg-[#FFA726]" />
           </div>
 
           <p className="mt-2 text-sm text-[#6B7280]">
-            {notification?.message || 'New activity received.'}
+            {notification?.message || t.newActivityReceived}
           </p>
 
           <p className="mt-3 text-xs text-[#9CA3AF]">
@@ -424,4 +434,4 @@ function RealtimeNotification ({ notification }) {
 
 function NotificationGroup ({ title, rows, fallback }) { return <div><h3 className="font-semibold text-[#111827]">{title}</h3><div className="mt-1.5 space-y-1 text-xs text-[#6B7280]">{rows.map(([label, value]) => <p key={label}><span className="font-medium text-[#111827]">{label}:</span> {value || fallback}</p>)}</div></div> }
 
-function EmptyState ({ filter }) { return <Card className="py-14 text-center"><i className="ri-notification-3-line text-4xl text-[#FFA726]" /><h2 className="mt-3 font-bold text-[#111827]">No notifications</h2><p className="mt-1 text-sm text-[#6B7280]">{filter === 'All' || filter === 'Emergency' ? 'You’re all caught up.' : `No ${filter.toLowerCase()} notifications are available from the current API.`}</p></Card> }
+function EmptyState ({ filter, t }) { return <Card className="py-14 text-center"><i className="ri-notification-3-line text-4xl text-[#FFA726]" /><h2 className="mt-3 font-bold text-[#111827]">{t.noNotifications}</h2><p className="mt-1 text-sm text-[#6B7280]">{filter === 'All' || filter === 'Emergency' ? t.allCaughtUp : t.noFilteredNotifications}</p></Card> }

@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useAdminLanguage } from '../context/AdminLanguageContext'
 
 const AdminHeader = ({
   onRefresh,
   emergencyAlerts = [],
 }) => {
   const navigate = useNavigate()
+  const { t } = useAdminLanguage()
   const [theme, setTheme] = useState(() => {
     return localStorage.getItem('adminTheme') || 'dark'
   })
@@ -45,8 +47,8 @@ const AdminHeader = ({
           <button
             type="button"
             onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-            aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
-            title={theme === 'dark' ? 'Light mode' : 'Dark mode'}
+            aria-label={theme === 'dark' ? t.switchToLightMode : t.switchToDarkMode}
+            title={theme === 'dark' ? t.lightMode : t.darkMode}
             className="
               grid
               h-11
@@ -75,8 +77,8 @@ const AdminHeader = ({
           <button
             type="button"
             onClick={onRefresh}
-            aria-label="Refresh"
-            title="Refresh"
+            aria-label={t.refresh}
+            title={t.refresh}
             className="
               grid
               h-11
@@ -97,8 +99,8 @@ const AdminHeader = ({
           <button
             type="button"
             onClick={() => navigate('/admin/notifications')}
-            aria-label="Notifications"
-            title="Notifications"
+            aria-label={t.notifications}
+            title={t.notifications}
             className="
               relative
               grid

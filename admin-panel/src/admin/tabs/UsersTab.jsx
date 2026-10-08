@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { useAdminLanguage } from '../../context/AdminLanguageContext'
 import { displayName, rowStableKey } from '../adminUtils'
 import {
   Button,
@@ -26,6 +27,7 @@ export default function UsersTab({
   deleteUser,
   bulkDeleteUsers,
 }) {
+  const { t } = useAdminLanguage()
   const [selectedUser, setSelectedUser] = useState(null)
 
   const visibleUsers = filteredUsers || []
@@ -56,7 +58,7 @@ export default function UsersTab({
 
     {
       key: 'user',
-      label: 'User',
+      label: t.user,
       render: (user) => {
         const name = displayName(user.name) || 'Unnamed User'
 
@@ -72,7 +74,7 @@ export default function UsersTab({
               </p>
 
               <p className="text-xs text-[#9CA3AF]">
-                Passenger
+                {t.passenger}
               </p>
             </div>
           </div>
@@ -82,7 +84,7 @@ export default function UsersTab({
 
     {
       key: 'email',
-      label: 'Email',
+      label: t.email,
       render: (user) => (
         <span className="whitespace-nowrap text-sm text-[#718096]">
           {user.email || '—'}
@@ -92,7 +94,7 @@ export default function UsersTab({
 
     {
       key: 'phone',
-      label: 'Phone',
+      label: t.phone,
       render: (user) => (
         <span className="whitespace-nowrap text-sm text-[#718096]">
           {user.phone || '—'}
@@ -102,7 +104,7 @@ export default function UsersTab({
 
     {
       key: 'city',
-      label: 'City',
+      label: t.city,
       render: (user) => (
         <div className="flex items-center gap-1.5 whitespace-nowrap text-sm text-[#718096]">
           <i className="ri-map-pin-line text-[#9CA3AF]" />
@@ -113,7 +115,7 @@ export default function UsersTab({
 
     {
       key: 'status',
-      label: 'Status',
+      label: t.status,
       render: (user) => {
         const blocked = Boolean(user.blocked)
 
@@ -126,7 +128,7 @@ export default function UsersTab({
                 : 'ri-checkbox-circle-line'
             }
           >
-            {blocked ? 'Blocked' : 'Active'}
+            {blocked ? t.blocked : t.active}
           </Badge>
         )
       },
@@ -134,7 +136,7 @@ export default function UsersTab({
 
     {
       key: 'actions',
-      label: 'Actions',
+      label: t.actions,
       className: 'text-right',
       cellClassName: 'text-right',
       render: (user) => {
@@ -195,7 +197,7 @@ export default function UsersTab({
               </h1>
 
               <p className="mt-1 text-sm text-[#718096]">
-                Manage registered RideEasy passengers.
+                {t.usersPageSubtitle}
               </p>
             </div>
 
@@ -206,7 +208,7 @@ export default function UsersTab({
 
               <div>
                 <p className="text-xs text-[#718096]">
-                  Total users
+                  {t.totalUsersLabel}
                 </p>
 
                 <p className="text-lg font-bold text-[#152238]">
@@ -226,7 +228,7 @@ export default function UsersTab({
                 onChange={(event) =>
                   setTableSearch(event.target.value)
                 }
-                placeholder="Search by name, email, phone or city..."
+                placeholder={t.searchUsers}
               />
             </div>
 
@@ -237,7 +239,7 @@ export default function UsersTab({
                   variant="primary"
                   icon="ri-checkbox-multiple-line"
                 >
-                  {selectedIds.length} selected
+                  {selectedIds.length} {t.selected}
                 </Badge>
 
                 <Button
@@ -254,7 +256,7 @@ export default function UsersTab({
                   icon="ri-delete-bin-line"
                   onClick={bulkDeleteUsers}
                 >
-                  Delete ({selectedIds.length})
+                  {t.delete} ({selectedIds.length})
                 </Button>
 
               </div>
@@ -275,19 +277,19 @@ export default function UsersTab({
 
           <div>
             <h2 className="font-bold text-[#152238]">
-              All Users
+              {t.allUsers}
             </h2>
 
             <p className="mt-0.5 text-xs text-[#718096]">
               {visibleUsers.length} user
-              {visibleUsers.length === 1 ? '' : 's'} shown
+              {visibleUsers.length === 1 ? t.userShown : t.usersShown}
             </p>
           </div>
 
           {selectedIds.length === 0 &&
             visibleUsers.length > 0 && (
               <span className="text-xs text-[#9CA3AF]">
-                Select users to perform bulk actions
+                {t.selectUsersBulk}
               </span>
             )}
 
@@ -308,11 +310,11 @@ export default function UsersTab({
                   clearSelection()
                 }
               }}
-              aria-label="Select all visible users"
+              aria-label="{t.selectAllVisibleUsers}"
             />
 
             <span className="text-xs font-medium text-[#718096]">
-              Select all visible users
+              {t.selectAllVisibleUsers}
             </span>
           </div>
         )}
@@ -320,17 +322,17 @@ export default function UsersTab({
         {/* Loading */}
         {usersLoading ? (
           <div className="flex min-h-[360px] items-center justify-center p-8">
-            <Loader text="Loading users..." />
+            <Loader text="{t.loadingUsers}" />
           </div>
         ) : visibleUsers.length === 0 ? (
           <div className="p-5 sm:p-6">
             <EmptyState
               icon="ri-user-search-line"
-              title="No users found"
+              title="{t.noUsersFound}"
               message={
                 tableSearch
-                  ? 'No users match your current search.'
-                  : 'There are currently no registered users.'
+                  ? '{t.noUsersMatchSearch}'
+                  : '{t.noRegisteredUsers}'
               }
             />
           </div>
@@ -339,7 +341,7 @@ export default function UsersTab({
             columns={columns}
             data={visibleUsers}
             rowKey="_id"
-            emptyMessage="No users found"
+            emptyMessage="{t.noUsersFound}"
           />
         )}
 
@@ -348,7 +350,7 @@ export default function UsersTab({
       <Modal
         open={Boolean(selectedUser)}
         onClose={() => setSelectedUser(null)}
-        title="User Details"
+        title="{t.userDetails}"
       >
         {selectedUser && (
           <div className="space-y-5">
@@ -366,7 +368,7 @@ export default function UsersTab({
                   {displayName(selectedUser.name) || 'Unnamed User'}
                 </p>
                 <p className="text-xs text-[#718096]">
-                  Passenger
+                  {t.passenger}
                 </p>
               </div>
             </div>
@@ -374,7 +376,7 @@ export default function UsersTab({
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
                 <p className="text-xs font-medium text-[#718096]">
-                  User ID
+                  {t.userId}
                 </p>
                 <p className="mt-1 break-all text-sm text-[#152238]">
                   {selectedUser._id || '—'}
@@ -393,7 +395,7 @@ export default function UsersTab({
                         : 'success'
                     }
                   >
-                    {selectedUser.blocked ? 'Blocked' : 'Active'}
+                    {selectedUser.blocked ? t.blocked : t.active}
                   </Badge>
                 </div>
               </div>

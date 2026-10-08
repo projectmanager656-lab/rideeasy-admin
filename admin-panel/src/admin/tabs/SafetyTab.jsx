@@ -2,6 +2,8 @@ import React, { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Card } from '../../components/AdminUIComponents'
 import { SecondaryPageShell } from './SecondaryPageShell'
+import { adminApi } from '../../services/adminApi'
+import { useAdminLanguage } from '../../context/AdminLanguageContext'
 
 export default function SafetyTab ({
   alerts = [],
@@ -11,7 +13,19 @@ export default function SafetyTab ({
   highlightedAlertId,
 }) {
   const navigate = useNavigate()
+  const { t } = useAdminLanguage()
   const [activeSection, setActiveSection] = useState(null)
+  const [support, setSupport] = useState(null)
+  const [supportLoading, setSupportLoading] = useState(false)
+  const [supportSaving, setSupportSaving] = useState(false)
+  const [supportError, setSupportError] = useState('')
+  const [supportSuccess, setSupportSuccess] = useState('')
+  const [supportForm, setSupportForm] = useState({
+    name: '{t.rideEasySupport}',
+    phone: '',
+    description: 'RideEasy emergency and customer support',
+    isActive: true,
+  })
 
   useEffect(() => {
     document.getElementById('admin-main-content')?.scrollTo({
@@ -19,6 +33,93 @@ export default function SafetyTab ({
       behavior: 'auto',
     })
   }, [activeSection])
+
+  useEffect(() => {
+    if (activeSection !== 'contacts') return
+
+    let cancelled = false
+
+    const loadSupport = async () => {
+      setSupportLoading(true)
+      setSupportError('')
+      setSupportSuccess('')
+
+      try {
+        const response = await adminApi.getRideEasySupport()
+        const data = response?.data || response
+        const currentSupport = data?.support || null
+
+        if (cancelled) return
+
+        setSupport(currentSupport)
+
+        if (currentSupport) {
+          setSupportForm({
+            name: currentSupport.name || '{t.rideEasySupport}',
+            phone: currentSupport.phone || '',
+            description:
+              currentSupport.description ||
+              'RideEasy emergency and customer support',
+            isActive: Boolean(currentSupport.isActive),
+          })
+        }
+      } catch (error) {
+        if (!cancelled) {
+          setSupportError(
+            error?.response?.data?.message ||
+              error?.message ||
+              'Failed to load {t.rideEasySupport}.'
+          )
+        }
+      } finally {
+        if (!cancelled) {
+          setSupportLoading(false)
+        }
+      }
+    }
+
+    loadSupport()
+
+    return () => {
+      cancelled = true
+    }
+  }, [activeSection])
+
+  const handleSupportSave = async (event) => {
+    event.preventDefault()
+    setSupportSaving(true)
+    setSupportError('')
+    setSupportSuccess('')
+
+    try {
+      const response = await adminApi.updateRideEasySupport(supportForm)
+      const data = response?.data || response
+      const updatedSupport = data?.support || null
+
+      setSupport(updatedSupport)
+
+      if (updatedSupport) {
+        setSupportForm({
+          name: updatedSupport.name || '{t.rideEasySupport}',
+          phone: updatedSupport.phone || '',
+          description:
+            updatedSupport.description ||
+            'RideEasy emergency and customer support',
+          isActive: Boolean(updatedSupport.isActive),
+        })
+      }
+
+      setSupportSuccess('{t.rideEasySupport} updated successfully.')
+    } catch (error) {
+      setSupportError(
+        error?.response?.data?.message ||
+          error?.message ||
+          'Failed to update {t.rideEasySupport}.'
+      )
+    } finally {
+      setSupportSaving(false)
+    }
+  }
 
   const highlightedAlertRef = useRef(null)
   const emergencyAlertsSectionRef = useRef(null)
@@ -42,40 +143,40 @@ export default function SafetyTab ({
     <div className="space-y-6">
       {activeSection === null && (
         <SecondaryPageShell
-          title="Safety"
-        subtitle="Emergency controls & safety operations"
+          title={t.safetyTitle}
+        subtitle={t.safetySubtitle}
         rows={[
           {
-            title: 'Emergency Alerts',
-            description: 'View and manage emergency alerts',
+            title: t.emergencyAlerts,
+            description: t.emergencyAlertsDescription,
             icon: 'ri-alarm-warning-line',
             tone: 'orange',
             onClick: () => setActiveSection('emergency'),
           },
           {
-            title: 'Police Stations',
-            description: 'Manage nearby police stations',
+            title: t.policeStations,
+            description: t.policeStationsDescription,
             icon: 'ri-police-car-line',
             tone: 'blue',
             onClick: () => setActiveSection('police'),
           },
           {
-            title: 'Safety Settings',
-            description: 'Configure safety features',
+            title: t.safetySettings,
+            description: t.safetySettingsDescription,
             icon: 'ri-settings-3-line',
             tone: 'green',
             onClick: () => setActiveSection('settings'),
           },
           {
-            title: 'Emergency Contacts',
-            description: 'Manage emergency contacts',
+            title: t.emergencyContacts,
+            description: t.emergencyContactsDescription,
             icon: 'ri-contacts-line',
             tone: 'purple',
             onClick: () => setActiveSection('contacts'),
           },
           {
-            title: 'Blocked Users',
-            description: 'View blocked users list',
+            title: t.blockedUsers,
+            description: t.blockedUsersDescription,
             icon: 'ri-user-forbid-line',
             tone: 'navy',
             onClick: () => setActiveSection('blocked'),
@@ -90,16 +191,15 @@ export default function SafetyTab ({
 
           <div>
             <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[#B86B00]">
-              Safety & Emergency
+              {t.safetyAndEmergency}
             </p>
 
             <h2 className="mt-1 text-2xl font-bold tracking-tight text-[#111827]">
-              Safety Control Center
+              {t.safetyControlCenter}
             </h2>
 
             <p className="mt-1 max-w-2xl text-sm text-[#6B7280]">
-              Monitor emergency alarms, manage rider safety events and review
-              driver allocation rules.
+              {t.monitorEmergencyAlarms}
             </p>
           </div>
 
@@ -112,7 +212,7 @@ export default function SafetyTab ({
 
             <div>
               <p className="text-xs text-[#6B7280]">
-                Safety system
+                {t.safetySystem}
               </p>
 
               <p className="font-bold text-[#15803D]">
@@ -130,10 +230,10 @@ export default function SafetyTab ({
           <div className="flex items-center justify-between gap-3 border-b border-[#E5E7EB] px-5 py-4">
             <div>
               <h3 className="font-bold text-[#111827]">
-                Emergency Alerts
+                {t.emergencyAlerts}
               </h3>
               <p className="mt-0.5 text-xs text-[#6B7280]">
-                Rider emergency alarms requiring admin attention.
+                {t.emergencyAlertsDescription}.
               </p>
             </div>
 
@@ -154,11 +254,11 @@ export default function SafetyTab ({
                 </div>
 
                 <h4 className="mt-4 font-bold text-[#111827]">
-                  No emergency alerts
+                  {t.noEmergencyAlerts}
                 </h4>
 
                 <p className="mt-1 text-sm text-[#6B7280]">
-                  There are currently no rider safety events requiring attention.
+                  {t.noEmergencyAlertsDescription}
                 </p>
               </div>
             ) : (
@@ -179,7 +279,7 @@ export default function SafetyTab ({
                         <div className="min-w-0">
                           <div className="flex flex-wrap items-center gap-2">
                             <h4 className="font-bold text-[#111827]">
-                              {alert.riderName || 'Unknown rider'}
+                              {alert.riderName || t.unknownRider}
                             </h4>
 
                             <span
@@ -188,12 +288,12 @@ export default function SafetyTab ({
                                 'border-slate-200 bg-slate-100 text-slate-700'
                               }`}
                             >
-                              {alert.status || 'Unknown'}
+                              {alert.status || t.unknownStatus}
                             </span>
                           </div>
 
                           <p className="mt-1 text-sm text-[#6B7280]">
-                            {alert.type || 'Emergency alarm'}
+                            {alert.type || t.emergencyAlarm}
                             {alert.city ? ` • ${alert.city}` : ''}
                           </p>
 
@@ -244,10 +344,10 @@ export default function SafetyTab ({
           <div className="flex items-center justify-between gap-3 border-b border-[#E5E7EB] px-5 py-4">
             <div>
               <h3 className="font-bold text-[#111827]">
-                Police Stations
+                {t.policeStations}
               </h3>
               <p className="mt-0.5 text-xs text-[#6B7280]">
-                Available police contacts for emergency response.
+                {t.availablePoliceContacts}
               </p>
             </div>
 
@@ -265,7 +365,7 @@ export default function SafetyTab ({
               <div className="rounded-xl bg-[#F7F9FC] p-5 text-center">
                 <i className="ri-police-car-line text-2xl text-[#9CA3AF]" />
                 <p className="mt-2 text-sm text-[#6B7280]">
-                  No police station data available.
+                  {t.noPoliceStationData}
                 </p>
               </div>
             ) : (
@@ -319,11 +419,11 @@ export default function SafetyTab ({
 
                 <div>
                   <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#FFB21C]">
-                    Safety Configuration
+                    {t.safetyConfiguration}
                   </p>
 
                   <h3 className="mt-1 text-lg font-bold text-white">
-                    Driver Allocation Rules
+                    {t.driverAllocationRules}
                   </h3>
                 </div>
               </div>
@@ -357,13 +457,13 @@ export default function SafetyTab ({
                     </p>
 
                     <p className="mt-1 font-bold text-[#111827]">
-                      Female passenger
+                      {t.femalePassenger}
                     </p>
                   </div>
                 </div>
 
                 <div className="mt-4 rounded-xl bg-white p-3 text-sm text-[#6B7280]">
-                  Requests a <strong className="text-[#111827]">Bike</strong> ride.
+                  {t.requestsBikeRide}
                 </div>
               </div>
 
@@ -382,18 +482,18 @@ export default function SafetyTab ({
 
                   <div>
                     <p className="text-xs font-semibold uppercase tracking-wide text-[#B86B00]">
-                      Driver Allocation
+                      {t.driverAllocation}
                     </p>
 
                     <p className="mt-1 font-bold text-[#111827]">
-                      Female driver only
+                      {t.femaleDriverOnly}
                     </p>
                   </div>
                 </div>
 
                 <div className="mt-4 flex items-center gap-2 rounded-xl bg-white p-3 text-sm font-semibold text-[#15803D]">
                   <i className="ri-checkbox-circle-fill" />
-                  Eligible female drivers only
+                  {t.eligibleFemaleDriversOnly}
                 </div>
               </div>
             </div>
@@ -406,12 +506,12 @@ export default function SafetyTab ({
 
                 <div>
                   <p className="font-bold text-[#111827]">
-                    Active allocation rule
+                    {t.activeAllocationRule}
                   </p>
 
                   <p className="mt-1 text-sm leading-6 text-[#6B7280]">
-                    Female passenger + Bike ride → Female driver only.
-                    Female passengers requesting bike rides are automatically
+                    {t.femalePassenger} + Bike ride → {t.femaleDriverOnly}.
+                    {t.femalePassenger}s requesting bike rides are automatically
                     assigned only to eligible female drivers.
                   </p>
                 </div>
@@ -431,10 +531,10 @@ export default function SafetyTab ({
 
               <div>
                 <h3 className="font-bold text-[#111827]">
-                  Blocked Users
+                  {t.blockedUsersTitle}
                 </h3>
                 <p className="mt-0.5 text-xs text-[#6B7280]">
-                  View and manage blocked users.
+                  {t.blockedUsersDescription}
                 </p>
               </div>
             </div>
@@ -458,7 +558,7 @@ export default function SafetyTab ({
             </h4>
 
             <p className="mt-1 max-w-md text-sm leading-6 text-[#6B7280]">
-              Blocked user management is not configured in the current Safety data source.
+              {t.blockedUsersNotConfigured}
             </p>
           </div>
         </Card>
@@ -474,11 +574,11 @@ export default function SafetyTab ({
 
               <div>
                 <h3 className="font-bold text-[#111827]">
-                  Emergency Contacts
+                  {t.rideEasySupport}
                 </h3>
 
                 <p className="mt-0.5 text-xs text-[#6B7280]">
-                  Manage emergency contacts.
+                  {t.rideEasySupportDescription}
                 </p>
               </div>
             </div>
@@ -492,20 +592,136 @@ export default function SafetyTab ({
             </button>
           </div>
 
-          <div className="flex min-h-[240px] flex-col items-center justify-center px-5 py-10 text-center">
-            <div className="grid h-14 w-14 place-items-center rounded-2xl bg-[#F3EEFF] text-[#7C3AED]">
-              <i className="ri-contacts-line text-2xl" />
+          {supportLoading ? (
+            <div className="flex min-h-[240px] items-center justify-center px-5 py-10">
+              <div className="text-sm font-medium text-[#6B7280]">
+                Loading {t.rideEasySupport}...
+              </div>
             </div>
+          ) : (
+            <form onSubmit={handleSupportSave} className="space-y-6 px-5 py-6">
+              {supportError && (
+                <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
+                  {supportError}
+                </div>
+              )}
 
-            <h4 className="mt-4 font-bold text-[#111827]">
-              Emergency contacts
-            </h4>
+              {supportSuccess && (
+                <div className="rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm font-medium text-green-700">
+                  {supportSuccess}
+                </div>
+              )}
 
-            <p className="mt-1 max-w-md text-sm leading-6 text-[#6B7280]">
-              Emergency contact management is not configured in the current
-              Safety data source.
-            </p>
-          </div>
+              <div className="flex items-center justify-between rounded-xl border border-[#E5E7EB] bg-[#F9FAFB] px-4 py-3">
+                <div>
+                  <p className="text-sm font-bold text-[#111827]">
+                    {t.supportStatus}
+                  </p>
+                  <p className="mt-0.5 text-xs text-[#6B7280]">
+                    {support?.isActive
+                      ? '{t.rideEasySupport} is currently active.'
+                      : '{t.rideEasySupport} is currently inactive.'}
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={supportForm.isActive}
+                  onClick={() =>
+                    setSupportForm((current) => ({
+                      ...current,
+                      isActive: !current.isActive,
+                    }))
+                  }
+                  className={`relative h-7 w-12 rounded-full transition ${
+                    supportForm.isActive
+                      ? 'bg-[#16A34A]'
+                      : 'bg-[#CBD5E1]'
+                  }`}
+                >
+                  <span
+                    className={`absolute top-1 h-5 w-5 rounded-full bg-white shadow transition ${
+                      supportForm.isActive ? 'left-6' : 'left-1'
+                    }`}
+                  />
+                </button>
+              </div>
+
+              <div className="grid gap-5 md:grid-cols-2">
+                <label className="block">
+                  <span className="mb-2 block text-sm font-semibold text-[#111827]">
+                    Name
+                  </span>
+                  <input
+                    value={supportForm.name}
+                    onChange={(event) =>
+                      setSupportForm((current) => ({
+                        ...current,
+                        name: event.target.value,
+                      }))
+                    }
+                    required
+                    className="w-full rounded-xl border border-[#D1D5DB] px-4 py-3 text-sm outline-none focus:border-[#7C3AED] focus:ring-2 focus:ring-[#7C3AED]/10"
+                  />
+                </label>
+
+                <label className="block">
+                  <span className="mb-2 block text-sm font-semibold text-[#111827]">
+                    Phone
+                  </span>
+                  <input
+                    type="tel"
+                    value={supportForm.phone}
+                    onChange={(event) =>
+                      setSupportForm((current) => ({
+                        ...current,
+                        phone: event.target.value,
+                      }))
+                    }
+                    required
+                    placeholder="+919876543210"
+                    className="w-full rounded-xl border border-[#D1D5DB] px-4 py-3 text-sm outline-none focus:border-[#7C3AED] focus:ring-2 focus:ring-[#7C3AED]/10"
+                  />
+                </label>
+              </div>
+
+              <label className="block">
+                <span className="mb-2 block text-sm font-semibold text-[#111827]">
+                  Description
+                </span>
+                <textarea
+                  value={supportForm.description}
+                  onChange={(event) =>
+                    setSupportForm((current) => ({
+                      ...current,
+                      description: event.target.value,
+                    }))
+                  }
+                  rows={4}
+                  className="w-full resize-none rounded-xl border border-[#D1D5DB] px-4 py-3 text-sm outline-none focus:border-[#7C3AED] focus:ring-2 focus:ring-[#7C3AED]/10"
+                />
+              </label>
+
+              <div className="flex items-center justify-between gap-4 border-t border-[#E5E7EB] pt-5">
+                <div>
+                  <p className="text-xs text-[#6B7280]">
+                    {support
+                      ? 'Changes will update the existing {t.rideEasySupport} record.'
+                      : 'A {t.rideEasySupport} record will be created.'}
+                  </p>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={supportSaving}
+                  className="rounded-xl bg-[#7C3AED] px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-[#6D28D9] disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {supportSaving ? t.saving : t.saveSupport}
+                </button>
+              </div>
+            </form>
+          )}
         </Card>
       )}
 

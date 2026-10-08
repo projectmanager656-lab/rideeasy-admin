@@ -2,6 +2,7 @@ import React, { useCallback, useContext, useEffect, useMemo, useState } from 're
 import { adminApi } from '../services/adminApi'
 import RideMap from '../components/RideMap'
 import { SocketContext } from '../context/SocketContext'
+import { useAdminLanguage } from '../context/AdminLanguageContext'
 const STATUS_CONFIG = {
   ONLINE: {
     label: 'Online',
@@ -35,6 +36,12 @@ function getVehicle(driver) {
     driver?.vehicle?.type ||
     'Vehicle not specified'
   )
+}
+
+function getStatusLabel(status, t) {
+  if (status === 'ONLINE') return t.liveOpsOnline
+  if (status === 'BUSY') return t.liveOpsBusy
+  return t.liveOpsOffline
 }
 function getDriverCoords(driver) {
   const coordinates = driver?.location?.coordinates
@@ -70,6 +77,7 @@ function isLocationFresh(driver) {
 }
 
 export default function AdminLiveOperations() {
+  const { t } = useAdminLanguage()
   const { socket, isConnected, connectionStatus } = useContext(SocketContext)
 
   const [drivers, setDrivers] = useState([])
@@ -82,7 +90,7 @@ export default function AdminLiveOperations() {
   const socketStatus = useMemo(() => {
     if (connectionStatus === 'connected' || isConnected) {
       return {
-        label: 'Live updates connected',
+        label: t.liveOpsUpdatesConnected,
         className: 'bg-emerald-50 text-emerald-700 border-emerald-200',
         dot: 'bg-emerald-500',
       }
@@ -90,7 +98,7 @@ export default function AdminLiveOperations() {
 
     if (connectionStatus === 'reconnecting') {
       return {
-        label: 'Reconnecting live updates…',
+        label: t.liveOpsReconnecting,
         className: 'bg-amber-50 text-amber-700 border-amber-200',
         dot: 'bg-amber-500',
       }
@@ -98,18 +106,18 @@ export default function AdminLiveOperations() {
 
     if (connectionStatus === 'disabled') {
       return {
-        label: 'Live updates disabled',
+        label: t.liveOpsUpdatesDisabled,
         className: 'bg-gray-50 text-gray-600 border-gray-200',
         dot: 'bg-gray-400',
       }
     }
 
     return {
-      label: 'Live updates disconnected',
+      label: t.liveOpsUpdatesDisconnected,
       className: 'bg-red-50 text-red-700 border-red-200',
       dot: 'bg-red-500',
     }
-  }, [connectionStatus, isConnected])
+  }, [connectionStatus, isConnected, t])
 
   const loadDrivers = useCallback(async () => {
     try {
@@ -122,11 +130,11 @@ export default function AdminLiveOperations() {
       setRides(Array.isArray(rideResult) ? rideResult : [])
     } catch (err) {
       console.error('Failed to load drivers:', err)
-      setError('Unable to load driver live status.')
+      setError(t.liveOpsUnableLoadDrivers)
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [t])
 
   useEffect(() => {
     loadDrivers()
@@ -292,15 +300,15 @@ const mapDrivers = useMemo(() => {
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <p className="text-sm font-medium text-[#718096]">
-            Operations
+            {t.operations || 'Operations'}
           </p>
 
           <h1 className="mt-1 text-2xl font-bold text-[#152238] sm:text-3xl">
-            Live Operations
+            {t.liveOperations}
           </h1>
 
           <p className="mt-2 text-sm text-[#718096]">
-            Monitor driver availability and active ride status.
+            {t.liveOpsPageSubtitle}
           </p>
         </div>
 
@@ -327,9 +335,7 @@ const mapDrivers = useMemo(() => {
           }`}
         >
           <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-[#718096]">
-              Online
-            </span>
+            <span className="text-sm font-medium text-[#718096]">{t.liveOpsOnline}</span>
             <span className="h-3 w-3 rounded-full bg-emerald-500" />
           </div>
 
@@ -338,7 +344,7 @@ const mapDrivers = useMemo(() => {
           </p>
 
           <p className="mt-1 text-xs text-[#718096]">
-            Available drivers
+            {t.liveOpsAvailableDrivers}
           </p>
         </button>
 
@@ -352,9 +358,7 @@ const mapDrivers = useMemo(() => {
           }`}
         >
           <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-[#718096]">
-              Busy
-            </span>
+            <span className="text-sm font-medium text-[#718096]">{t.liveOpsBusy}</span>
             <span className="h-3 w-3 rounded-full bg-orange-500" />
           </div>
 
@@ -363,7 +367,7 @@ const mapDrivers = useMemo(() => {
           </p>
 
           <p className="mt-1 text-xs text-[#718096]">
-            Drivers on active rides
+            {t.liveOpsDriversOnActiveRides}
           </p>
         </button>
 
@@ -377,9 +381,7 @@ const mapDrivers = useMemo(() => {
           }`}
         >
           <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-[#718096]">
-              Offline
-            </span>
+            <span className="text-sm font-medium text-[#718096]">{t.liveOpsOffline}</span>
             <span className="h-3 w-3 rounded-full bg-gray-400" />
           </div>
 
@@ -388,7 +390,7 @@ const mapDrivers = useMemo(() => {
           </p>
 
           <p className="mt-1 text-xs text-[#718096]">
-            Currently unavailable
+            {t.liveOpsCurrentlyUnavailable}
           </p>
         </button>
       </div>
@@ -396,27 +398,19 @@ const mapDrivers = useMemo(() => {
            {/* Admin Map */}
 <div className="mb-6 rounded-2xl border border-[#E5E7EB] bg-white shadow-sm">
   <div className="border-b border-[#E5E7EB] p-5">
-    <h2 className="text-lg font-semibold text-[#152238]">
-      Live Map
-    </h2>
+    <h2 className="text-lg font-semibold text-[#152238]">{t.liveOpsLiveMap}</h2>
     <div className="mt-1 flex flex-wrap items-center gap-3 text-xs font-medium text-[#718096]">
       <span className="inline-flex items-center gap-1.5">
-        <span className="h-2.5 w-2.5 rounded-full bg-blue-500" />
-        Live
-      </span>
+        <span className="h-2.5 w-2.5 rounded-full bg-blue-500" />{t.liveOpsLive}</span>
 
       <span className="inline-flex items-center gap-1.5">
-        <span className="h-2.5 w-2.5 rounded-full bg-slate-400" />
-        Stale
-      </span>
+        <span className="h-2.5 w-2.5 rounded-full bg-slate-400" />{t.liveOpsStale}</span>
 
       <span className="inline-flex items-center gap-1.5">
-        <span className="h-2.5 w-2.5 rounded-full bg-gray-500" />
-        Offline
-      </span>
+        <span className="h-2.5 w-2.5 rounded-full bg-gray-500" />{t.liveOpsOffline}</span>
 
       <span className="text-[#A0AEC0]">
-        Driver and active ride locations
+        {t.liveOpsDriverActiveLocations}
       </span>
     </div>
   </div>
@@ -427,10 +421,10 @@ const mapDrivers = useMemo(() => {
       <div>
         <i className="ri-loader-4-line animate-spin text-3xl text-[#FFB21C]" />
         <p className="mt-3 font-semibold text-[#152238]">
-          Loading live map...
+          {t.liveOpsLoadingMap}
         </p>
         <p className="mt-1 text-sm text-[#718096]">
-          Fetching driver and active ride locations.
+          {t.liveOpsFetchingLocations}
         </p>
       </div>
     </div>
@@ -439,10 +433,10 @@ const mapDrivers = useMemo(() => {
       <div>
         <i className="ri-error-warning-line text-3xl text-red-400" />
         <p className="mt-3 font-semibold text-[#152238]">
-          Unable to load live map
+          {t.liveOpsUnableLoadMap}
         </p>
         <p className="mt-1 text-sm text-[#718096]">
-          Driver and active ride locations could not be loaded.
+          {t.liveOpsLocationsCouldNotLoad}
         </p>
       </div>
     </div>
@@ -451,10 +445,10 @@ const mapDrivers = useMemo(() => {
       <div>
         <i className="ri-map-pin-line text-3xl text-[#A0AEC0]" />
         <p className="mt-3 text-sm font-semibold text-[#152238]">
-          No live locations available
+          {t.liveOpsNoLocations}
         </p>
         <p className="mt-1 text-sm text-[#718096]">
-          Driver and active ride locations will appear here.
+          {t.liveOpsLocationsAppearHere}
         </p>
       </div>
     </div>
@@ -473,12 +467,13 @@ const mapDrivers = useMemo(() => {
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <h2 className="text-lg font-semibold text-[#152238]">
-                Driver Status
+                {t.liveOpsDriverStatus}
               </h2>
 
               <p className="mt-1 text-sm text-[#718096]">
-                {filteredDrivers.length} driver
-                {filteredDrivers.length === 1 ? '' : 's'} shown
+                 {filteredDrivers.length}{' '}
+                {filteredDrivers.length === 1 ? t.liveOpsDriver : t.liveOpsDrivers}{' '}
+                {t.liveOpsShown}
               </p>
             </div>
 
@@ -490,7 +485,7 @@ const mapDrivers = useMemo(() => {
                   type="text"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Search driver..."
+                  placeholder={t.liveOpsSearchDriver}
                   className="w-full rounded-xl border border-[#E5E7EB] py-2.5 pl-10 pr-4 text-sm outline-none transition focus:border-[#FFB21C] focus:ring-2 focus:ring-[#FFF4D6] sm:w-64"
                 />
               </div>
@@ -500,10 +495,10 @@ const mapDrivers = useMemo(() => {
                 onChange={(e) => setStatusFilter(e.target.value)}
                 className="rounded-xl border border-[#E5E7EB] bg-white px-4 py-2.5 text-sm font-medium text-[#152238] outline-none focus:border-[#FFB21C]"
               >
-                <option value="ALL">All statuses</option>
-                <option value="ONLINE">Online</option>
-                <option value="BUSY">Busy</option>
-                <option value="OFFLINE">Offline</option>
+                <option value="ALL">{t.liveOpsAllStatuses}</option>
+                <option value="ONLINE">{t.liveOpsOnline}</option>
+                <option value="BUSY">{t.liveOpsBusy}</option>
+                <option value="OFFLINE">{t.liveOpsOffline}</option>
               </select>
             </div>
           </div>
@@ -515,7 +510,7 @@ const mapDrivers = useMemo(() => {
               <div className="text-center">
                 <i className="ri-loader-4-line animate-spin text-3xl text-[#FFB21C]" />
                 <p className="mt-3 text-sm text-[#718096]">
-                  Loading driver status...
+                  {t.liveOpsLoadingStatus}
                 </p>
               </div>
             </div>
@@ -547,11 +542,11 @@ const mapDrivers = useMemo(() => {
                 </div>
 
                 <p className="mt-3 text-sm font-semibold text-[#152238]">
-                  No drivers found
+                  {t.liveOpsNoDrivers}
                 </p>
 
                 <p className="mt-1 text-sm text-[#718096]">
-                  Try changing your search or status filter.
+                  {t.liveOpsChangeFilter}
                 </p>
               </div>
             </div>
@@ -577,11 +572,11 @@ const mapDrivers = useMemo(() => {
 
                         <div className="min-w-0">
                           <h3 className="truncate font-semibold text-[#152238]">
-                            {driver?.name || 'Unnamed Driver'}
+                            {driver?.name || t.liveOpsUnnamedDriver}
                           </h3>
 
                           <p className="truncate text-xs text-[#718096]">
-                            {driver?.phone || driver?.email || 'No contact'}
+                            {driver?.phone || driver?.email || t.liveOpsNoContact}
                           </p>
                         </div>
                       </div>
@@ -592,14 +587,14 @@ const mapDrivers = useMemo(() => {
                         <span
                           className={`h-2 w-2 rounded-full ${config.dot}`}
                         />
-                        {config.label}
+                        {getStatusLabel(status, t)}
                       </span>
                     </div>
 
                     <div className="mt-4 grid grid-cols-2 gap-3">
                       <div className="rounded-xl bg-[#F8FAFC] p-3">
                         <p className="text-[11px] font-medium uppercase tracking-wide text-[#A0AEC0]">
-                          Vehicle
+                          {t.liveOpsVehicle}
                         </p>
 
                         <p className="mt-1 truncate text-sm font-semibold text-[#152238]">
@@ -609,11 +604,11 @@ const mapDrivers = useMemo(() => {
 
                       <div className="rounded-xl bg-[#F8FAFC] p-3">
                         <p className="text-[11px] font-medium uppercase tracking-wide text-[#A0AEC0]">
-                          Status
+                          {t.liveOpsStatus}
                         </p>
 
                         <p className="mt-1 text-sm font-semibold text-[#152238]">
-                          {config.label}
+                          {getStatusLabel(status, t)}
                         </p>
                       </div>
                     </div>

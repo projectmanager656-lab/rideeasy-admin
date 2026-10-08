@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useAdminLanguage } from '../context/AdminLanguageContext'
 
 const languages = [
   { code: 'en', name: 'English', nativeName: 'English' },
@@ -9,15 +10,14 @@ const languages = [
 
 export default function AdminLanguage () {
   const navigate = useNavigate()
+  const { language: currentLanguage, changeLanguage, t } = useAdminLanguage()
 
-  const [language, setLanguage] = useState(
-    localStorage.getItem('adminLanguage') || 'en'
-  )
+  const [language, setLanguage] = useState(currentLanguage)
   const [message, setMessage] = useState('')
 
   const handleSave = () => {
-    localStorage.setItem('adminLanguage', language)
-    setMessage('Language preference saved successfully.')
+    changeLanguage(language)
+    setMessage(t.languagePreferenceSaved)
   }
 
   return (
@@ -29,7 +29,7 @@ export default function AdminLanguage () {
           className="mb-5 inline-flex items-center gap-2 text-sm font-medium text-neutral-600 hover:text-neutral-900"
         >
           <i className="ri-arrow-left-line" />
-          Back to Settings
+          {t.backToSettings}
         </button>
 
         <div className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm sm:p-7">
@@ -39,11 +39,11 @@ export default function AdminLanguage () {
             </div>
 
             <h1 className="text-xl font-semibold text-neutral-900">
-              Language
+              {t.language}
             </h1>
 
             <p className="mt-1 text-sm text-neutral-500">
-              Select your preferred admin panel language.
+              {t.selectPreferredLanguage}
             </p>
           </div>
 
@@ -64,7 +64,11 @@ export default function AdminLanguage () {
               >
                 <div>
                   <p className="text-sm font-semibold text-neutral-900">
-                    {item.name}
+                    {item.code === 'en'
+                      ? t.english
+                      : item.code === 'hi'
+                        ? t.hindi
+                        : t.marathi}
                   </p>
                   <p className="mt-1 text-sm text-neutral-500">
                     {item.nativeName}
@@ -89,7 +93,7 @@ export default function AdminLanguage () {
             onClick={handleSave}
             className="mt-6 w-full rounded-xl bg-orange-500 px-4 py-3 text-sm font-semibold text-white transition hover:bg-orange-600"
           >
-            Save Language
+            {t.saveLanguage}
           </button>
         </div>
       </div>

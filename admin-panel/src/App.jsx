@@ -16,6 +16,7 @@ const AdminAppSettings = lazy(() => import('./pages/AdminAppSettings'))
 const AdminLanguage = lazy(() => import('./pages/AdminLanguage'))
 
 const AdminFinance = lazy(() => import('./pages/AdminFinance'))
+const AdminCoupons = lazy(() => import('./pages/AdminCoupons'))
 const AdminLiveOperations = lazy(() => import('./pages/AdminLiveOperations'))
 const AdminRoles = lazy(() => import('./pages/AdminRoles'))
 
@@ -230,6 +231,18 @@ const App = () => {
             element={
               <StandaloneAdminPage tab="finance">
                 <AdminFinance />
+              </StandaloneAdminPage>
+            }
+          />
+
+          {/* =====================================================
+              COUPONS
+          ====================================================== */}
+          <Route
+            path="/admin/coupons"
+            element={
+              <StandaloneAdminPage tab="coupons">
+                <AdminCoupons />
               </StandaloneAdminPage>
             }
           />

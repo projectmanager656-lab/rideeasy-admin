@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react'
+import { useAdminLanguage } from '../../context/AdminLanguageContext'
 import { displayName, rowStableKey, statusBadgeClass, RIDE_STATUSES } from '../adminUtils'
 import MobileRecordCard, { MobileField } from '../../components/MobileRecordCard'
 import Modal from '../../components/ui/Modal'
@@ -43,6 +44,8 @@ export default function RidesTab ({
   bulkDeleteRides,
   refreshRides,
 }) {
+  const { t } = useAdminLanguage()
+
   const [ridesPage, setRidesPage] = useState(1)
   const ridesPageSize = 10
 
@@ -68,19 +71,19 @@ export default function RidesTab ({
   return (
     <div className="space-y-4">
       <div className="px-1">
-        <p className="text-sm font-medium text-[var(--color-text-secondary)]">Operations</p>
+        <p className="text-sm font-medium text-[var(--color-text-secondary)]">{t.operations}</p>
         <h1 className="mt-1 text-3xl font-bold tracking-tight text-[var(--color-text-primary)]">
-          Rides
+          {t.rides}
         </h1>
         <p className="mt-2 text-base text-[var(--color-text-secondary)]">
-          Manage and monitor all rides.
+          {t.ridesPageSubtitle}
         </p>
       </div>
 
       <div className="rounded-2xl border border-neutral-200 bg-white px-3 py-3 sm:px-4 dark:border-[#26384D] dark:bg-[#0B1B2B]">
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <label className="text-sm text-neutral-600">
-            Status
+            {t.status}
             <select
               value={rideStatusFilter}
               onChange={(e) => setRideStatusFilter(e.target.value)}
@@ -93,7 +96,7 @@ export default function RidesTab ({
           </label>
 
           <label className="text-sm text-neutral-600">
-            Date
+            {t.date}
             <input
               type="date"
               value={rideDateFilter}
@@ -103,32 +106,32 @@ export default function RidesTab ({
           </label>
 
           <label className="text-sm text-neutral-600">
-            Driver
+            {t.driverLabel}
             <select
               value={rideDriverFilter}
               onChange={(e) => setRideDriverFilter(e.target.value)}
               className="ml-2 rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm text-black dark:border-[#3A4D63] dark:bg-[#0B1B2B] dark:text-white"
             >
-              <option value="all">All Drivers</option>
+              <option value="all">{t.allDrivers}</option>
               {drivers.map((driver) => (
                 <option key={driver._id} value={driver._id}>
-                  {displayName(driver.name) || driver.phone || 'Unnamed Driver'}
+                  {displayName(driver.name) || driver.phone || t.unnamedDriver}
                 </option>
               ))}
             </select>
           </label>
 
           <label className="text-sm text-neutral-600">
-            User
+            {t.user}
             <select
               value={rideUserFilter}
               onChange={(e) => setRideUserFilter(e.target.value)}
               className="ml-2 rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm text-black dark:border-[#3A4D63] dark:bg-[#0B1B2B] dark:text-white"
             >
-              <option value="all">All Users</option>
+              <option value="all">{t.allUsers}</option>
               {users.map((user) => (
                 <option key={user._id} value={user._id}>
-                  {displayName(user.name) || user.phone || 'Unnamed User'}
+                  {displayName(user.name) || user.phone || t.unnamedUser}
                 </option>
               ))}
             </select>
@@ -138,7 +141,7 @@ export default function RidesTab ({
         <div className="mt-3">
           <input
             type="search"
-            placeholder="Search city, route, passenger, driver, id…"
+            placeholder={t.searchRides}
             value={tableSearch}
             onChange={(e) => setTableSearch(e.target.value)}
             className="w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm text-black placeholder:text-neutral-500 focus:border-black focus:outline-none focus:ring-1 focus:ring-black dark:border-[#3A4D63] dark:bg-[#0B1B2B] dark:text-white dark:placeholder:text-[#7183A0] dark:focus:border-white dark:focus:ring-white"
@@ -147,34 +150,34 @@ export default function RidesTab ({
 
         {selectedIds.length > 0 && (
           <div className="mt-3 flex flex-wrap items-center gap-2">
-            <span className="text-xs text-neutral-600">{selectedIds.length} selected</span>
-            <button type="button" onClick={clearSelection} className="text-xs text-neutral-600 hover:text-black">Clear</button>
-            <button type="button" onClick={bulkDeleteRides} className="rounded-lg border border-black bg-black px-2 py-1.5 text-xs font-medium text-white hover:bg-neutral-800 sm:px-3">Delete selected</button>
+            <span className="text-xs text-neutral-600">{selectedIds.length} {t.selected}</span>
+            <button type="button" onClick={clearSelection} className="text-xs text-neutral-600 hover:text-black">{t.clear}</button>
+            <button type="button" onClick={bulkDeleteRides} className="rounded-lg border border-black bg-black px-2 py-1.5 text-xs font-medium text-white hover:bg-neutral-800 sm:px-3">{t.deleteSelected}</button>
           </div>
         )}
       </div>
       <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-xl dark:border-[#26384D] dark:bg-[#0B1B2B]">
         {ridesLoading ? (
-          <div className="p-12 text-center text-neutral-600">Loading rides…</div>
+          <div className="p-12 text-center text-neutral-600">{t.loadingRides}</div>
         ) : (
           <>
           <div className="space-y-3 p-3 md:hidden">
-            {paginatedRides.map((ride, index) => <MobileRecordCard key={rowStableKey(ride, index)} title={`Ride ${String(ride._id).slice(-8)}`} subtitle={ride.createdAt ? new Date(ride.createdAt).toLocaleString() : 'Date unavailable'} badge={<span className={`rounded-full border px-2 py-1 text-[10px] font-semibold capitalize ${statusBadgeClass(ride.status)}`}>{ride.status || '—'}</span>} checked={selectedIds.includes(String(ride._id))} onCheck={() => toggleSelect(ride._id)} actions={<div className="flex gap-2">
+            {paginatedRides.map((ride, index) => <MobileRecordCard key={rowStableKey(ride, index)} title={`Ride ${String(ride._id).slice(-8)}`} subtitle={ride.createdAt ? new Date(ride.createdAt).toLocaleString() : t.dateUnavailable} badge={<span className={`rounded-full border px-2 py-1 text-[10px] font-semibold capitalize ${statusBadgeClass(ride.status)}`}>{ride.status || '—'}</span>} checked={selectedIds.includes(String(ride._id))} onCheck={() => toggleSelect(ride._id)} actions={<div className="flex gap-2">
   <button
     type="button"
     onClick={() => onViewRide(ride)}
     className="rounded-lg bg-neutral-100 px-3 py-2 text-xs font-semibold text-neutral-800"
   >
-    View
+    {t.view}
   </button>
   <button
     type="button"
     onClick={() => deleteRide(ride._id)}
     className="rounded-lg bg-red-50 px-3 py-2 text-xs font-semibold text-[#DC2626]"
   >
-    Delete
+    {t.delete}
   </button>
-</div>}><MobileField label="Pickup" value={ride.pickupLocation} /><MobileField label="Drop" value={ride.dropLocation} /><MobileField label="User" value={displayName(ride.user?.name)} /><MobileField label="Driver" value={displayName(ride.captain?.name) || 'Unassigned'} /><MobileField label="Vehicle" value={ride.vehicleType || '—'} /><MobileField label="Distance" value={ride.distance != null ? `${ride.distance} km` : '—'} /><MobileField label="Booked Fare" value={money(ride.price)} /><MobileField label="Final Fare" value={ride.chargedAmount != null ? money(ride.chargedAmount) : 'Payment pending'} /><MobileField label="Difference" value={(() => { const difference = fareDifference(ride.price, ride.chargedAmount); return difference == null ? '—' : `${difference >= 0 ? '+' : '−'}${money(Math.abs(difference))}` })()} /><MobileField label="Payment" value={ride.paymentMethod ? `${ride.paymentMethod} · ${ride.paymentStatus || 'pending'}` : (ride.paymentStatus || '—')} /></MobileRecordCard>)}
+</div>}><MobileField label={t.pickup} value={ride.pickupLocation} /><MobileField label={t.drop} value={ride.dropLocation} /><MobileField label={t.user} value={displayName(ride.user?.name)} /><MobileField label={t.driver} value={displayName(ride.captain?.name) || t.unassigned} /><MobileField label={t.vehicle} value={ride.vehicleType || '—'} /><MobileField label={t.distance} value={ride.distance != null ? `${ride.distance} km` : '—'} /><MobileField label={t.bookedFare} value={money(ride.price)} /><MobileField label={t.finalFare} value={ride.chargedAmount != null ? money(ride.chargedAmount) : t.paymentPending} /><MobileField label={t.difference} value={(() => { const difference = fareDifference(ride.price, ride.chargedAmount); return difference == null ? '—' : `${difference >= 0 ? '+' : '−'}${money(Math.abs(difference))}` })()} /><MobileField label={t.payment} value={ride.paymentMethod ? `${ride.paymentMethod} · ${ride.paymentStatus || 'pending'}` : (ride.paymentStatus || '—')} /></MobileRecordCard>)}
           </div>
 
           <div className="hidden overflow-x-auto md:block">
@@ -190,17 +193,17 @@ export default function RidesTab ({
                       onChange={(e) => (e.target.checked ? selectAllVisible(filteredRides) : clearSelection())}
                     />
                   </th>
-                  <th className="px-4 py-3">When</th>
-                  <th className="px-4 py-3">City</th>
-                  <th className="px-4 py-3">Rider</th>
-                  <th className="px-4 py-3">Driver</th>
-                  <th className="px-4 py-3">Pickup → Destination</th>
-                  <th className="px-4 py-3">Completed</th>
-                  <th className="px-4 py-3 text-right">Booked Fare</th>
-                  <th className="px-4 py-3 text-right">Final Fare</th>
-                  <th className="px-4 py-3 text-right">Difference</th>
-                  <th className="px-4 py-3">Status</th>
-                  <th className="sticky right-0 z-20 bg-neutral-100 px-4 py-3">Action</th>
+                  <th className="px-4 py-3">{t.when}</th>
+                  <th className="px-4 py-3">{t.city}</th>
+                  <th className="px-4 py-3">{t.rider}</th>
+                  <th className="px-4 py-3">{t.driver}</th>
+                  <th className="px-4 py-3">{t.pickupDestination}</th>
+                  <th className="px-4 py-3">{t.completed}</th>
+                  <th className="px-4 py-3 text-right">{t.bookedFare}</th>
+                  <th className="px-4 py-3 text-right">{t.finalFare}</th>
+                  <th className="px-4 py-3 text-right">{t.difference}</th>
+                  <th className="px-4 py-3">{t.status}</th>
+                  <th className="sticky right-0 z-20 bg-neutral-100 px-4 py-3">{t.action}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-neutral-200">
@@ -208,8 +211,8 @@ export default function RidesTab ({
                   <tr>
                     <td colSpan={12} className="px-4 py-8 text-center text-neutral-500">
                       {rides.length === 0
-                        ? 'No rides in the database yet. Pick All under Status, or check the backend connection.'
-                        : 'No rides match your search or filter.'}
+                        ? t.noRidesYet
+                        : t.noRidesMatch}
                     </td>
                   </tr>
                 )}
@@ -269,14 +272,14 @@ export default function RidesTab ({
                           className="text-sm font-medium text-neutral-600 underline hover:text-black"
                           onClick={() => onViewRide(r)}
                         >
-                          View
+                          {t.view}
                         </button>
                         <button
                           type="button"
                           className="text-sm font-medium text-red-600 underline hover:text-red-800"
                           onClick={() => deleteRide(r._id)}
                         >
-                          Delete
+                          {t.delete}
                         </button>
                       </div>
                     </td>
@@ -324,14 +327,14 @@ export default function RidesTab ({
       <Modal
         open={Boolean(selectedRide)}
         onClose={() => onViewRide?.(null)}
-        title="Ride Details"
+        title={t.rideDetails}
         size="xl"
       >
         {selectedRide && (
           <div className="space-y-5">
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
-                <p className="text-xs font-medium uppercase text-neutral-500">Ride ID</p>
+                <p className="text-xs font-medium uppercase text-neutral-500">{t.rideId}</p>
                 <p className="mt-1 break-all text-sm font-semibold text-neutral-900">{selectedRide._id || '—'}</p>
               </div>
 
@@ -341,43 +344,43 @@ export default function RidesTab ({
               </div>
 
               <div>
-                <p className="text-xs font-medium uppercase text-neutral-500">Pickup</p>
+                <p className="text-xs font-medium uppercase text-neutral-500">{t.pickup}</p>
                 <p className="mt-1 text-sm text-neutral-900">{selectedRide.pickupLocation || '—'}</p>
               </div>
 
               <div>
-                <p className="text-xs font-medium uppercase text-neutral-500">Drop</p>
+                <p className="text-xs font-medium uppercase text-neutral-500">{t.drop}</p>
                 <p className="mt-1 text-sm text-neutral-900">{selectedRide.dropLocation || '—'}</p>
               </div>
 
               <div>
-                <p className="text-xs font-medium uppercase text-neutral-500">Vehicle</p>
+                <p className="text-xs font-medium uppercase text-neutral-500">{t.vehicle}</p>
                 <p className="mt-1 text-sm text-neutral-900">{selectedRide.vehicleType || '—'}</p>
               </div>
 
               <div>
-                <p className="text-xs font-medium uppercase text-neutral-500">Distance</p>
+                <p className="text-xs font-medium uppercase text-neutral-500">{t.distance}</p>
                 <p className="mt-1 text-sm text-neutral-900">
                   {selectedRide.distance != null ? `${selectedRide.distance} km` : '—'}
                 </p>
               </div>
 
               <div>
-                <p className="text-xs font-medium uppercase text-neutral-500">Fare</p>
+                <p className="text-xs font-medium uppercase text-neutral-500">{t.bookedFare}</p>
                 <p className="mt-1 text-sm font-semibold text-neutral-900">
                   {selectedRide.price != null ? `₹${selectedRide.price}` : '—'}
                 </p>
               </div>
 
               <div>
-                <p className="text-xs font-medium uppercase text-neutral-500">Charged Amount</p>
+                <p className="text-xs font-medium uppercase text-neutral-500">{t.chargedAmount}</p>
                 <p className="mt-1 text-sm font-semibold text-neutral-900">
                   {selectedRide.chargedAmount != null ? `₹${selectedRide.chargedAmount}` : '—'}
                 </p>
               </div>
 
               <div>
-                <p className="text-xs font-medium uppercase text-neutral-500">Payment</p>
+                <p className="text-xs font-medium uppercase text-neutral-500">{t.payment}</p>
                 <p className="mt-1 text-sm text-neutral-900">
                   {selectedRide.paymentMethod || '—'}
                   {selectedRide.paymentStatus ? ` · ${selectedRide.paymentStatus}` : ''}
@@ -385,14 +388,14 @@ export default function RidesTab ({
               </div>
 
               <div>
-                <p className="text-xs font-medium uppercase text-neutral-500">Passenger</p>
+                <p className="text-xs font-medium uppercase text-neutral-500">{t.passenger}</p>
                 <p className="mt-1 text-sm text-neutral-900">{displayName(selectedRide.user?.name) || '—'}</p>
                 <p className="text-xs text-neutral-500">{selectedRide.user?.phone || '—'}</p>
               </div>
 
               <div>
-                <p className="text-xs font-medium uppercase text-neutral-500">Driver</p>
-                <p className="mt-1 text-sm text-neutral-900">{displayName(selectedRide.captain?.name) || 'Unassigned'}</p>
+                <p className="text-xs font-medium uppercase text-neutral-500">{t.driver}</p>
+                <p className="mt-1 text-sm text-neutral-900">{displayName(selectedRide.captain?.name) || t.unassigned}</p>
                 <p className="text-xs text-neutral-500">
                   {selectedRide.captain?.phone || '—'}
                   {selectedRide.captain?.vehicleNumber ? ` · ${selectedRide.captain.vehicleNumber}` : ''}
@@ -400,7 +403,7 @@ export default function RidesTab ({
               </div>
 
               <div>
-                <p className="text-xs font-medium uppercase text-neutral-500">Created</p>
+                <p className="text-xs font-medium uppercase text-neutral-500">{t.created}</p>
                 <p className="mt-1 text-sm text-neutral-900">
                   {selectedRide.createdAt ? new Date(selectedRide.createdAt).toLocaleString() : '—'}
                 </p>
@@ -410,7 +413,7 @@ export default function RidesTab ({
             <div className="mt-6 border-t border-neutral-200 pt-5">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-sm font-semibold text-neutral-900">Payment Breakdown</h3>
+                  <h3 className="text-sm font-semibold text-neutral-900">{t.paymentBreakdown}</h3>
                   <p className="mt-1 text-xs text-neutral-500">
                     User payment, driver earnings and platform fee
                   </p>
@@ -422,7 +425,7 @@ export default function RidesTab ({
 
               <div className="mt-3 grid gap-3 sm:grid-cols-3">
                 <div className="rounded-xl border border-neutral-200 bg-neutral-50 p-3">
-                  <p className="text-xs text-neutral-500">User Paid</p>
+                  <p className="text-xs text-neutral-500">{t.userPaid}</p>
                   <p className="mt-1 text-lg font-semibold text-neutral-900">
                     {selectedRide.chargedAmount != null
                       ? `₹${selectedRide.chargedAmount}`
@@ -431,7 +434,7 @@ export default function RidesTab ({
                 </div>
 
                 <div className="rounded-xl border border-neutral-200 bg-neutral-50 p-3">
-                  <p className="text-xs text-neutral-500">Driver Gets</p>
+                  <p className="text-xs text-neutral-500">{t.driverGets}</p>
                   <p className="mt-1 text-lg font-semibold text-neutral-900">
                     {selectedRide.captainNetEarning != null
                       ? `₹${selectedRide.captainNetEarning}`
@@ -440,7 +443,7 @@ export default function RidesTab ({
                 </div>
 
                 <div className="rounded-xl border border-neutral-200 bg-neutral-50 p-3">
-                  <p className="text-xs text-neutral-500">Admin / Platform Fee</p>
+                  <p className="text-xs text-neutral-500">{t.adminPlatformFee}</p>
                   <p className="mt-1 text-lg font-semibold text-neutral-900">
                     {selectedRide.platformFee != null
                       ? `₹${selectedRide.platformFee}`
@@ -450,7 +453,7 @@ export default function RidesTab ({
               </div>
 
               <p className="mt-3 text-xs text-neutral-500">
-                Payment Status:
+                {t.payment}:
                 <span className="ml-1 font-semibold text-neutral-700">
                   {selectedRide.paymentStatus || 'pending'}
                 </span>
@@ -458,13 +461,13 @@ export default function RidesTab ({
             </div>
 
             <div className="border-t border-neutral-200 pt-5">
-              <h3 className="text-sm font-semibold text-neutral-900">Assignment Summary</h3>
+              <h3 className="text-sm font-semibold text-neutral-900">{t.assignmentSummary}</h3>
 
               <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 <div className="rounded-xl border border-neutral-200 bg-neutral-50 p-3">
-                  <p className="text-xs text-neutral-500">Current Driver</p>
+                  <p className="text-xs text-neutral-500">{t.currentDriver}</p>
                   <p className="mt-1 text-sm font-semibold text-neutral-900">
-                    {displayName(selectedRide.captain?.name) || 'Unassigned'}
+                    {displayName(selectedRide.captain?.name) || t.unassigned}
                   </p>
                   <p className="mt-1 text-xs text-neutral-500">
                     {selectedRide.captain?.phone || '—'}
@@ -472,7 +475,7 @@ export default function RidesTab ({
                 </div>
 
                 <div className="rounded-xl border border-neutral-200 bg-neutral-50 p-3">
-                  <p className="text-xs text-neutral-500">Vehicle</p>
+                  <p className="text-xs text-neutral-500">{t.vehicle}</p>
                   <p className="mt-1 text-sm font-semibold text-neutral-900">
                     {selectedRide.captain?.vehicleNumber || '—'}
                   </p>
@@ -482,23 +485,23 @@ export default function RidesTab ({
                 </div>
 
                 <div className="rounded-xl border border-neutral-200 bg-neutral-50 p-3">
-                  <p className="text-xs text-neutral-500">Current Ride State</p>
+                  <p className="text-xs text-neutral-500">{t.currentRideState}</p>
                   <p className="mt-1 text-sm font-semibold capitalize text-neutral-900">
                     {selectedRide.status || '—'}
                   </p>
                 </div>
 
                 <div className="rounded-xl border border-neutral-200 bg-neutral-50 p-3">
-                  <p className="text-xs text-neutral-500">Assignment Time</p>
+                  <p className="text-xs text-neutral-500">{t.assignmentTime}</p>
                   <p className="mt-1 text-sm text-neutral-900">
                     {selectedRide.acceptedAt
                       ? new Date(selectedRide.acceptedAt).toLocaleString()
-                      : 'Not assigned'}
+                      : t.notAssigned}
                   </p>
                 </div>
 
                 <div className="rounded-xl border border-neutral-200 bg-neutral-50 p-3">
-                  <p className="text-xs text-neutral-500">ETA</p>
+                  <p className="text-xs text-neutral-500">{t.eta}</p>
                   <p className="mt-1 text-sm text-neutral-500">
                     Not available from backend
                   </p>
@@ -513,7 +516,7 @@ export default function RidesTab ({
               <div className="border-t border-neutral-200 pt-5">
                 <div className="flex items-center justify-between">
                   <h3 className="text-sm font-semibold text-neutral-900">
-                    Matching Attempts
+                    {t.matchingAttempts}
                   </h3>
                   <span className="text-xs text-neutral-500">
                     {matchingAttempts.length} attempt
@@ -549,7 +552,7 @@ export default function RidesTab ({
                               Attempt #{attempt.attemptNumber || index + 1}
                             </p>
                             <p className="mt-1 text-sm font-semibold text-neutral-900">
-                              {displayName(captain?.name) || 'Driver unavailable'}
+                              {displayName(captain?.name) || t.driverUnavailable}
                             </p>
                             <p className="text-xs text-neutral-500">
                               {captain?.phone || captain?.vehicleNumber || '—'}
@@ -565,7 +568,7 @@ export default function RidesTab ({
 
                         <div className="mt-3 grid gap-3 text-sm sm:grid-cols-2">
                           <div>
-                            <p className="text-xs text-neutral-500">Offered At</p>
+                            <p className="text-xs text-neutral-500">{t.offeredAt}</p>
                             <p className="mt-1 text-neutral-900">
                               {attempt.offeredAt
                                 ? new Date(attempt.offeredAt).toLocaleString()
@@ -574,7 +577,7 @@ export default function RidesTab ({
                           </div>
 
                           <div>
-                            <p className="text-xs text-neutral-500">Responded At</p>
+                            <p className="text-xs text-neutral-500">{t.respondedAt}</p>
                             <p className="mt-1 text-neutral-900">
                               {attempt.respondedAt
                                 ? new Date(attempt.respondedAt).toLocaleString()
@@ -593,31 +596,31 @@ export default function RidesTab ({
 
             <div className="border-t border-neutral-200 pt-5">
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                <h3 className="text-sm font-semibold text-neutral-900">Assignment Timeline</h3>
+                <h3 className="text-sm font-semibold text-neutral-900">{t.assignmentTimeline}</h3>
                 <button
                   type="button"
                   onClick={refreshRides}
                   disabled={ridesLoading}
                   className="inline-flex w-fit items-center rounded-lg border border-neutral-300 bg-white px-3 py-1.5 text-xs font-semibold text-neutral-700 transition hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  {ridesLoading ? 'Refreshing...' : 'Refresh Timeline'}
+                  {ridesLoading ? t.refreshing : t.refreshTimeline}
                 </button>
               </div>
 
               <div className="mt-4 space-y-4">
                 {[
-                  ['Ride Created', selectedRide.createdAt, 'normal'],
-                  ['Driver Accepted', selectedRide.acceptedAt, 'normal'],
-                  ['Driver Arrived', selectedRide.arrivedAt, 'normal'],
-                  ['PIN Verified', selectedRide.otpVerifiedAt, 'success'],
-                  ['PIN Verification Failed', selectedRide.otpVerificationFailedAt, 'failed'],
-                  ['Ride Started', selectedRide.startedAt, 'success'],
-                  ['Ride Completed', selectedRide.completedAt, 'normal'],
-                  ['Ride Cancelled', selectedRide.cancelledAt, 'failed'],
+                  [t.rideCreated, selectedRide.createdAt, 'normal'],
+                  [t.driverAccepted, selectedRide.acceptedAt, 'normal'],
+                  [t.driverArrived, selectedRide.arrivedAt, 'normal'],
+                  [t.pinVerified, selectedRide.otpVerifiedAt, 'success'],
+                  [t.pinVerificationFailed, selectedRide.otpVerificationFailedAt, 'failed'],
+                  [t.rideStarted, selectedRide.startedAt, 'success'],
+                  [t.completed, selectedRide.completedAt, 'normal'],
+                  [t.rideCancelled, selectedRide.cancelledAt, 'failed'],
                 ]
                   .filter(([, value]) => value)
                   .map(([label, value, type], index, events) => (
-                    <div key={label} className="flex gap-3">
+                    <div key={`${label}-${index}`} className="flex gap-3">
                       <div className="flex flex-col items-center">
                         <span
                           className={`mt-1 h-2.5 w-2.5 rounded-full ${
@@ -638,11 +641,11 @@ export default function RidesTab ({
                         <p className="mt-1 text-xs text-neutral-500">
                           {new Date(value).toLocaleString()}
                         </p>
-                        {type === 'failed' && label === 'PIN Verification Failed' && (
+                        {type === 'failed' && label === t.pinVerificationFailed && (
                           <p className="mt-1 text-xs font-medium text-red-600">
                             {selectedRide.otpVerificationFailureReason === 'expired_pin'
-                              ? 'PIN expired'
-                              : 'Invalid PIN'}
+                              ? t.pinExpired
+                              : t.invalidPin}
                           </p>
                         )}
                       </div>
@@ -652,10 +655,10 @@ export default function RidesTab ({
             </div>
 
             <div className="border-t border-neutral-200 pt-5">
-              <h3 className="text-sm font-semibold text-neutral-900">Change Audit</h3>
+              <h3 className="text-sm font-semibold text-neutral-900">{t.changeAudit}</h3>
 
               {rideAuditLoading && (
-                <p className="mt-3 text-sm text-neutral-500">Loading audit history…</p>
+                <p className="mt-3 text-sm text-neutral-500">{t.loadingAuditHistory}</p>
               )}
 
               {rideAuditError && (
@@ -678,10 +681,10 @@ export default function RidesTab ({
                       <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                         <div>
                           <p className="text-sm font-semibold capitalize text-neutral-900">
-                            {String(entry.field || 'Change').replace(/([A-Z])/g, ' $1')}
+                            {String(entry.field || t.change).replace(/([A-Z])/g, ' $1')}
                           </p>
                           <p className="mt-1 text-xs text-neutral-500">
-                            Actor: {entry.actorType || 'System'}
+                            {t.actor} {entry.actorType || t.system}
                             {entry.actor ? ` · ${entry.actor}` : ''}
                           </p>
                         </div>
@@ -757,22 +760,22 @@ export default function RidesTab ({
             {(selectedRide.cancelledBy || selectedRide.cancellationReason ||
               selectedRide.cancellationFee != null) && (
               <div className="border-t border-neutral-200 pt-5">
-                <h3 className="text-sm font-semibold text-neutral-900">Cancellation</h3>
+                <h3 className="text-sm font-semibold text-neutral-900">{t.cancellation}</h3>
                 <div className="mt-3 grid gap-3 sm:grid-cols-2">
                   <div>
-                    <p className="text-xs text-neutral-500">Cancelled By</p>
+                    <p className="text-xs text-neutral-500">{t.cancelledBy}</p>
                     <p className="mt-1 text-sm capitalize text-neutral-900">{selectedRide.cancelledBy || '—'}</p>
                   </div>
 
                   <div>
-                    <p className="text-xs text-neutral-500">Cancellation Fee</p>
+                    <p className="text-xs text-neutral-500">{t.cancellationFee}</p>
                     <p className="mt-1 text-sm text-neutral-900">
                       {selectedRide.cancellationFee != null ? `₹${selectedRide.cancellationFee}` : '—'}
                     </p>
                   </div>
 
                   <div className="sm:col-span-2">
-                    <p className="text-xs text-neutral-500">Reason</p>
+                    <p className="text-xs text-neutral-500">{t.reason}</p>
                     <p className="mt-1 text-sm text-neutral-900">{selectedRide.cancellationReason || '—'}</p>
                   </div>
                 </div>
@@ -781,42 +784,42 @@ export default function RidesTab ({
 
             {selectedRide && (
               <div className="border-t border-neutral-200 pt-5">
-                <h3 className="text-sm font-semibold text-neutral-900">Ratings</h3>
+                <h3 className="text-sm font-semibold text-neutral-900">{t.ratings}</h3>
                 <div className="mt-3 grid gap-3 sm:grid-cols-2">
                   <div>
-                    <p className="text-xs text-neutral-500">Passenger Rating</p>
+                    <p className="text-xs text-neutral-500">{t.passengerRating}</p>
                     <p className="mt-1 text-sm text-neutral-900">
-                      {selectedRide.rating != null ? `${selectedRide.rating}/5` : 'Not rated'}
+                      {selectedRide.rating != null ? `${selectedRide.rating}/5` : t.notRated}
                     </p>
                   </div>
 
                   <div>
-                    <p className="text-xs text-neutral-500">Driver Rating</p>
+                    <p className="text-xs text-neutral-500">{t.driverRating}</p>
                     <p className="mt-1 text-sm text-neutral-900">
                       {selectedRide.captainPassengerRating != null
                         ? `${selectedRide.captainPassengerRating}/5`
-                        : 'Not rated'}
+                        : t.notRated}
                     </p>
                   </div>
 
                   {selectedRide.ratingComment && (
                     <div className="sm:col-span-2">
-                      <p className="text-xs text-neutral-500">Comment</p>
+                      <p className="text-xs text-neutral-500">{t.comment}</p>
                       <p className="mt-1 text-sm text-neutral-900">{selectedRide.ratingComment}</p>
                     </div>
                   )}
 
                   <div>
-                    <p className="text-xs text-neutral-500">Compliments</p>
+                    <p className="text-xs text-neutral-500">{t.compliments}</p>
                     <p className="mt-1 text-sm text-neutral-900">
                       {Array.isArray(selectedRide.compliments) && selectedRide.compliments.length > 0
                         ? selectedRide.compliments.join(', ')
-                        : 'None'}
+                        : t.none}
                     </p>
                   </div>
 
                   <div>
-                    <p className="text-xs text-neutral-500">Tip</p>
+                    <p className="text-xs text-neutral-500">{t.tip}</p>
                     <p className="mt-1 text-sm text-neutral-900">
                       ₹{Number(selectedRide.tipAmount || 0).toFixed(2)}
                     </p>

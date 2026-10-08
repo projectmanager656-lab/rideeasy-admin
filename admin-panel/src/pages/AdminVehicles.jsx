@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import { useAdminLanguage } from '../context/AdminLanguageContext'
 import { useNavigate } from 'react-router-dom'
 import { adminApi } from '../services/adminApi'
 import { displayName } from '../admin/adminUtils'
@@ -15,10 +16,10 @@ import {
 import { Modal } from '../components/ui'
 
 import Table from '../components/ui/Table'
-const vehicleStatus = (driver) => {
+const vehicleStatus = (driver, t) => {
   if (driver.blocked) {
     return {
-      label: 'Blocked',
+      label: t.blocked,
       variant: 'danger',
       key: 'blocked',
     }
@@ -26,7 +27,7 @@ const vehicleStatus = (driver) => {
 
   if (!driver.approved) {
     return {
-      label: 'Pending Verification',
+      label: t.pendingVerification,
       variant: 'warning',
       key: 'pending',
     }
@@ -37,7 +38,7 @@ const vehicleStatus = (driver) => {
     driver.isOnline
   ) {
     return {
-      label: 'Active',
+      label: t.active,
       variant: 'success',
       key: 'active',
     }
@@ -50,8 +51,8 @@ const vehicleStatus = (driver) => {
   }
 }
 
-const valueOrUnavailable = (value) => {
-  return value || 'Not available'
+const valueOrUnavailable = (value, t) => {
+  return value || t.notAvailable
 }
 
 const formatDate = (value) => {
@@ -67,6 +68,7 @@ const formatDate = (value) => {
 }
 
 export default function AdminVehicles() {
+  const { t } = useAdminLanguage()
   const navigate = useNavigate()
 
   const [drivers, setDrivers] = useState([])
@@ -94,7 +96,7 @@ export default function AdminVehicles() {
     setError(
       loadError?.response?.data?.message ||
       loadError?.message ||
-      'Unable to load vehicles'
+      t.unableLoadVehicles
     )
   } finally {
     if (!signal?.aborted) {
@@ -115,7 +117,7 @@ export default function AdminVehicles() {
     const query = search.trim().toLowerCase()
 
     return drivers.filter((driver) => {
-      const status = vehicleStatus(driver).key
+      const status = vehicleStatus(driver, t).key
 
       const matchesStatus =
         statusFilter === 'all' ||
@@ -147,22 +149,22 @@ export default function AdminVehicles() {
 
       active: drivers.filter(
         (driver) =>
-          vehicleStatus(driver).key === 'active'
+          vehicleStatus(driver, t).key === 'active'
       ).length,
 
       pending: drivers.filter(
         (driver) =>
-          vehicleStatus(driver).key === 'pending'
+          vehicleStatus(driver, t).key === 'pending'
       ).length,
 
       blocked: drivers.filter(
         (driver) =>
-          vehicleStatus(driver).key === 'blocked'
+          vehicleStatus(driver, t).key === 'blocked'
       ).length,
 
       inactive: drivers.filter(
         (driver) =>
-          vehicleStatus(driver).key === 'inactive'
+          vehicleStatus(driver, t).key === 'inactive'
       ).length,
     }
   }, [drivers])
@@ -174,15 +176,15 @@ export default function AdminVehicles() {
     },
     {
       value: 'active',
-      label: `Active (${counts.active})`,
+      label: `${t.active} (${counts.active})`,
     },
     {
       value: 'pending',
-      label: `Pending (${counts.pending})`,
+      label: `${t.pending} (${counts.pending})`,
     },
     {
       value: 'blocked',
-      label: `Blocked (${counts.blocked})`,
+      label: `${t.blocked} (${counts.blocked})`,
     },
     {
       value: 'inactive',
@@ -197,11 +199,11 @@ export default function AdminVehicles() {
       render: (driver) => (
         <div>
           <p className="font-bold text-[#152238]">
-            {valueOrUnavailable(driver.vehicleNumber)}
+            {valueOrUnavailable(driver.vehicleNumber, t)}
           </p>
 
           <p className="mt-0.5 text-xs text-[#718096]">
-            {valueOrUnavailable(driver.vehicleType)}
+            {valueOrUnavailable(driver.vehicleType, t)}
           </p>
         </div>
       ),
@@ -212,7 +214,8 @@ export default function AdminVehicles() {
       label: 'Model',
       render: (driver) =>
         valueOrUnavailable(
-          driver.vehicleModel || driver.model
+          driver.vehicleModel || driver.model,
+          t
         ),
     },
 
@@ -222,11 +225,11 @@ export default function AdminVehicles() {
       render: (driver) => (
         <div>
           <p className="font-semibold text-[#152238]">
-            {displayName(driver.name) || 'Unnamed driver'}
+            {displayName(driver.name) || t.unnamedDriver}
           </p>
 
           <p className="mt-0.5 text-xs text-[#718096]">
-            {driver.email || 'Not available'}
+            {driver.email || t.notAvailable}
           </p>
         </div>
       ),
@@ -234,26 +237,28 @@ export default function AdminVehicles() {
 
     {
       key: 'rcStatus',
-      label: 'RC Status',
+      label: t.rcStatus,
       render: (driver) =>
         valueOrUnavailable(
-          driver.rcStatus || driver.rc?.status
+          driver.rcStatus || driver.rc?.status,
+          t
         ),
     },
 
     {
       key: 'insuranceStatus',
-      label: 'Insurance',
+      label: t.insuranceStatus,
       render: (driver) =>
         valueOrUnavailable(
           driver.insuranceStatus ||
-          driver.insurance?.status
+          driver.insurance?.status,
+          t
         ),
     },
 
     {
       key: 'registrationDate',
-      label: 'Registration Date',
+      label: t.registrationDate,
       render: (driver) =>
         formatDate(
           driver.registrationDate ||
@@ -263,9 +268,9 @@ export default function AdminVehicles() {
 
     {
       key: 'status',
-      label: 'Vehicle Status',
+      label: t.vehicleStatus,
       render: (driver) => {
-        const status = vehicleStatus(driver)
+        const status = vehicleStatus(driver, t)
 
         return (
           <Badge variant={status.variant}>
@@ -298,11 +303,11 @@ export default function AdminVehicles() {
         <div className="flex items-start justify-between gap-3">
           <div>
             <h1 className="text-[28px] font-bold tracking-[-0.04em] text-[#152238] sm:text-[32px]">
-              Vehicles
+              {t.vehicles}
             </h1>
 
             <p className="mt-1 text-sm text-[#718096]">
-              Manage registered vehicles and verification status
+              {t.manageRegisteredVehicles}
             </p>
           </div>
 
@@ -314,7 +319,7 @@ export default function AdminVehicles() {
               })
             }
             className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-[#E6EBF2] bg-white text-[#152238] shadow-sm transition hover:bg-[#F8FAFC]"
-            aria-label="Back to drivers"
+            aria-label={t.backToDrivers}
           >
             <i className="ri-arrow-left-line text-lg" />
           </button>
@@ -337,7 +342,7 @@ export default function AdminVehicles() {
             </div>
 
             <p className="mt-3 text-[10px] font-semibold uppercase tracking-[0.08em] text-[#718096]">
-              All Vehicles
+              {t.allVehicles}
             </p>
 
             <p className="mt-1 text-xl font-bold text-[#152238]">
@@ -359,7 +364,7 @@ export default function AdminVehicles() {
             </div>
 
             <p className="mt-3 text-[10px] font-semibold uppercase tracking-[0.08em] text-[#718096]">
-              Active
+              {t.active}
             </p>
 
             <p className="mt-1 text-xl font-bold text-[#152238]">
@@ -381,7 +386,7 @@ export default function AdminVehicles() {
             </div>
 
             <p className="mt-3 text-[10px] font-semibold uppercase tracking-[0.08em] text-[#718096]">
-              Pending
+              {t.pending}
             </p>
 
             <p className="mt-1 text-xl font-bold text-[#152238]">
@@ -403,7 +408,7 @@ export default function AdminVehicles() {
             </div>
 
             <p className="mt-3 text-[10px] font-semibold uppercase tracking-[0.08em] text-[#718096]">
-              Blocked
+              {t.blocked}
             </p>
 
             <p className="mt-1 text-xl font-bold text-[#152238]">
@@ -420,12 +425,12 @@ export default function AdminVehicles() {
             <Search
               value={search}
               onChange={setSearch}
-              placeholder="Search vehicle number, type, model or driver..."
+              placeholder={t.searchVehicles}
               className="flex-1"
             />
 
             <Filter
-              label="Status"
+              label={t.vehicleStatusLabel}
               value={statusFilter}
               onChange={setStatusFilter}
               options={statusOptions}
@@ -437,7 +442,7 @@ export default function AdminVehicles() {
         {/* Error */}
         {error && (
           <ErrorState
-            title="Unable to load vehicles"
+            title={t.unableLoadVehicles}
             message={error}
             onRetry={() => loadVehicles()}
           />
@@ -449,14 +454,14 @@ export default function AdminVehicles() {
 
             {loading ? (
               <Card>
-                <Loader label="Loading vehicles..." />
+                <Loader label={t.loadingVehicles} />
               </Card>
             ) : filteredVehicles.length === 0 ? (
               <EmptyState
-                title="No vehicles found"
+                title={t.noVehiclesFound}
                 message={
                   search || statusFilter !== 'all'
-                    ? 'No vehicles match your current search or filter.'
+                    ? t.noVehiclesMatch
                     : 'Vehicle records are sourced from registered drivers.'
                 }
                 icon="ri-car-line"
@@ -481,31 +486,32 @@ export default function AdminVehicles() {
 
             {loading ? (
               <Card>
-                <Loader label="Loading vehicles..." />
+                <Loader label={t.loadingVehicles} />
               </Card>
             ) : filteredVehicles.length === 0 ? (
               <EmptyState
-                title="No vehicles found"
+                title={t.noVehiclesFound}
                 message={
                   search || statusFilter !== 'all'
-                    ? 'No vehicles match your current search or filter.'
+                    ? t.noVehiclesMatch
                     : 'Vehicle records are sourced from registered drivers.'
                 }
                 icon="ri-car-line"
               />
             ) : (
               filteredVehicles.map((driver) => {
-                const status = vehicleStatus(driver)
+                const status = vehicleStatus(driver, t)
 
                 return (
                   <MobileRecordCard
                     key={driver._id}
                     title={valueOrUnavailable(
-                      driver.vehicleNumber
+                      driver.vehicleNumber,
+                      t
                     )}
                     subtitle={
                       displayName(driver.name) ||
-                      'Unnamed driver'
+                      t.unnamedDriver
                     }
                     badge={
                       <Badge variant={status.variant}>
@@ -514,12 +520,12 @@ export default function AdminVehicles() {
                     }
                   >
                     <MobileField
-                      label="Type"
+                      label={t.vehicleType}
                       value={driver.vehicleType}
                     />
 
                     <MobileField
-                      label="Model"
+                      label={t.vehicleModel}
                       value={
                         driver.vehicleModel ||
                         driver.model
@@ -527,7 +533,7 @@ export default function AdminVehicles() {
                     />
 
                     <MobileField
-                      label="RC"
+                      label={t.rcStatus}
                       value={
                         driver.rcStatus ||
                         driver.rc?.status
@@ -535,7 +541,7 @@ export default function AdminVehicles() {
                     />
 
                     <MobileField
-                      label="Insurance"
+                      label={t.insuranceStatus}
                       value={
                         driver.insuranceStatus ||
                         driver.insurance?.status
@@ -543,7 +549,7 @@ export default function AdminVehicles() {
                     />
 
                     <MobileField
-                      label="Registered"
+                      label={t.registrationDate}
                       value={formatDate(
                         driver.registrationDate ||
                         driver.createdAt
@@ -562,7 +568,7 @@ export default function AdminVehicles() {
         <Modal
           open={Boolean(selectedVehicle)}
           onClose={() => setSelectedVehicle(null)}
-          title="Vehicle Details"
+          title={t.vehicleDetails}
         >
           <div className="space-y-5">
             <div className="flex items-center gap-4 rounded-xl bg-[#F7F9FC] p-4">
@@ -572,66 +578,76 @@ export default function AdminVehicles() {
 
               <div className="min-w-0">
                 <h3 className="truncate text-lg font-bold text-[#152238]">
-                  {valueOrUnavailable(selectedVehicle.vehicleNumber)}
+                  {valueOrUnavailable(selectedVehicle.vehicleNumber, t)}
                 </h3>
                 <p className="text-sm text-[#718096]">
-                  {displayName(selectedVehicle.name) || 'Unnamed driver'}
+                  {displayName(selectedVehicle.name) || t.unnamedDriver}
                 </p>
               </div>
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
               <VehicleDetail
-                label="Vehicle Number"
+                label={t.vehicleNumber}
                 value={selectedVehicle.vehicleNumber}
+                t={t}
               />
               <VehicleDetail
-                label="Vehicle Type"
+                label={t.vehicleType}
                 value={selectedVehicle.vehicleType}
+                t={t}
               />
               <VehicleDetail
-                label="Vehicle Model"
+                label={t.vehicleModel}
                 value={
                   selectedVehicle.vehicleModel ||
                   selectedVehicle.model
                 }
+                t={t}
               />
               <VehicleDetail
-                label="Driver"
+                label={t.driver}
                 value={displayName(selectedVehicle.name)}
+                t={t}
               />
               <VehicleDetail
-                label="Driver Email"
+                label={t.driverEmail}
                 value={selectedVehicle.email}
+                t={t}
               />
               <VehicleDetail
-                label="Driver Phone"
+                label={t.driverPhone}
                 value={selectedVehicle.phone}
+                t={t}
               />
               <VehicleDetail
-                label="RC Status"
+                label={t.rcStatus}
                 value={
                   selectedVehicle.rcStatus ||
                   selectedVehicle.rc?.status
                 }
+                t={t}
               />
               <VehicleDetail
-                label="Insurance Status"
+                label={t.insuranceStatus}
                 value={
                   selectedVehicle.insuranceStatus ||
                   selectedVehicle.insurance?.status
                 }
+                t={t}
               />
               <VehicleDetail
-                label="Registration Date"
+                label={t.registrationDate}
                 value={formatDate(
                   selectedVehicle.registrationDate ||
                   selectedVehicle.createdAt
                 )}
+                t={t}
               />
               <VehicleDetail
-                label="Vehicle Status"
-                value={vehicleStatus(selectedVehicle).label}
+                label={t.vehicleStatus}
+                value={vehicleStatus(selectedVehicle, t).label}
+                t={t}
               />
             </div>
 
@@ -652,14 +668,14 @@ export default function AdminVehicles() {
   )
 }
 
-function VehicleDetail({ label, value }) {
+function VehicleDetail({ label, value, t }) {
   return (
     <div className="rounded-xl border border-[#E6EBF2] bg-white p-3">
       <p className="text-xs font-medium text-[#718096]">
         {label}
       </p>
       <p className="mt-1 break-words text-sm font-semibold text-[#152238]">
-        {value || 'Not available'}
+        {value || t.notAvailable}
       </p>
     </div>
   )

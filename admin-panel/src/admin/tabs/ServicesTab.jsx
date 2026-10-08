@@ -1,3 +1,4 @@
+import { useAdminLanguage } from '../../context/AdminLanguageContext'
 import React, { useMemo, useState } from 'react'
 import { AlertCard, Card } from '../../components/AdminUIComponents'
 import { SecondaryPageShell } from './SecondaryPageShell'
@@ -30,6 +31,7 @@ export default function ServicesTab ({
   onSave,
   onDelete,
 }) {
+  const { t } = useAdminLanguage()
   const [search, setSearch] = useState('')
   const [status, setStatus] = useState('all')
   const [form, setForm] = useState(null)
@@ -164,14 +166,14 @@ export default function ServicesTab ({
     <div className="space-y-6">
 
       <SecondaryPageShell
-        title="Services"
-        subtitle="Manage service offerings and pricing"
+        title={t.services}
+        subtitle={t.servicesPageSubtitle}
         rows={[
-          { title: 'Service List', description: 'View and manage all services', icon: 'ri-list-check-2', tone: 'blue' },
-          { title: 'Service Categories', description: 'Manage service categories', icon: 'ri-folder-3-line', tone: 'green' },
-          { title: 'Pricing Settings', description: 'Configure pricing rules', icon: 'ri-price-tag-3-line', tone: 'orange' },
-          { title: 'Surge Settings', description: 'Manage surge pricing', icon: 'ri-line-chart-line', tone: 'purple' },
-          { title: 'Service Availability', description: 'Manage service availability', icon: 'ri-checkbox-circle-line', tone: 'navy' },
+          { title: t.serviceList, description: t.serviceListDescription, icon: 'ri-list-check-2', tone: 'blue' },
+          { title: t.serviceCategories, description: t.serviceCategoriesDescription, icon: 'ri-folder-3-line', tone: 'green' },
+          { title: t.pricingSettings, description: t.pricingSettingsDescription, icon: 'ri-price-tag-3-line', tone: 'orange' },
+          { title: t.surgeSettings, description: t.surgeSettingsDescription, icon: 'ri-line-chart-line', tone: 'purple' },
+          { title: t.serviceAvailability, description: t.serviceAvailabilityDescription, icon: 'ri-checkbox-circle-line', tone: 'navy' },
         ]}
       />
 
@@ -182,11 +184,11 @@ export default function ServicesTab ({
 
           <div>
             <h2 className="text-2xl font-bold tracking-tight text-[#111827]">
-              Services
+              {t.services}
             </h2>
 
             <p className="mt-1 text-sm text-[#6B7280]">
-              Manage RideEasy services
+              {t.manageRideEasyServices}
             </p>
           </div>
 
@@ -200,7 +202,7 @@ export default function ServicesTab ({
 
               <div>
                 <p className="text-[11px] text-[#6B7280]">
-                  Active
+                  {t.active}
                 </p>
 
                 <p className="font-bold text-[#111827]">
@@ -218,7 +220,7 @@ export default function ServicesTab ({
 
               <div>
                 <p className="text-[11px] text-[#6B7280]">
-                  Inactive
+                  {t.inactive}
                 </p>
 
                 <p className="font-bold text-[#111827]">
@@ -234,7 +236,7 @@ export default function ServicesTab ({
               className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#FFB21C] px-4 py-2.5 text-sm font-bold text-[#0B1B2B] shadow-sm transition hover:bg-[#FFC34D]"
             >
               <i className="ri-add-line text-base" />
-              Add Service
+              {t.addService}
             </button>
 
           </div>
@@ -246,7 +248,7 @@ export default function ServicesTab ({
       {error && (
         <AlertCard
           type="error"
-          title="Unable to load services"
+          title={t.unableLoadServices}
           message={error}
         />
       )}
@@ -265,7 +267,7 @@ export default function ServicesTab ({
               onChange={(event) =>
                 setSearch(event.target.value)
               }
-              placeholder="Search services..."
+              placeholder={t.searchServices}
               className="w-full rounded-xl border border-[#E5E7EB] bg-[#F7F9FC] py-2.5 pl-11 pr-4 text-sm text-[#111827] placeholder:text-[#9CA3AF] outline-none transition focus:border-[#FFB21C] focus:ring-2 focus:ring-[#FFB21C]/20"
             />
 
@@ -282,7 +284,7 @@ export default function ServicesTab ({
               }
               className="w-full appearance-none rounded-xl border border-[#E5E7EB] bg-[#F7F9FC] py-2.5 pl-10 pr-9 text-sm font-medium text-[#111827] outline-none transition focus:border-[#FFB21C] sm:w-[170px]"
             >
-              <option value="all">All statuses</option>
+              <option value="all">{t.allStatuses}</option>
               <option value="active">Active</option>
               <option value="inactive">Inactive</option>
             </select>
@@ -406,7 +408,7 @@ export default function ServicesTab ({
               <div>
 
                 <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#B86B00]">
-                  Service Configuration
+                  {t.serviceConfiguration}
                 </p>
 
                 <h3
@@ -414,12 +416,12 @@ export default function ServicesTab ({
                   className="mt-1 text-xl font-bold text-[#111827]"
                 >
                   {form._id
-                    ? 'Edit Service'
-                    : 'Add Service'}
+                    ? t.editService
+                    : t.addService}
                 </h3>
 
                 <p className="mt-1 text-sm text-[#6B7280]">
-                  All fare amounts are in INR.
+                  {t.allFareAmountsInINR}
                 </p>
 
               </div>
@@ -428,7 +430,7 @@ export default function ServicesTab ({
                 type="button"
                 onClick={() => setForm(null)}
                 className="grid h-9 w-9 place-items-center rounded-lg text-[#6B7280] transition hover:bg-[#F7F9FC] hover:text-[#111827]"
-                aria-label="Close"
+                aria-label={t.close}
               >
                 <i className="ri-close-line text-xl" />
               </button>
@@ -495,7 +497,7 @@ export default function ServicesTab ({
                 />
 
                 <span className="text-sm font-semibold text-[#111827]">
-                  Active service
+                  {t.active} service
                 </span>
 
               </label>

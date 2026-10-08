@@ -1,6 +1,7 @@
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
 import AdminLayout from '../components/AdminLayout'
+import { useAdminLanguage } from '../context/AdminLanguageContext'
 
 const content = {
   help: {
@@ -86,8 +87,32 @@ const content = {
 
 export default function AdminInfoPage({ section }) {
   const navigate = useNavigate()
+  const { t } = useAdminLanguage()
 
   const page = content[section] || content.help
+
+  const displayPage =
+    section === 'help'
+      ? {
+          ...page,
+          title: t.helpSupport,
+          subtitle: t.helpSupportSubtitle,
+          sections: [
+            {
+              title: t.needHelp,
+              text: t.needHelpText,
+            },
+            {
+              title: t.adminSupport,
+              text: t.adminSupportText,
+            },
+            {
+              title: t.contactSupport,
+              text: t.contactSupportText,
+            },
+          ],
+        }
+      : page
 
   const goMore = () => {
     navigate('/admin/dashboard', {
@@ -124,7 +149,7 @@ export default function AdminInfoPage({ section }) {
             <button
               type="button"
               onClick={goMore}
-              aria-label="Back to More"
+              aria-label={t.more || "More"}
               className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-[#E6EBF2] bg-white text-[#152238] shadow-sm"
             >
               <i className="ri-arrow-left-line text-lg" />
@@ -132,11 +157,11 @@ export default function AdminInfoPage({ section }) {
 
             <div className="min-w-0">
               <h1 className="truncate text-lg font-bold text-[#152238]">
-                {page.title}
+                {displayPage.title}
               </h1>
 
               <p className="text-xs text-[#718096]">
-                {page.subtitle}
+                {displayPage.subtitle}
               </p>
             </div>
 
@@ -155,7 +180,7 @@ export default function AdminInfoPage({ section }) {
 
             <div className="mt-1 flex items-center gap-2">
               <h2 className="text-[26px] font-bold tracking-[-0.03em] text-[#152238]">
-                {page.title}
+                {displayPage.title}
               </h2>
             </div>
 
@@ -170,16 +195,16 @@ export default function AdminInfoPage({ section }) {
               <div className="flex items-center gap-3">
 
                 <div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-[#F3F6FA] text-[#152238]">
-                  <i className={`${page.icon} text-xl`} />
+                  <i className={`${displayPage.icon} text-xl`} />
                 </div>
 
                 <div>
                   <h3 className="font-bold text-[#152238]">
-                    {page.title}
+                    {displayPage.title}
                   </h3>
 
                   <p className="mt-0.5 text-xs text-[#718096]">
-                    {page.subtitle}
+                    {displayPage.subtitle}
                   </p>
                 </div>
 
@@ -190,7 +215,7 @@ export default function AdminInfoPage({ section }) {
             {/* INFORMATION */}
             <div className="divide-y divide-[#EEF1F5]">
 
-              {page.sections.map((item, index) => (
+              {displayPage.sections.map((item, index) => (
                 <div
                   key={`${item.title}-${index}`}
                   className="p-5"

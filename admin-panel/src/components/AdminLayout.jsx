@@ -1,3 +1,4 @@
+import { useAdminLanguage } from '../context/AdminLanguageContext'
 import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import AdminSidebar from './AdminSidebar'
@@ -13,6 +14,7 @@ const AdminLayout = ({
   emergencyAlerts,
   children,
 }) => {
+  const { t } = useAdminLanguage()
   const navigate = useNavigate()
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
 
@@ -98,10 +100,10 @@ const AdminLayout = ({
         open={showLogoutConfirm}
         onClose={() => setShowLogoutConfirm(false)}
         onConfirm={confirmLogout}
-        title="Confirm Logout"
-        message="Are you sure you want to logout from the RideEasy Admin Panel?"
-        confirmLabel="Logout"
-        cancelLabel="Cancel"
+        title={t.confirmLogout}
+        message={t.logoutMessage}
+        confirmLabel={t.logout}
+        cancelLabel={t.cancel}
         variant="danger"
       />
     </>

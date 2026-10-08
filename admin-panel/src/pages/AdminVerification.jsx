@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { adminApi } from '../services/adminApi'
+import { useAdminLanguage } from '../context/AdminLanguageContext'
 
 const STATUS_FILTERS = [
   'ALL',
@@ -25,16 +26,16 @@ const getDriverId = (driver) => {
   return driver?._id || driver?.id
 }
 
-const getDriverName = (driver) => {
+const getDriverName = (driver, t) => {
   return (
     driver?.name ||
     driver?.fullName ||
     driver?.driverName ||
     driver?.user?.name ||
-    'Not available'
+    t.notAvailable
   )
 }
-const getDriverIdentifier = (driver) => {
+const getDriverIdentifier = (driver, t) => {
   return (
     driver?.identifier ||
     driver?.driverId ||
@@ -42,57 +43,57 @@ const getDriverIdentifier = (driver) => {
     driver?.user?.identifier ||
     driver?._id ||
     driver?.id ||
-    'Not available'
+    t.notAvailable
   )
 }
-const getDriverEmail = (driver) => {
+const getDriverEmail = (driver, t) => {
   return (
     driver?.email ||
     driver?.user?.email ||
-    'Not available'
+    t.notAvailable
   )
 }
 
-const getDriverPhone = (driver) => {
+const getDriverPhone = (driver, t) => {
   return (
     driver?.phone ||
     driver?.mobile ||
     driver?.phoneNumber ||
     driver?.user?.phone ||
-    'Not available'
+    t.notAvailable
   )
 }
 
-const getVehicleNumber = (driver) => {
+const getVehicleNumber = (driver, t) => {
   return (
     driver?.vehicleNumber ||
     driver?.vehicle?.number ||
     driver?.vehicle?.registrationNumber ||
     driver?.registrationNumber ||
-    'Not available'
+    t.notAvailable
   )
 }
 
-const getVehicleType = (driver) => {
+const getVehicleType = (driver, t) => {
   return (
     driver?.vehicleType ||
     driver?.vehicle?.type ||
     driver?.vehicle ||
-    'Not available'
+    t.notAvailable
   )
 }
 
-const getCity = (driver) => {
+const getCity = (driver, t) => {
   return (
     driver?.city ||
     driver?.servingCity ||
     driver?.location?.city ||
     driver?.user?.city ||
-    'Not available'
+    t.notAvailable
   )
 }
 
-const getSubmittedDate = (driver) => {
+const getSubmittedDate = (driver, t) => {
   const value =
     driver?.submittedAt ||
     driver?.submittedDate ||
@@ -100,7 +101,7 @@ const getSubmittedDate = (driver) => {
     driver?.createdAt ||
     driver?.registrationDate
 
-  if (!value) return 'Not available'
+  if (!value) return t.notAvailable
 
   const date = new Date(value)
 
@@ -197,14 +198,15 @@ const getPendingDocumentCount = (driver) => {
   return 0
 }
 
-const formatDocumentStatus = (value) => {
+const formatDocumentStatus = (value, t) => {
   const status = normalizeStatus(value || 'PENDING')
 
-  if (status === 'UNDER_REVIEW') return 'Under review'
-  if (status === 'RE_UPLOAD_REQUIRED') return 'Re-upload required'
-  if (status === 'APPROVED') return 'Approved'
-  if (status === 'REJECTED') return 'Rejected'
-  return 'Pending review'
+  if (status === 'UNDER_REVIEW') return t.underReview
+  if (status === 'RE_UPLOAD_REQUIRED') return t.reUploadRequired
+  if (status === 'APPROVED') return t.approved
+  if (status === 'REJECTED') return t.rejected
+  if (status === 'EXPIRED') return t.expired
+  return t.pendingReview
 }
 
 const documentStatusClasses = (value) => {
@@ -410,11 +412,11 @@ const getDriverExpiryDate = (driver) => {
   return null
 }
 
-const getExpiryState = (value) => {
+const getExpiryState = (value, t) => {
   if (!value) {
     return {
       state: 'MISSING',
-      label: 'Not available',
+      label: t.notAvailable,
     }
   }
 
@@ -423,7 +425,7 @@ const getExpiryState = (value) => {
   if (Number.isNaN(date.getTime())) {
     return {
       state: 'MISSING',
-      label: 'Not available',
+      label: t.notAvailable,
     }
   }
 
@@ -437,30 +439,30 @@ const getExpiryState = (value) => {
   if (differenceMs < 0) {
     return {
       state: 'EXPIRED',
-      label: 'Expired',
+      label: t.expired,
     }
   }
 
   if (differenceDays <= 30) {
     return {
       state: 'EXPIRING_SOON',
-      label: 'Expiring soon',
+      label: t.expiringSoon,
     }
   }
 
   return {
     state: 'VALID',
-    label: 'Valid',
+    label: t.valid,
   }
 }
 
-const formatExpiryDate = (value) => {
-  if (!value) return 'Not available'
+const formatExpiryDate = (value, t) => {
+  if (!value) return t.notAvailable
 
   const date = new Date(value)
 
   if (Number.isNaN(date.getTime())) {
-    return 'Not available'
+    return t.notAvailable
   }
 
   return date.toLocaleDateString('en-IN', {
@@ -470,8 +472,13 @@ const formatExpiryDate = (value) => {
   })
 }
 
-const expiryClasses = (value) => {
-  const state = getExpiryState(value).state
+const expiryClasses = (value, t) => {
+  const state = getExpiryState(value, {
+    notAvailable: t.notAvailable,
+    expired: t.expired,
+    expiringSoon: t.expiringSoon,
+    valid: t.valid,
+  }).state
 
   if (state === 'EXPIRED') {
     return 'bg-[#FEE2E2] text-[#DC2626]'
@@ -526,7 +533,7 @@ const getDocumentIcon = (value) => {
 }
 
 const formatDate = (value) => {
-  if (!value) return 'Not available'
+  if (!value) return t.notAvailable
 
   const date = new Date(value)
 
@@ -544,6 +551,7 @@ const formatDate = (value) => {
 }
 
 const AdminVerification = () => {
+  const { t } = useAdminLanguage()
   const navigate = useNavigate()
 
   const [drivers, setDrivers] = useState([])
@@ -596,7 +604,7 @@ const AdminVerification = () => {
       setError(
         loadError?.response?.data?.message ||
           loadError?.message ||
-          'Unable to load verification queue'
+          t.unableToLoadVerificationQueue
       )
     } finally {
       setLoading(false)
@@ -622,14 +630,14 @@ const AdminVerification = () => {
         status === statusFilter
 
       const searchableValues = [
-        getDriverName(driver),
-        getDriverEmail(driver),
-        getDriverPhone(driver),
+        getDriverName(driver, t),
+        getDriverEmail(driver, t),
+        getDriverPhone(driver, t),
         driver?.identifier,
         driver?.user?.identifier,
-        getVehicleNumber(driver),
-        getCity(driver),
-        getVehicleType(driver),
+        getVehicleNumber(driver, t),
+        getCity(driver, t),
+        getVehicleType(driver, t),
       ]
 
       const searchMatches =
@@ -719,7 +727,7 @@ const AdminVerification = () => {
     const driverId = getDriverId(selectedDriver)
 
     if (!driverId) {
-      window.alert('Driver ID is missing. Unable to approve.')
+      window.alert(t.driverIdMissingApprove)
       return
     }
 
@@ -741,7 +749,7 @@ const AdminVerification = () => {
     try {
       await adminApi.approveDriver(driverId)
 
-      window.alert('Driver verification approved successfully.')
+      window.alert(t.verificationApprovedSuccess)
 
       setSelectedDocument(null)
       setSelectedDriver(null)
@@ -793,14 +801,14 @@ const AdminVerification = () => {
     const reason = rejectReason.trim()
 
     if (!reason) {
-      window.alert('Reject reason is mandatory.')
+      window.alert(t.rejectReasonMandatory)
       return
     }
 
     const driverId = getDriverId(selectedDriver)
 
     if (!driverId) {
-      window.alert('Driver ID is missing. Unable to reject.')
+      window.alert(t.driverIdMissingReject)
       return
     }
 
@@ -821,7 +829,7 @@ const AdminVerification = () => {
         payload
       )
 
-      window.alert('Driver verification rejected successfully.')
+      window.alert(t.verificationRejectedSuccess)
 
       setShowRejectModal(false)
       setRejectCategory('')
@@ -835,6 +843,111 @@ const AdminVerification = () => {
         actionError?.response?.data?.message ||
           actionError?.message ||
           'Unable to reject driver verification'
+      )
+    } finally {
+      setActionLoading(false)
+      setActionType('')
+    }
+  }
+
+  const handleComplianceApprove = async () => {
+    if (!selectedDriver || !selectedDocument || actionLoading) return
+
+    const documentType = String(
+      selectedDocument?.raw?.documentType || ''
+    ).trim().toUpperCase()
+
+    if (!documentType) {
+      window.alert('Compliance document type is missing.')
+      return
+    }
+
+    await handleComplianceStatusChange(documentType, 'APPROVED')
+  }
+
+  const handleComplianceReject = async () => {
+    if (!selectedDriver || !selectedDocument || actionLoading) return
+
+    const documentType = String(
+      selectedDocument?.raw?.documentType || ''
+    ).trim().toUpperCase()
+
+    if (!documentType) {
+      window.alert('Compliance document type is missing.')
+      return
+    }
+
+    await handleComplianceStatusChange(documentType, 'REJECTED')
+  }
+
+  const handleComplianceStatusChange = async (documentType, status) => {
+    if (!selectedDriver || actionLoading) return
+
+    const driverId = getDriverId(selectedDriver)
+
+    if (!driverId) {
+      window.alert(t.driverIdMissingCompliance)
+      return
+    }
+
+    setActionLoading(true)
+    setActionType(`compliance-${documentType}`)
+
+    try {
+      await adminApi.updateDriverCompliance(driverId, {
+        documentType,
+        status,
+      })
+
+      window.alert(t.complianceStatusUpdated)
+
+      setSelectedDocument(null)
+      setSelectedDriver(null)
+
+      await loadDrivers()
+    } catch (actionError) {
+      window.alert(
+        actionError?.response?.data?.message ||
+          actionError?.message ||
+          'Unable to update compliance status'
+      )
+    } finally {
+      setActionLoading(false)
+      setActionType('')
+    }
+  }
+
+  const handleComplianceUpload = async (documentType, file) => {
+    if (!selectedDriver || actionLoading || !file) return
+
+    const driverId = getDriverId(selectedDriver)
+
+    if (!driverId) {
+      window.alert(t.driverIdMissingUpload)
+      return
+    }
+
+    const formData = new FormData()
+    formData.append('documentType', documentType)
+    formData.append('document', file)
+
+    setActionLoading(true)
+    setActionType(`compliance-upload-${documentType}`)
+
+    try {
+      await adminApi.uploadDriverComplianceDocument(driverId, formData)
+
+      window.alert(t.complianceDocumentUploaded)
+
+      setSelectedDocument(null)
+      setSelectedDriver(null)
+
+      await loadDrivers()
+    } catch (actionError) {
+      window.alert(
+        actionError?.response?.data?.message ||
+          actionError?.message ||
+          'Unable to upload compliance document'
       )
     } finally {
       setActionLoading(false)
@@ -859,21 +972,21 @@ const AdminVerification = () => {
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#718096]">
-              Admin / Verification
+              {t.adminVerification}
             </p>
 
             <h1 className="mt-2 text-2xl font-bold tracking-[-0.03em] text-[#152238] sm:text-3xl">
-              Document Verification
+              {t.documentVerification}
             </h1>
 
             <p className="mt-1 max-w-2xl text-sm text-[#718096]">
-              Review driver documents and approve or reject verification requests.
+              {t.reviewVerificationRequests}
             </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
             <div className="inline-flex w-fit items-center rounded-full bg-[#FFF7E6] px-3 py-1.5 text-xs font-semibold text-[#B77900]">
-              {pendingCount} Pending
+              {pendingCount} {t.pending}
             </div>
 
             <button
@@ -887,7 +1000,7 @@ const AdminVerification = () => {
                   loading ? 'animate-spin' : ''
                 }`}
               />
-              Refresh
+              {t.refresh}
             </button>
           </div>
         </div>
@@ -895,20 +1008,20 @@ const AdminVerification = () => {
         {/* SUMMARY */}
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           <SummaryCard
-            title="Total Drivers"
+            title={t.totalDrivers}
             value={drivers.length}
             icon="ri-group-line"
           />
 
           <SummaryCard
-            title="Pending Review"
+            title={t.pendingReview}
             value={pendingCount}
             icon="ri-time-line"
             warning
           />
 
           <SummaryCard
-            title="Approved"
+            title={t.approved}
             value={approvedCount}
             icon="ri-checkbox-circle-line"
             success
@@ -921,11 +1034,11 @@ const AdminVerification = () => {
           {/* SECTION HEADER */}
           <div className="flex flex-col gap-1 border-b border-[#E5E7EB] px-5 py-5 sm:px-6">
             <h2 className="text-lg font-bold text-[#152238]">
-              Verification Queue
+              {t.verificationQueue}
             </h2>
 
             <p className="text-sm text-[#718096]">
-              Review driver verification requests and submitted documents.
+              {t.reviewVerificationRequests}
             </p>
           </div>
 
@@ -941,7 +1054,7 @@ const AdminVerification = () => {
                 onChange={(event) =>
                   setSearchQuery(event.target.value)
                 }
-                placeholder="Search by name, email, phone or vehicle..."
+                placeholder={t.searchVerification}
                 className="w-full rounded-xl border border-[#E5E7EB] bg-white py-2.5 pl-10 pr-4 text-sm text-[#152238] outline-none placeholder:text-[#94A3B8] focus:border-[#FFB21C] focus:ring-2 focus:ring-[#FFB21C]/20"
               />
             </div>
@@ -959,8 +1072,8 @@ const AdminVerification = () => {
                   }`}
                 >
                   {status === 'ALL'
-                    ? 'All'
-                    : status.replaceAll('_', ' ')}
+                    ? t.all
+                    : formatDocumentStatus(status, t)}
                 </button>
               ))}
             </div>
@@ -989,28 +1102,22 @@ const AdminVerification = () => {
                   <thead className="bg-[#F7F9FC]">
                     <tr>
                       <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-[#718096]">
-  Driver
-</th>
+  {t.driver}</th>
 
 <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-[#718096]">
-  Document Status
-</th>
+  {t.documentStatus}</th>
 
 <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-[#718096]">
-  Verification
-</th>
+  {t.verification}</th>
 
 <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-[#718096]">
-  Expiry
-</th>
+  {t.expiry}</th>
 
 <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-[#718096]">
-  Last Updated
-</th>
+  {t.lastUpdated}</th>
 
 <th className="px-5 py-3 text-right text-xs font-semibold uppercase tracking-wide text-[#718096]">
-  Action
-</th>
+  {t.action}</th>
                     </tr>
                   </thead>
 
@@ -1060,6 +1167,8 @@ const AdminVerification = () => {
           onOpenDocument={handleOpenDocument}
           onApprove={handleApprove}
           onReject={openRejectModal}
+          onComplianceStatusChange={handleComplianceStatusChange}
+          onComplianceUpload={handleComplianceUpload}
         />
       )}
 
@@ -1070,8 +1179,8 @@ const AdminVerification = () => {
           document={selectedDocument}
           actionLoading={actionLoading}
           onBack={handleCloseDocument}
-          onApprove={handleApprove}
-          onReject={openRejectModal}
+          onApprove={handleComplianceApprove}
+          onReject={handleComplianceReject}
         />
       )}
 
@@ -1132,6 +1241,7 @@ function DriverTableRow ({
   driver,
   onOpen,
 }) {
+  const { t } = useAdminLanguage()
   const status = getDriverStatus(driver)
   const documents = getDocumentList(driver)
 
@@ -1143,7 +1253,7 @@ function DriverTableRow ({
       : 'PENDING'
 
   const expiryDate = getDriverExpiryDate(driver)
-  const expiryState = getExpiryState(expiryDate)
+  const expiryState = getExpiryState(expiryDate, t)
 
   const lastUpdated =
     driver?.updatedAt ||
@@ -1161,15 +1271,15 @@ function DriverTableRow ({
       <td className="px-5 py-4">
         <div>
           <p className="font-semibold text-[#152238]">
-            {getDriverName(driver)}
+            {getDriverName(driver, t)}
           </p>
 
           <p className="mt-1 text-xs text-[#718096]">
-            ID: {getDriverIdentifier(driver)}
+            ID: {getDriverIdentifier(driver, t)}
           </p>
 
           <p className="mt-1 text-xs text-[#718096]">
-            {getDriverPhone(driver)}
+            {getDriverPhone(driver, t)}
           </p>
         </div>
       </td>
@@ -1188,13 +1298,14 @@ function DriverTableRow ({
       <td className="px-5 py-4">
         <div>
           <p className="text-sm font-medium text-[#152238]">
-            {formatExpiryDate(expiryDate)}
+            {formatExpiryDate(expiryDate, t)}
           </p>
 
           {expiryDate && (
             <span
               className={`mt-1 inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${expiryClasses(
-                expiryDate
+                expiryDate,
+                t
               )}`}
             >
               {expiryState.label}
@@ -1215,7 +1326,7 @@ function DriverTableRow ({
           onClick={() => onOpen(driver)}
           className="rounded-xl bg-[#FFB21C] px-4 py-2.5 text-sm font-semibold text-[#0B1B2B] shadow-sm transition hover:bg-[#F5A900]"
         >
-          View Documents
+          {t.viewDocuments}
         </button>
       </td>
 
@@ -1226,6 +1337,7 @@ function DriverMobileCard ({
   driver,
   onOpen,
 }) {
+  const { t } = useAdminLanguage()
   const status = getDriverStatus(driver)
   const documents = getDocumentList(driver)
 
@@ -1237,7 +1349,7 @@ function DriverMobileCard ({
       : 'PENDING'
 
   const expiryDate = getDriverExpiryDate(driver)
-  const expiryState = getExpiryState(expiryDate)
+  const expiryState = getExpiryState(expiryDate, t)
 
   const lastUpdated =
     driver?.updatedAt ||
@@ -1253,15 +1365,15 @@ function DriverMobileCard ({
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <h3 className="font-bold text-[#152238]">
-            {getDriverName(driver)}
+            {getDriverName(driver, t)}
           </h3>
 
           <p className="mt-1 text-xs text-[#718096]">
-            ID: {getDriverIdentifier(driver)}
+            ID: {getDriverIdentifier(driver, t)}
           </p>
 
           <p className="mt-1 text-xs text-[#718096]">
-            {getDriverPhone(driver)}
+            {getDriverPhone(driver, t)}
           </p>
         </div>
 
@@ -1284,13 +1396,14 @@ function DriverMobileCard ({
           </p>
 
           <p className="mt-1 text-sm font-semibold text-[#152238]">
-            {formatExpiryDate(expiryDate)}
+            {formatExpiryDate(expiryDate, t)}
           </p>
 
           {expiryDate && (
             <span
               className={`mt-1 inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold ${expiryClasses(
-                expiryDate
+                expiryDate,
+                t
               )}`}
             >
               {expiryState.label}
@@ -1314,7 +1427,7 @@ function DriverMobileCard ({
         onClick={() => onOpen(driver)}
         className="mt-4 w-full rounded-xl bg-[#FFB21C] px-4 py-2.5 text-sm font-semibold text-[#0B1B2B]"
       >
-        View Documents
+        {t.viewDocuments}
       </button>
     </div>
   )
@@ -1342,7 +1455,7 @@ function StatusBadge ({ status }) {
     >
       {normalized
         ? normalized.replaceAll('_', ' ')
-        : 'Not available'}
+        : t.notAvailable}
     </span>
   )
 }
@@ -1354,7 +1467,11 @@ function DriverDocumentsModal ({
   onOpenDocument,
   onApprove,
   onReject,
+  onComplianceStatusChange,
+  onComplianceUpload,
 }) {
+  const { t } = useAdminLanguage()
+
   const documents = getDocumentList(driver)
   const status = getDriverStatus(driver)
 
@@ -1364,10 +1481,10 @@ function DriverDocumentsModal ({
     'Not available'
 
   const vehicleNumber =
-    getVehicleNumber(driver)
+    getVehicleNumber(driver, t)
 
   const vehicleType =
-    getVehicleType(driver)
+    getVehicleType(driver, t)
 
   const rejectionReason =
     driver?.rejectionReason ||
@@ -1387,11 +1504,11 @@ function DriverDocumentsModal ({
         <div className="flex items-center justify-between border-b border-[#E5E7EB] px-5 py-4">
           <div>
             <h2 className="text-lg font-bold text-[#152238]">
-              Verification Documents
+              {t.verificationDocuments}
             </h2>
 
             <p className="mt-0.5 text-xs text-[#718096]">
-              Review driver verification information
+              {t.reviewDriverVerificationInfo}
             </p>
           </div>
 
@@ -1400,55 +1517,56 @@ function DriverDocumentsModal ({
             onClick={onClose}
             disabled={actionLoading}
             className="grid h-9 w-9 place-items-center rounded-lg text-[#64748B] transition hover:bg-[#F1F5F9] disabled:cursor-not-allowed disabled:opacity-50"
-            aria-label="Close"
+            aria-label={t.close}
           >
             <i className="ri-close-line text-xl" />
           </button>
         </div>
 
-        {/* DRIVER SUMMARY */}
-        <div className="border-b border-[#E5E7EB] bg-[#F7F9FC] p-4 sm:p-5">
+        <div className="min-h-0 flex-1 overflow-y-auto">
+          {/* DRIVER SUMMARY */}
+          <div className="border-b border-[#E5E7EB] bg-[#F7F9FC] p-4 sm:p-5">
 
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
 
             <InfoBox
-              label="Driver"
-              value={getDriverName(driver)}
+              label={t.driver}
+              value={getDriverName(driver, t)}
             />
 
             <InfoBox
-              label="Phone"
-              value={getDriverPhone(driver)}
+              label={t.phone}
+              value={getDriverPhone(driver, t)}
             />
 
             <InfoBox
-              label="Email"
-              value={getDriverEmail(driver)}
+              label={t.email}
+              value={getDriverEmail(driver, t)}
             />
 
             <InfoBox
-              label="City"
-              value={getCity(driver)}
+              label={t.city}
+              value={getCity(driver, t)}
             />
 
             <InfoBox
-              label="Vehicle Type"
+              label={t.vehicleType}
               value={vehicleType}
             />
 
             <InfoBox
-              label="Vehicle Number"
+              label={t.vehicleNumber}
               value={vehicleNumber}
             />
 
             <InfoBox
-              label="Licence"
+              label={t.licence}
               value={licence}
             />
 
             <InfoBox
-              label="Last Updated"
-              value={getSubmittedDate(driver)}
+              label={t.lastUpdated}
+              value={getSubmittedDate(driver, t)}
             />
 
           </div>
@@ -1456,7 +1574,7 @@ function DriverDocumentsModal ({
           {/* VERIFICATION STATUS */}
           <div className="mt-4 flex items-center justify-between rounded-xl border border-[#E5E7EB] bg-white px-4 py-3">
             <span className="text-xs font-semibold uppercase tracking-wide text-[#718096]">
-              Overall Status
+              {t.overallStatus}
             </span>
 
             <StatusBadge status={status} />
@@ -1468,20 +1586,21 @@ function DriverDocumentsModal ({
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-wide text-[#718096]">
-                    Subscription Expiry
+                    {t.subscriptionExpiry}
                   </p>
 
                   <p className="mt-1 text-sm font-semibold text-[#152238]">
-                    {formatExpiryDate(subscriptionExpiry)}
+                    {formatExpiryDate(subscriptionExpiry, t)}
                   </p>
                 </div>
 
                 <span
                   className={`rounded-full px-2.5 py-1 text-xs font-semibold ${expiryClasses(
-                    subscriptionExpiry
+                    subscriptionExpiry,
+                    t
                   )}`}
                 >
-                  {getExpiryState(subscriptionExpiry).label}
+                  {getExpiryState(subscriptionExpiry, t).label}
                 </span>
               </div>
             </div>
@@ -1491,7 +1610,7 @@ function DriverDocumentsModal ({
           {status === 'REJECTED' && rejectionReason && (
             <div className="mt-3 rounded-xl border border-[#FECACA] bg-[#FEF2F2] px-4 py-3">
               <p className="text-xs font-semibold uppercase tracking-wide text-[#B91C1C]">
-                Rejection Reason
+                {t.rejectionReason}
               </p>
 
               <p className="mt-1 text-sm leading-5 text-[#7F1D1D]">
@@ -1499,6 +1618,148 @@ function DriverDocumentsModal ({
               </p>
             </div>
           )}
+        </div>
+
+        {/* COMPLIANCE */}
+        <div className="border-b border-[#E5E7EB] bg-white p-4 sm:p-5">
+          <div className="mb-3">
+            <h3 className="text-sm font-bold text-[#152238]">
+              {t.captainCompliance}
+            </h3>
+            <p className="mt-1 text-xs text-[#718096]">
+              {t.reviewCompliance}
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            {[
+              {
+                title: t.policeVerification,
+                type: 'POLICE_VERIFICATION',
+                icon: 'ri-police-car-line',
+              },
+              {
+                title: t.medicalFitness,
+                type: 'MEDICAL_FITNESS',
+                icon: 'ri-heart-pulse-line',
+              },
+              {
+                title: t.eyeExamination,
+                type: 'EYE_EXAMINATION',
+                icon: 'ri-eye-line',
+              },
+              {
+                title: t.psychologicalAssessment,
+                type: 'PSYCHOLOGICAL_ASSESSMENT',
+                icon: 'ri-mental-health-line',
+              },
+            ].map((item) => {
+              const complianceDocument =
+                documents.find(
+                  (document) =>
+                    String(document?.raw?.documentType || '').toUpperCase() ===
+                    item.type
+                ) || null
+
+              const complianceStatus =
+                complianceDocument?.status || 'PENDING'
+
+              const complianceStatusLabel =
+                formatDocumentStatus(complianceStatus, t)
+
+              const complianceSubmittedText = complianceDocument
+                ? complianceDocument.uploadedAt
+                  ? `${t.submitted} ${formatDate(complianceDocument.uploadedAt)}`
+                  : t.submitted
+                : t.notSubmitted
+
+              return (
+                <div
+                  key={item.title}
+                  className="rounded-xl border border-[#E5E7EB] bg-[#F8FAFC] p-4"
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex min-w-0 items-center gap-3">
+                      <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-white text-[#2563EB] shadow-sm">
+                        <i className={`${item.icon} text-lg`} />
+                      </div>
+
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-[#152238]">
+                          {item.title}
+                        </p>
+                        <p className="mt-1 text-xs text-[#94A3B8]">
+                          {complianceSubmittedText}
+                        </p>
+                      </div>
+                    </div>
+
+                    <select
+                      value={complianceStatus}
+                      disabled={actionLoading}
+                      onChange={(event) =>
+                        onComplianceStatusChange(
+                          item.type,
+                          event.target.value
+                        )
+                      }
+                      className="shrink-0 rounded-full border border-[#F3D79B] bg-[#FFF7E6] px-2.5 py-1 text-xs font-semibold text-[#B77900] outline-none disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {[
+                        'PENDING',
+                        'UNDER_REVIEW',
+                        'APPROVED',
+                        'REJECTED',
+                        'EXPIRED',
+                        'RE_UPLOAD_REQUIRED',
+                      ].map((status) => (
+                        <option key={status} value={status}>
+                          {formatDocumentStatus(status, t)}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="mt-3 flex items-center justify-between gap-3">
+                    <label
+                      className={`inline-flex cursor-pointer items-center rounded-lg border border-[#CBD5E1] bg-white px-3 py-2 text-xs font-semibold text-[#334155] transition hover:bg-[#F8FAFC] ${
+                        actionLoading
+                          ? 'pointer-events-none opacity-60'
+                          : ''
+                      }`}
+                    >
+                      <input
+                        type="file"
+                        accept=".pdf,image/jpeg,image/png,image/webp"
+                        className="hidden"
+                        disabled={actionLoading}
+                        onChange={(event) => {
+                          const file = event.target.files?.[0]
+                          if (file) {
+                            onComplianceUpload(item.type, file)
+                          }
+                          event.target.value = ''
+                        }}
+                      />
+                      <i className="ri-upload-2-line mr-1.5" />
+                      {t.uploadDocument}
+                    </label>
+
+                    {complianceDocument?.raw?.documentUrl ? (
+                      <button
+                        type="button"
+                        onClick={() => onOpenDocument(complianceDocument)}
+                        className="inline-flex items-center rounded-lg border border-[#BFDBFE] bg-[#EFF6FF] px-3 py-2 text-xs font-semibold text-[#2563EB] transition hover:bg-[#DBEAFE]"
+                      >
+                        <i className="ri-eye-line mr-1.5" />
+                        {t.view}
+                      </button>
+                    ) : null}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
         </div>
 
         {/* DOCUMENT LIST */}
@@ -1512,11 +1773,11 @@ function DriverDocumentsModal ({
               </div>
 
               <h3 className="mt-3 font-semibold text-[#475569]">
-                No documents available
+                {t.noDocumentsAvailable}
               </h3>
 
               <p className="mt-1 max-w-sm text-xs leading-5 text-[#94A3B8]">
-                The driver API did not return document records for this driver.
+                {t.noDocumentsReturned}
               </p>
 
             </div>
@@ -1541,7 +1802,7 @@ function DriverDocumentsModal ({
                       </p>
 
                       <p className="mt-1 text-xs text-[#94A3B8]">
-                        Version {document.version}
+                        {t.version} {document.version}
                       </p>
                     </div>
                   </div>
@@ -1551,13 +1812,14 @@ function DriverDocumentsModal ({
                       document.status
                     )}`}
                   >
-                    {formatDocumentStatus(document.status)}
+                    {formatDocumentStatus(document.status, t)}
                   </span>
                 </button>
               ))}
             </div>
           )}
 
+        </div>
         </div>
 
         {/* ACTIONS */}
@@ -1582,8 +1844,8 @@ function DriverDocumentsModal ({
                 className="rounded-xl bg-[#16A34A] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#15803D] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {actionLoading
-                  ? 'Processing...'
-                  : 'Approve'}
+                  ? t.processing
+                  : t.approve}
               </button>
             )}
 
@@ -1595,13 +1857,12 @@ function DriverDocumentsModal ({
                 className="rounded-xl bg-[#DC2626] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#B91C1C] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {actionLoading
-                  ? 'Processing...'
-                  : 'Reject'}
+                  ? t.processing
+                  : t.reject}
               </button>
             )}
 
           </div>
-
         </div>
       </div>
     </div>
@@ -1615,7 +1876,63 @@ function DocumentDetailsModal ({
   onApprove,
   onReject,
 }) {
+  const { t } = useAdminLanguage()
   const status = normalizeStatus(document.status)
+  const [previewUrl, setPreviewUrl] = useState('')
+  const [previewMimeType, setPreviewMimeType] = useState('')
+  const [previewLoading, setPreviewLoading] = useState(false)
+  const [previewError, setPreviewError] = useState('')
+
+  useEffect(() => {
+    let objectUrl = ''
+
+    const loadPreview = async () => {
+      const documentType = String(
+        document?.raw?.documentType || ''
+      ).trim().toUpperCase()
+      const driverId = getDriverId(driver)
+
+      if (!driverId || !documentType || !document?.documentUrl) {
+        setPreviewUrl('')
+        setPreviewMimeType('')
+        setPreviewError('')
+        setPreviewLoading(false)
+        return
+      }
+
+      setPreviewLoading(true)
+      setPreviewError('')
+
+      try {
+        const blob = await adminApi.getDriverComplianceDocument(
+          driverId,
+          documentType
+        )
+
+        objectUrl = URL.createObjectURL(blob)
+        setPreviewMimeType(blob.type || '')
+        setPreviewUrl(objectUrl)
+      } catch (error) {
+        setPreviewUrl('')
+        setPreviewMimeType('')
+        setPreviewError(
+          error?.response?.data?.message ||
+            error?.message ||
+            t.unableToLoadDocumentPreview
+        )
+      } finally {
+        setPreviewLoading(false)
+      }
+    }
+
+    loadPreview()
+
+    return () => {
+      if (objectUrl) {
+        URL.revokeObjectURL(objectUrl)
+      }
+    }
+  }, [driver, document])
 
   const canApprove =
     status !== 'APPROVED' &&
@@ -1642,7 +1959,7 @@ function DocumentDetailsModal ({
               </h2>
 
               <p className="mt-0.5 text-xs text-[#718096]">
-                Document review
+                {t.documentReview}
               </p>
             </div>
           </div>
@@ -1652,7 +1969,7 @@ function DocumentDetailsModal ({
             onClick={onBack}
             disabled={actionLoading}
             className="ml-3 grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[#F7F9FC] text-[#718096] transition hover:bg-[#E5E7EB] disabled:opacity-50"
-            aria-label="Close document details"
+            aria-label={t.close}
           >
             <i className="ri-close-line text-lg" />
           </button>
@@ -1666,18 +1983,18 @@ function DocumentDetailsModal ({
             <div className="flex items-center justify-between gap-3">
               <div>
                 <p className="text-[11px] font-semibold uppercase tracking-wide text-[#718096]">
-                  Status
+                  {t.statusLabel}
                 </p>
 
                 <p className="mt-0.5 text-sm font-semibold text-[#152238]">
-                  {formatDocumentStatus(document.status)}
+                  {formatDocumentStatus(document.status, t)}
                 </p>
               </div>
 
               <span
                 className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold ${documentStatusClasses(document.status)}`}
               >
-                {formatDocumentStatus(document.status)}
+                {formatDocumentStatus(document.status, t)}
               </span>
             </div>
           </div>
@@ -1685,12 +2002,12 @@ function DocumentDetailsModal ({
           {/* VERSION / UPLOAD */}
           <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
             <InfoBox
-              label="Version"
+              label={t.versionLabel}
               value={document.version || '1'}
             />
 
             <InfoBox
-              label="Upload date"
+              label={t.uploadDate}
               value={formatDate(document.uploadedAt)}
             />
           </div>
@@ -1699,7 +2016,7 @@ function DocumentDetailsModal ({
           {document.rejectionReason && (
             <div className="rounded-xl border border-[#FCA5A5] bg-[#FFF8F8] px-3.5 py-3">
               <p className="text-[11px] font-semibold uppercase tracking-wide text-[#DC2626]">
-                Rejection reason
+                {t.rejectionReason}
               </p>
 
               <p className="mt-1 text-sm leading-5 text-[#7F1D1D]">
@@ -1711,7 +2028,7 @@ function DocumentDetailsModal ({
           {/* DOCUMENT INFORMATION */}
           <div>
             <h3 className="mb-2.5 text-sm font-bold text-[#152238]">
-              Document Information
+              {t.documentInformation}
             </h3>
 
             {document.fields?.length ? (
@@ -1729,11 +2046,11 @@ function DocumentDetailsModal ({
             ) : (
               <div className="rounded-xl border border-dashed border-[#CBD5E1] bg-[#F8FAFC] px-4 py-5 text-center">
                 <p className="text-sm font-semibold text-[#475569]">
-                  No extracted document information
+                  {t.noExtractedDocumentInformation}
                 </p>
 
                 <p className="mt-1 text-xs text-[#94A3B8]">
-                  The API did not provide additional document fields.
+                  {t.apiDidNotProvideDocumentFields}
                 </p>
               </div>
             )}
@@ -1743,37 +2060,45 @@ function DocumentDetailsModal ({
           <div>
             <div className="mb-2.5 flex items-center justify-between">
               <h3 className="text-sm font-bold text-[#152238]">
-                Document Preview
+                {t.documentPreview}
               </h3>
 
-              {document.documentUrl && (
+              {previewUrl && (
                 <a
-                  href={document.documentUrl}
+                  href={previewUrl}
                   target="_blank"
                   rel="noreferrer"
                   className="text-xs font-semibold text-[#B77900] hover:underline"
                 >
-                  Open
+                  {t.openDocument}
                 </a>
               )}
             </div>
 
-            {document.documentUrl ? (
-              <div className="overflow-hidden rounded-xl border border-[#E5E7EB] bg-[#F7F9FC]">
-                <img
-                  src={document.documentUrl}
-                  alt={`${document.title} document`}
-                  className="max-h-[320px] w-full object-contain"
-                  onError={(event) => {
-                    event.currentTarget.style.display = 'none'
-                  }}
-                />
-
-                <div className="flex min-h-[120px] items-center justify-center px-4 text-center">
-                  <p className="text-xs text-[#718096]">
-                    If the preview does not load, use Open to view the authorized document.
+            {previewLoading ? (
+              <div className="flex min-h-[180px] items-center justify-center rounded-xl border border-[#E5E7EB] bg-[#F7F9FC]">
+                <div className="text-center">
+                  <i className="ri-loader-4-line animate-spin text-2xl text-[#B77900]" />
+                  <p className="mt-2 text-xs text-[#718096]">
+                    {t.loadingDocumentPreview}
                   </p>
                 </div>
+              </div>
+            ) : previewUrl ? (
+              <div className="overflow-hidden rounded-xl border border-[#E5E7EB] bg-[#F7F9FC]">
+                {previewMimeType.toLowerCase() === 'application/pdf' ? (
+                  <iframe
+                    src={previewUrl}
+                    title={`${document.title} document`}
+                    className="h-[320px] w-full border-0"
+                  />
+                ) : (
+                  <img
+                    src={previewUrl}
+                    alt={`${document.title} document`}
+                    className="max-h-[320px] w-full object-contain"
+                  />
+                )}
               </div>
             ) : (
               <div className="flex min-h-[140px] flex-col items-center justify-center rounded-xl border border-dashed border-[#CBD5E1] bg-[#F8FAFC] px-4 py-5 text-center">
@@ -1782,15 +2107,16 @@ function DocumentDetailsModal ({
                 </div>
 
                 <p className="mt-2.5 text-sm font-semibold text-[#475569]">
-                  Preview unavailable
+                  {previewError || t.previewUnavailable}
                 </p>
 
                 <p className="mt-0.5 max-w-xs text-[11px] leading-4 text-[#94A3B8]">
-                  No authorized document URL or file was returned by the API.
+                  {t.authorizedDocumentPreviewUnavailable}
                 </p>
               </div>
             )}
           </div>
+
         </div>
 
         {/* FOOTER */}
@@ -1801,7 +2127,7 @@ function DocumentDetailsModal ({
             disabled={actionLoading}
             className="rounded-xl border border-[#D1D5DB] bg-white px-3.5 py-2 text-sm font-semibold text-[#475569] transition hover:bg-[#F8FAFC] disabled:opacity-50"
           >
-            Back
+            {t.back}
           </button>
 
           <div className="flex items-center gap-2">
@@ -1812,7 +2138,7 @@ function DocumentDetailsModal ({
                 disabled={actionLoading}
                 className="rounded-xl border border-[#FCA5A5] bg-white px-3.5 py-2 text-sm font-semibold text-[#DC2626] transition hover:bg-red-50 disabled:opacity-50"
               >
-                Reject
+                {t.reject}
               </button>
             )}
 
@@ -1823,7 +2149,7 @@ function DocumentDetailsModal ({
                 disabled={actionLoading}
                 className="rounded-xl bg-[#16A34A] px-3.5 py-2 text-sm font-semibold text-white transition hover:bg-[#15803D] disabled:opacity-50"
               >
-                {actionLoading ? 'Processing...' : 'Approve'}
+                {actionLoading ? t.processing : t.approve}
               </button>
             )}
           </div>
@@ -1843,10 +2169,12 @@ function RejectModal ({
   onClose,
   onSubmit,
 }) {
+  const { t } = useAdminLanguage()
+
   const categories = [
     'Invalid document',
-    'Document expired',
-    'Document unreadable',
+    t.documentExpired,
+    t.documentUnreadable,
     'Information mismatch',
     'Vehicle information mismatch',
     'Missing document',
@@ -1860,11 +2188,11 @@ function RejectModal ({
         <div className="flex items-center justify-between border-b border-[#E5E7EB] px-5 py-4">
           <div>
             <h2 className="font-bold text-[#152238]">
-              Reject Verification
+              {t.rejectVerification}
             </h2>
 
             <p className="mt-1 text-xs text-[#718096]">
-              {getDriverName(driver)}
+              {getDriverName(driver, t)}
             </p>
           </div>
 
@@ -1882,9 +2210,9 @@ function RejectModal ({
 
           <div>
             <label className="mb-1.5 block text-sm font-semibold text-[#152238]">
-              Reason category
+              {t.reasonCategory}
               <span className="ml-1 text-xs font-normal text-[#94A3B8]">
-                Optional
+                {t.optional}
               </span>
             </label>
 
@@ -1897,7 +2225,7 @@ function RejectModal ({
               className="w-full rounded-xl border border-[#E5E7EB] bg-white px-3.5 py-2.5 text-sm text-[#152238] outline-none focus:border-[#FFB21C] focus:ring-2 focus:ring-[#FFB21C]/20"
             >
               <option value="">
-                Select a reason category
+                {t.selectReasonCategory}
               </option>
 
               {categories.map((item) => (
@@ -1910,7 +2238,7 @@ function RejectModal ({
 
           <div>
             <label className="mb-1.5 block text-sm font-semibold text-[#152238]">
-              Rejection reason
+              {t.rejectionReason}
               <span className="ml-1 text-[#DC2626]">*</span>
             </label>
 
@@ -1921,12 +2249,12 @@ function RejectModal ({
               }
               disabled={loading}
               rows={5}
-              placeholder="Enter the reason for rejecting this verification..."
+              placeholder={t.enterRejectionReason}
               className="w-full resize-none rounded-xl border border-[#E5E7EB] bg-white px-3.5 py-3 text-sm text-[#152238] outline-none placeholder:text-[#94A3B8] focus:border-[#FFB21C] focus:ring-2 focus:ring-[#FFB21C]/20 disabled:bg-[#F7F9FC]"
             />
 
             <p className="mt-1 text-xs text-[#94A3B8]">
-              This reason will be sent to the backend.
+              {t.rejectionReasonBackend}
             </p>
           </div>
         </div>
@@ -1947,7 +2275,7 @@ function RejectModal ({
             disabled={loading || !reason.trim()}
             className="rounded-xl bg-[#DC2626] px-4 py-2.5 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {loading ? 'Rejecting...' : 'Confirm Reject'}
+            {loading ? t.rejecting : t.confirmReject}
           </button>
         </div>
       </div>
@@ -1966,20 +2294,22 @@ function InfoBox ({
       </p>
 
       <p className="mt-0.5 break-words text-sm font-semibold text-[#152238]">
-        {value || 'Not available'}
+        {value || t.notAvailable}
       </p>
     </div>
   )
 }
 
 function LoadingState () {
+  const { t } = useAdminLanguage()
+
   return (
     <div className="flex min-h-[280px] items-center justify-center px-6 py-12">
       <div className="text-center">
         <i className="ri-loader-4-line inline-block animate-spin text-3xl text-[#FFB21C]" />
 
         <p className="mt-3 text-sm text-[#718096]">
-          Loading verification queue...
+          {t.loadingVerificationQueue}
         </p>
       </div>
     </div>
@@ -1990,6 +2320,8 @@ function ErrorState ({
   message,
   onRetry,
 }) {
+  const { t } = useAdminLanguage()
+
   return (
     <div className="flex min-h-[280px] flex-col items-center justify-center px-6 py-12 text-center">
       <div className="grid h-14 w-14 place-items-center rounded-2xl bg-[#FEE2E2] text-2xl text-[#DC2626]">
@@ -1997,7 +2329,7 @@ function ErrorState ({
       </div>
 
       <h3 className="mt-4 text-base font-bold text-[#152238]">
-        Unable to load verification queue
+        {t.unableToLoadVerificationQueue}
       </h3>
 
       <p className="mt-1 max-w-md text-sm text-[#718096]">
@@ -2026,8 +2358,8 @@ function EmptyState ({
 
       <h3 className="mt-4 text-base font-bold text-[#152238]">
         {hasFilters
-          ? 'No matching verifications'
-          : 'No verification requests'}
+          ? t.noMatchingVerifications
+          : t.noVerificationRequests}
       </h3>
 
       <p className="mt-1 max-w-sm text-sm text-[#718096]">
@@ -2045,6 +2377,7 @@ function Pagination ({
   total,
   onPageChange,
 }) {
+  const { t } = useAdminLanguage()
   const start = (page - 1) * PAGE_SIZE + 1
   const end = Math.min(page * PAGE_SIZE, total)
 
@@ -2062,7 +2395,7 @@ function Pagination ({
           }
           disabled={page === 1}
           className="grid h-9 w-9 place-items-center rounded-lg border border-[#E5E7EB] bg-white text-[#475569] disabled:cursor-not-allowed disabled:opacity-40"
-          aria-label="Previous page"
+          aria-label={t.previousPage}
         >
           <i className="ri-arrow-left-s-line" />
         </button>
@@ -2080,7 +2413,7 @@ function Pagination ({
           }
           disabled={page === totalPages}
           className="grid h-9 w-9 place-items-center rounded-lg border border-[#E5E7EB] bg-white text-[#475569] disabled:cursor-not-allowed disabled:opacity-40"
-          aria-label="Next page"
+          aria-label={t.nextPage}
         >
           <i className="ri-arrow-right-s-line" />
         </button>

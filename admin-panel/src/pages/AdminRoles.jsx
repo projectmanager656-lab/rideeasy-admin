@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { useAdminLanguage } from '../context/AdminLanguageContext'
 import { useNavigate } from 'react-router-dom'
 
 const INITIAL_ROLES = [
@@ -80,7 +81,9 @@ const PERMISSIONS = [
   'Fare Configuration',
 ]
 
-function StatusBadge({ status }) {
+function StatusBadge({ status, t }) {
+  const label = status === 'Active' ? t.active : status
+
   return (
     <span
       className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${
@@ -89,12 +92,60 @@ function StatusBadge({ status }) {
           : 'border-gray-200 bg-gray-50 text-gray-600'
       }`}
     >
-      {status}
+      {label}
     </span>
   )
 }
 
+const permissionLabels = {
+  Dashboard: 'dashboard',
+  Users: 'users',
+  Drivers: 'drivers',
+  Vehicles: 'vehicles',
+  Verification: 'verification',
+  Rides: 'rides',
+  'Live Operations': 'liveOperations',
+  Finance: 'finance',
+  Payments: 'payments',
+  SOS: 'sos',
+  Support: 'support',
+  Reports: 'reports',
+  'Audit Logs': 'auditLogs',
+  Notifications: 'notifications',
+  Roles: 'roles',
+  Settings: 'settings',
+  'Fare Configuration': 'fareConfiguration',
+}
+
+const roleNameKeys = {
+  'Super Admin': 'superAdmin',
+  Operations: 'operations',
+  Support: 'support',
+}
+
+const roleDescriptionKeys = {
+  'Full access to all admin modules.': 'fullAccessAllAdminModules',
+  'Manage drivers, rides and live operations.': 'manageDriversRidesLiveOperations',
+  'Handle customer and driver support requests.': 'handleCustomerDriverSupport',
+}
+
+function translatedPermission(permission, t) {
+  const key = permissionLabels[permission]
+  return key && t[key] ? t[key] : permission
+}
+
+function translatedRoleName(name, t) {
+  const key = roleNameKeys[name]
+  return key && t[key] ? t[key] : name
+}
+
+function translatedRoleDescription(description, t) {
+  const key = roleDescriptionKeys[description]
+  return key && t[key] ? t[key] : description
+}
+
 export default function AdminRoles() {
+  const { t } = useAdminLanguage()
   const navigate = useNavigate()
 
   const [roles, setRoles] = useState(INITIAL_ROLES)
@@ -191,7 +242,7 @@ export default function AdminRoles() {
     event.preventDefault()
 
     if (!form.name.trim()) {
-      setFormError('Role name is required.')
+      setFormError(t.roleNameRequired)
       return
     }
 
@@ -240,15 +291,15 @@ export default function AdminRoles() {
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#718096]">
-              Administration
+              {t.roleAdministration}
             </p>
 
             <h1 className="mt-1 text-[28px] font-bold tracking-[-0.04em] text-[#152238] sm:text-[32px]">
-              Roles & Permissions
+              {t.rolesPermissions}
             </h1>
 
             <p className="mt-1 text-sm text-[#718096]">
-              Manage admin roles and access permissions.
+              {t.manageAdminRoles}
             </p>
           </div>
 
@@ -258,7 +309,7 @@ export default function AdminRoles() {
             className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-[#152238] px-4 text-sm font-semibold text-white transition hover:bg-[#0B1B2B]"
           >
             <i className="ri-add-line text-lg" />
-            Add Role
+            {t.addRole}
           </button>
         </div>
 
@@ -271,23 +322,23 @@ export default function AdminRoles() {
               <thead className="border-b border-[#E5E7EB] bg-[#F8FAFC]">
                 <tr>
                   <th className="px-5 py-4 text-xs font-semibold uppercase tracking-wide text-[#718096]">
-                    Role
+                    {t.roleColumn}
                   </th>
 
                   <th className="px-5 py-4 text-xs font-semibold uppercase tracking-wide text-[#718096]">
-                    Description
+                    {t.descriptionColumn}
                   </th>
 
                   <th className="px-5 py-4 text-xs font-semibold uppercase tracking-wide text-[#718096]">
-                    Users
+                    {t.usersColumn}
                   </th>
 
                   <th className="px-5 py-4 text-xs font-semibold uppercase tracking-wide text-[#718096]">
-                    Status
+                    {t.statusColumn}
                   </th>
 
                   <th className="px-5 py-4 text-right text-xs font-semibold uppercase tracking-wide text-[#718096]">
-                    Actions
+                    {t.actionsColumn}
                   </th>
                 </tr>
               </thead>
@@ -300,12 +351,12 @@ export default function AdminRoles() {
                   >
                     <td className="px-5 py-4">
                       <div className="font-semibold text-[#152238]">
-                        {role.name}
+                        {translatedRoleName(role.name, t)}
                       </div>
                     </td>
 
                     <td className="max-w-md px-5 py-4 text-sm text-[#718096]">
-                      {role.description}
+                      {translatedRoleDescription(role.description, t)}
                     </td>
 
                     <td className="px-5 py-4 text-sm font-medium text-[#152238]">
@@ -313,7 +364,7 @@ export default function AdminRoles() {
                     </td>
 
                     <td className="px-5 py-4">
-                      <StatusBadge status={role.status} />
+                      <StatusBadge status={role.status} t={t} />
                     </td>
 
                     <td className="px-5 py-4">
@@ -325,7 +376,7 @@ export default function AdminRoles() {
                           className="rounded-lg border border-[#E5E7EB] px-3 py-2 text-xs font-semibold text-[#152238] transition hover:bg-[#F8FAFC]"
                         >
                           <i className="ri-edit-line mr-1" />
-                          Edit
+                          {t.edit}
                         </button>
 
                         <button
@@ -334,7 +385,7 @@ export default function AdminRoles() {
                           className="rounded-lg border border-red-200 px-3 py-2 text-xs font-semibold text-red-600 transition hover:bg-red-50"
                         >
                           <i className="ri-delete-bin-line mr-1" />
-                          Delete
+                          {t.delete}
                         </button>
 
                       </div>
@@ -356,21 +407,21 @@ export default function AdminRoles() {
 
                   <div className="min-w-0">
                     <h3 className="font-semibold text-[#152238]">
-                      {role.name}
+                      {translatedRoleName(role.name, t)}
                     </h3>
 
                     <p className="mt-1 text-sm leading-5 text-[#718096]">
-                      {role.description}
+                      {translatedRoleDescription(role.description, t)}
                     </p>
                   </div>
 
-                  <StatusBadge status={role.status} />
+                  <StatusBadge status={role.status} t={t} />
                 </div>
 
                 <div className="mt-4 flex items-center justify-between gap-3">
 
                   <span className="text-xs text-[#718096]">
-                    {role.users} users
+                    {role.users} {t.usersCount}
                   </span>
 
                   <div className="flex gap-2">
@@ -380,7 +431,7 @@ export default function AdminRoles() {
                       onClick={() => openEdit(role)}
                       className="rounded-lg border border-[#E5E7EB] px-3 py-2 text-xs font-semibold text-[#152238]"
                     >
-                      Edit
+                      {t.edit}
                     </button>
 
                     <button
@@ -388,7 +439,7 @@ export default function AdminRoles() {
                       onClick={() => deleteRole(role.id)}
                       className="rounded-lg border border-red-200 px-3 py-2 text-xs font-semibold text-red-600"
                     >
-                      Delete
+                      {t.delete}
                     </button>
 
                   </div>
@@ -412,12 +463,12 @@ export default function AdminRoles() {
                   <div>
                     <h2 className="text-lg font-bold text-[#152238]">
                       {editingRole
-                        ? 'Edit Role'
-                        : 'Create Role'}
+                        ? t.editRole
+                        : t.createRole}
                     </h2>
 
                     <p className="mt-1 text-xs text-[#718096]">
-                      UI demo data — backend integration pending.
+                      {t.uiDemoDataBackendPending}
                     </p>
                   </div>
 
@@ -425,7 +476,7 @@ export default function AdminRoles() {
                     type="button"
                     onClick={closeModal}
                     className="grid h-9 w-9 place-items-center rounded-lg transition hover:bg-[#F8FAFC]"
-                    aria-label="Close"
+                    aria-label={t.close}
                   >
                     <i className="ri-close-line text-lg" />
                   </button>
@@ -438,7 +489,7 @@ export default function AdminRoles() {
                   {/* ROLE NAME */}
                   <div>
                     <label className="mb-2 block text-sm font-semibold text-[#152238]">
-                      Role Name
+                      {t.roleName}
                     </label>
 
                     <input
@@ -450,7 +501,7 @@ export default function AdminRoles() {
                         }))
                         if (formError) setFormError('')
                       }}
-                      placeholder="e.g. Operations"
+                      placeholder={t.roleNamePlaceholder}
                       className="h-11 w-full rounded-xl border border-[#D9DEE7] px-3 py-2.5 text-sm outline-none transition focus:border-[#FFA726] focus:ring-2 focus:ring-[#FFA726]/20"
                     />
 
@@ -464,7 +515,7 @@ export default function AdminRoles() {
                   {/* DESCRIPTION */}
                   <div>
                     <label className="mb-2 block text-sm font-semibold text-[#152238]">
-                      Description
+                      {t.descriptionColumn}
                     </label>
 
                     <textarea
@@ -475,7 +526,7 @@ export default function AdminRoles() {
                           description: event.target.value,
                         }))
                       }
-                      placeholder="Describe what this role can manage"
+                      placeholder={t.roleDescriptionPlaceholder}
                       rows={3}
                       className="w-full resize-none rounded-xl border border-[#D9DEE7] px-3 py-2.5 text-sm outline-none transition focus:border-[#FFA726] focus:ring-2 focus:ring-[#FFA726]/20"
                     />
@@ -486,11 +537,11 @@ export default function AdminRoles() {
                     <div className="mb-3 flex items-center justify-between">
 
                       <label className="text-sm font-semibold text-[#152238]">
-                        Permissions
+                        {t.permissions}
                       </label>
 
                       <span className="rounded-full bg-[#F1F5F9] px-2.5 py-1 text-xs font-semibold text-[#64748B]">
-                        {form.permissions.length} selected
+                        {form.permissions.length} {t.selectedCount}
                       </span>
 
                     </div>
@@ -502,7 +553,7 @@ export default function AdminRoles() {
 
                         return (
                           <label
-                            key={permission}
+                            key={translatedPermission(permission, t)}
                             className={`flex cursor-pointer items-center gap-3 rounded-xl border px-3 py-2.5 transition ${
                               checked
                                 ? 'border-[#FFA726] bg-[#FFF8E8]'
@@ -519,7 +570,7 @@ export default function AdminRoles() {
                             />
 
                             <span className="text-sm text-[#152238]">
-                              {permission}
+                              {translatedPermission(permission, t)}
                             </span>
                           </label>
                         )
@@ -545,8 +596,8 @@ export default function AdminRoles() {
                     className="rounded-xl bg-[#152238] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#0B1B2B]"
                   >
                     {editingRole
-                      ? 'Save Changes'
-                      : 'Create Role'}
+                      ? t.saveChanges
+                      : t.createRole}
                   </button>
 
                 </div>

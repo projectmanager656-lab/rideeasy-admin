@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react'
+import { useAdminLanguage } from '../context/AdminLanguageContext'
 import { useNavigate } from 'react-router-dom'
 import { adminApi } from '../services/adminApi'
 
@@ -9,6 +10,7 @@ const defaultSettings = {
 }
 
 export default function AdminAppSettings () {
+  const { t } = useAdminLanguage()
   const navigate = useNavigate()
 
   const [settings, setSettings] = useState(defaultSettings)
@@ -83,7 +85,7 @@ export default function AdminAppSettings () {
       setError(
         err?.response?.data?.message ||
         err?.message ||
-        'Unable to save app settings.'
+        t.unableToSaveAppSettings
       )
     } finally {
       setSaving(false)
@@ -93,18 +95,18 @@ export default function AdminAppSettings () {
   const rows = [
     {
       key: 'maintenanceMode',
-      title: 'Maintenance Mode',
-      description: 'Temporarily put the platform into maintenance mode.',
+      title: t.maintenanceMode,
+      description: t.maintenanceModeDescription,
     },
     {
       key: 'rideBookingEnabled',
-      title: 'Ride Booking',
-      description: 'Allow users to create new ride bookings.',
+      title: t.rideBooking,
+      description: t.rideBookingDescription,
     },
     {
       key: 'driverRegistrationEnabled',
-      title: 'Driver Registration',
-      description: 'Allow new drivers to register on the platform.',
+      title: t.driverRegistration,
+      description: t.driverRegistrationDescription,
     },
   ]
 
@@ -117,7 +119,7 @@ export default function AdminAppSettings () {
           className="mb-5 inline-flex items-center gap-2 text-sm font-medium text-neutral-600 hover:text-neutral-900"
         >
           <i className="ri-arrow-left-line" />
-          Back to Settings
+          {t.backToSettings}
         </button>
 
         <div className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm sm:p-7">
@@ -127,17 +129,17 @@ export default function AdminAppSettings () {
             </div>
 
             <h1 className="text-xl font-semibold text-neutral-900">
-              App Settings
+              {t.appSettingsTitle}
             </h1>
 
             <p className="mt-1 text-sm text-neutral-500">
-              Manage general platform configuration.
+              {t.managePlatformConfiguration}
             </p>
           </div>
 
           {loading ? (
             <div className="py-10 text-center text-sm text-neutral-500">
-              Loading settings…
+              {t.loadingSettings}
             </div>
           ) : (
             <>
@@ -197,7 +199,7 @@ export default function AdminAppSettings () {
                 disabled={saving}
                 className="mt-6 w-full rounded-xl bg-orange-500 px-4 py-3 text-sm font-semibold text-white transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {saving ? 'Saving…' : 'Save Settings'}
+                {saving ? t.savingSettings : t.saveSettings}
               </button>
             </>
           )}

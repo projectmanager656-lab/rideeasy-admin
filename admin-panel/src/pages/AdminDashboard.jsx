@@ -567,12 +567,14 @@ const [fareError, setFareError] = useState('')
   }, [socket])
 
   useEffect(() => {
+    console.log('[AdminTab] current tab:', tab, 'initialTab:', initialTab, 'path:', location.pathname)
+
     if (location.state?.tab) {
       setTab(location.state.tab)
     } else if (initialTab) {
       setTab(initialTab)
     }
-  }, [initialTab, location.state?.tab])
+  }, [initialTab, location.state?.tab, tab, location.pathname])
 
   useEffect(() => {
     setSelectedIds([])
@@ -763,6 +765,32 @@ const [d, usersResult, driversResult, ridesResult, paymentsResult, alertsResult]
 
   return
 }
+      if (tab === 'finance') {
+        console.log('[Finance] finance tab loader started')
+        console.log('[Finance] payments already loaded:', dataLoadedRef.current.has('payments'))
+
+        if (dataLoadedRef.current.has('payments')) return
+
+        setPaymentsLoading(true)
+        setTabError('')
+
+        try {
+          const list = await adminApi.getPayments(signal)
+
+          if (signal.aborted) return
+
+          setPayments(Array.isArray(list) ? list : [])
+          dataLoadedRef.current.add('payments')
+        } catch (e) {
+          if (signal.aborted) return
+          setTabError(fmtErr(e))
+        } finally {
+          if (!signal.aborted) setPaymentsLoading(false)
+        }
+
+        return
+      }
+
       if (tab === 'reports') {
         setTabError('')
 
@@ -807,6 +835,7 @@ const [d, usersResult, driversResult, ridesResult, paymentsResult, alertsResult]
 
             requests.push(
               adminApi.getPayments(signal).then((list) => {
+                console.log('[AdminFinance] payments loaded from finance:', list)
                 if (!signal.aborted) {
                   setPayments(Array.isArray(list) ? list : [])
                   dataLoadedRef.current.add('payments')
@@ -832,6 +861,7 @@ const [d, usersResult, driversResult, ridesResult, paymentsResult, alertsResult]
         setTabError('')
         try {
           const list = await adminApi.getPayments(signal)
+          console.log('[AdminFinance] payments loaded:', list)
           if (signal.aborted) return
           setPayments(list)
           dataLoadedRef.current.add('payments')
@@ -863,21 +893,34 @@ const [d, usersResult, driversResult, ridesResult, paymentsResult, alertsResult]
       if (tab === 'pricing') {
         if (dataLoadedRef.current.has('pricing')) return
         setPricingLoading(true)
+        setFareLoading(true)
         setTabError('')
         try {
-          const pricing = await adminApi.getPricing(signal)
+          const [pricing, fareResult] = await Promise.all([
+            adminApi.getPricing(signal),
+            adminApi.getFareConfigurations(signal),
+          ])
+
           if (signal.aborted) return
+
           setPricingJson(JSON.stringify({
             rates: pricing.rates || {},
             driverPlans: pricing.driverPlans || {},
           }, null, 2))
+
+          setFareConfigurations(Array.isArray(fareResult?.configurations) ? fareResult.configurations : [])
           dataLoadedRef.current.add('pricing')
+          dataLoadedRef.current.add('fare-configurations')
         } catch (e) {
           if (signal.aborted) return
           setPricingJson(JSON.stringify({ rates: {}, driverPlans: {} }, null, 2))
+          setFareConfigurations([])
           setTabError(fmtErr(e))
         } finally {
-          if (!signal.aborted) setPricingLoading(false)
+          if (!signal.aborted) {
+            setPricingLoading(false)
+            setFareLoading(false)
+          }
         }
         return
       }
@@ -1279,7 +1322,7 @@ const [d, usersResult, driversResult, ridesResult, paymentsResult, alertsResult]
         <div className="mb-6">
           <AlertCard
             type="error"
-            title="Error"
+            title={t.errorTitle}
             message={tabError}
             onClose={() => {}}
           />

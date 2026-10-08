@@ -1,6 +1,7 @@
 import React from 'react'
 import { rowStableKey, paymentStatusClass } from '../adminUtils'
 import MobileRecordCard, { MobileField } from '../../components/MobileRecordCard'
+import { useAdminLanguage } from '../../context/AdminLanguageContext'
 
 export default function PaymentsTab ({
   paymentsLoading,
@@ -20,6 +21,7 @@ export default function PaymentsTab ({
   paymentDetailLoading,
   onClosePayment,
 }) {
+  const { t } = useAdminLanguage()
   const formatDate = (value) => {
     if (!value) return '—'
     const date = new Date(value)
@@ -91,12 +93,12 @@ export default function PaymentsTab ({
   return (
     <div className="space-y-4">
       <div className="px-1">
-        <p className="text-sm font-medium text-[#7183A0]">Finance</p>
+        <p className="text-sm font-medium text-[#7183A0]">{t.finance}</p>
         <h1 className="mt-1 text-3xl font-bold tracking-tight text-[var(--color-text-primary)]">
-          Payment Reconciliation
+          {t.paymentReconciliation}
         </h1>
         <p className="mt-2 text-base text-[#7183A0]">
-          Compare expected and paid amounts, driver settlement status and reconciliation results.
+          {t.paymentReconciliationSubtitle}
         </p>
       </div>
 
@@ -110,7 +112,7 @@ export default function PaymentsTab ({
           <div className="flex flex-col gap-3 border-b border-[var(--color-border)] px-3 py-3 sm:px-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
             <input
               type="search"
-              placeholder="Search ride, driver, customer, amount, status…"
+              placeholder={t.searchPayments}
               value={tableSearch}
               onChange={(e) => setTableSearch(e.target.value)}
               className="w-full max-w-full sm:max-w-md rounded-lg border border-[var(--color-border-strong)] bg-[var(--color-surface)] text-[var(--color-text-primary)] px-3 py-2 text-sm placeholder:text-[var(--color-text-muted)] focus:border-[#F5A900] focus:outline-none focus:ring-1 focus:ring-[#F5A900]"
@@ -146,8 +148,8 @@ export default function PaymentsTab ({
             {filteredPayments.length === 0 && (
               <div className="py-8 text-center text-sm text-[var(--color-text-muted)]">
                 {payments.length === 0
-                  ? 'No payment transactions yet.'
-                  : 'No transactions match your search.'}
+                  ? t.noPaymentTransactions
+                  : t.noTransactionsMatch}
               </div>
             )}
 
@@ -201,72 +203,72 @@ export default function PaymentsTab ({
                   }
                 >
                   <MobileField
-                    label="Ride"
+                    label={t.ride}
                     value={payment.rideId || payment.ride?._id || '—'}
                   />
 
                   <MobileField
-                    label="Ride Route"
+                    label={t.rideRoute}
                     value={rideLabel(payment)}
                   />
 
                   <MobileField
-                    label="Customer"
+                    label={t.customer}
                     value={payerLabel(payment)}
                   />
 
                   <MobileField
-                    label="Driver"
+                    label={t.driver}
                     value={driverLabel(payment)}
                   />
 
                   <MobileField
-                    label="Expected Amount"
+                    label={t.expectedAmount}
                     value={formatAmount(payment.expectedAmount)}
                   />
 
                   <MobileField
-                    label="Paid Amount"
+                    label={t.paidAmount}
                     value={formatAmount(payment.paidAmount ?? payment.amount)}
                   />
 
                   <MobileField
-                    label="Payment Status"
+                    label={t.paymentStatus}
                     value={payment.paymentStatus || '—'}
                   />
 
                   <MobileField
-                    label="Settlement"
+                    label={t.settlement}
                     value={payment.settlementStatus || '—'}
                   />
 
                   <MobileField
-                    label="Reconciliation"
+                    label={t.reconciliation}
                     value={payment.reconciliationResult || '—'}
                   />
 
                   <MobileField
-                    label="Driver Earning"
+                    label={t.driverEarning}
                     value={formatAmount(payment.driverEarning)}
                   />
 
                   <MobileField
-                    label="Platform Fee"
+                    label={t.platformFee}
                     value={formatAmount(payment.platformFee)}
                   />
 
                   <MobileField
-                    label="Method"
+                    label={t.method}
                     value={payment.paymentMode}
                   />
 
                   <MobileField
-                    label="Provider Ref"
+                    label={t.providerReference}
                     value={payment.providerReference}
                   />
 
                   <MobileField
-                    label="Created"
+                    label={t.createdAt}
                     value={formatDate(payment.createdAt)}
                   />
                 </MobileRecordCard>
@@ -298,21 +300,21 @@ export default function PaymentsTab ({
                     />
                   </th>
 
-                  <th className="px-4 py-3">Transaction</th>
-                  <th className="px-4 py-3">Ride</th>
-                  <th className="px-4 py-3">Customer</th>
-                  <th className="px-4 py-3">Driver</th>
-                  <th className="px-4 py-3 text-right">Expected</th>
-                  <th className="px-4 py-3 text-right">Paid</th>
-                  <th className="px-4 py-3">Payment Status</th>
-                  <th className="px-4 py-3">Settlement</th>
-                  <th className="px-4 py-3">Reconciliation</th>
-                  <th className="px-4 py-3 text-right">Driver Earning</th>
-                  <th className="px-4 py-3 text-right">Platform Fee</th>
-                  <th className="px-4 py-3">Method</th>
-                  <th className="px-4 py-3">Provider Reference</th>
-                  <th className="px-4 py-3">Created</th>
-                  <th className="px-4 py-3">Action</th>
+                  <th className="px-4 py-3">{t.transaction}</th>
+                  <th className="px-4 py-3">{t.ride}</th>
+                  <th className="px-4 py-3">{t.customer}</th>
+                  <th className="px-4 py-3">{t.driver}</th>
+                  <th className="px-4 py-3 text-right">{t.expectedAmount}</th>
+                  <th className="px-4 py-3 text-right">{t.paidAmount}</th>
+                  <th className="px-4 py-3">{t.paymentStatus}</th>
+                  <th className="px-4 py-3">{t.settlement}</th>
+                  <th className="px-4 py-3">{t.reconciliation}</th>
+                  <th className="px-4 py-3 text-right">{t.driverEarning}</th>
+                  <th className="px-4 py-3 text-right">{t.platformFee}</th>
+                  <th className="px-4 py-3">{t.method}</th>
+                  <th className="px-4 py-3">{t.providerReference}</th>
+                  <th className="px-4 py-3">{t.createdAt}</th>
+                  <th className="px-4 py-3">{t.action}</th>
                 </tr>
               </thead>
 
@@ -324,8 +326,8 @@ export default function PaymentsTab ({
                       className="px-4 py-8 text-center text-[var(--color-text-muted)]"
                     >
                       {payments.length === 0
-                        ? 'No payment transactions yet.'
-                        : 'No transactions match your search.'}
+                        ? t.noPaymentTransactions
+                        : t.noTransactionsMatch}
                     </td>
                   </tr>
                 )}
@@ -497,22 +499,16 @@ export default function PaymentsTab ({
           <div className="mx-auto max-w-6xl rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-sm">
             <div className="flex items-center justify-between border-b border-[var(--color-border)] px-4 py-4 sm:px-6">
               <div>
-                <h3 className="text-base font-semibold text-[var(--color-text-primary)]">
-                  Reconciliation Details
-                </h3>
+                <h3 className="text-base font-semibold text-[var(--color-text-primary)]">{t.reconciliationDetails}</h3>
 
-                <p className="mt-1 text-xs text-[var(--color-text-muted)]">
-                  Payment, settlement and reconciliation information
-                </p>
+                <p className="mt-1 text-xs text-[var(--color-text-muted)]">{t.paymentSettlementReconciliationInfo}</p>
               </div>
 
               <button
                 type="button"
                 onClick={onClosePayment}
                 className="rounded-lg border border-[var(--color-border-strong)] px-3 py-2 text-xs font-medium text-[var(--color-text-primary)] hover:bg-[var(--color-surface-muted)]"
-              >
-                Close
-              </button>
+              >{t.close}</button>
             </div>
 
             {paymentDetailLoading ? (
@@ -522,14 +518,14 @@ export default function PaymentsTab ({
             ) : (
               <div className="grid gap-4 p-4 sm:grid-cols-2 lg:grid-cols-3 sm:p-6">
                 <div>
-                  <p className="text-xs text-[var(--color-text-muted)]">Transaction ID</p>
+                  <p className="text-xs text-[var(--color-text-muted)]">{t.transactionId}</p>
                   <p className="mt-1 break-all font-mono text-sm text-[var(--color-text-primary)]">
                     {selectedPayment._id || '—'}
                   </p>
                 </div>
 
                 <div>
-                  <p className="text-xs text-[var(--color-text-muted)]">Ride</p>
+                  <p className="text-xs text-[var(--color-text-muted)]">{t.ride}</p>
                   <p className="mt-1 break-all text-sm text-[var(--color-text-primary)]">
                     {selectedPayment.rideId?._id ||
                       selectedPayment.rideId ||
@@ -538,7 +534,7 @@ export default function PaymentsTab ({
                 </div>
 
                 <div>
-                  <p className="text-xs text-[var(--color-text-muted)]">Customer</p>
+                  <p className="text-xs text-[var(--color-text-muted)]">{t.customer}</p>
                   <p className="mt-1 text-sm text-[var(--color-text-primary)]">
                     {selectedPayment.payer?.name ||
                       selectedPayment.payer?.phone ||
@@ -548,25 +544,21 @@ export default function PaymentsTab ({
                 </div>
 
                 <div>
-                  <p className="text-xs text-[var(--color-text-muted)]">Driver</p>
+                  <p className="text-xs text-[var(--color-text-muted)]">{t.driver}</p>
                   <p className="mt-1 text-sm text-[var(--color-text-primary)]">
                     {driverLabel(selectedPayment)}
                   </p>
                 </div>
 
                 <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-muted)] p-3">
-                  <p className="text-xs text-[var(--color-text-muted)]">
-                    Expected Amount
-                  </p>
+                  <p className="text-xs text-[var(--color-text-muted)]">{t.expectedAmount}</p>
                   <p className="mt-1 text-lg font-semibold text-[var(--color-text-primary)]">
                     {formatAmount(selectedPayment.expectedAmount)}
                   </p>
                 </div>
 
                 <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-muted)] p-3">
-                  <p className="text-xs text-[var(--color-text-muted)]">
-                    Paid Amount
-                  </p>
+                  <p className="text-xs text-[var(--color-text-muted)]">{t.paidAmount}</p>
                   <p className="mt-1 text-lg font-semibold text-[var(--color-text-primary)]">
                     {formatAmount(
                       selectedPayment.paidAmount ??
@@ -582,9 +574,7 @@ export default function PaymentsTab ({
                       : 'border-[var(--color-border)] bg-[var(--color-surface-muted)]'
                   }`}
                 >
-                  <p className="text-xs text-[var(--color-text-muted)]">
-                    Reconciliation Result
-                  </p>
+                  <p className="text-xs text-[var(--color-text-muted)]">{t.reconciliation}</p>
 
                   <p
                     className={`mt-1 text-sm font-bold ${
@@ -600,9 +590,7 @@ export default function PaymentsTab ({
                 </div>
 
                 <div>
-                  <p className="text-xs text-[var(--color-text-muted)]">
-                    Payment Status
-                  </p>
+                  <p className="text-xs text-[var(--color-text-muted)]">{t.paymentStatus}</p>
 
                   <p
                     className={`mt-1 text-sm font-semibold ${paymentStatusClass(selectedPayment.paymentStatus)}`}
@@ -612,9 +600,7 @@ export default function PaymentsTab ({
                 </div>
 
                 <div>
-                  <p className="text-xs text-[var(--color-text-muted)]">
-                    Settlement Status
-                  </p>
+                  <p className="text-xs text-[var(--color-text-muted)]">{t.settlementStatus}</p>
 
                   <p
                     className={`mt-1 inline-flex rounded-full px-2 py-1 text-xs font-semibold ${settlementClass(selectedPayment.settlementStatus)}`}
@@ -624,9 +610,7 @@ export default function PaymentsTab ({
                 </div>
 
                 <div>
-                  <p className="text-xs text-[var(--color-text-muted)]">
-                    Driver Earning
-                  </p>
+                  <p className="text-xs text-[var(--color-text-muted)]">{t.driverEarning}</p>
 
                   <p className="mt-1 text-sm font-semibold text-[var(--color-text-primary)]">
                     {formatAmount(selectedPayment.driverEarning)}
@@ -634,9 +618,7 @@ export default function PaymentsTab ({
                 </div>
 
                 <div>
-                  <p className="text-xs text-[var(--color-text-muted)]">
-                    Platform Fee
-                  </p>
+                  <p className="text-xs text-[var(--color-text-muted)]">{t.platformFee}</p>
 
                   <p className="mt-1 text-sm font-semibold text-[var(--color-text-primary)]">
                     {formatAmount(selectedPayment.platformFee)}
@@ -644,9 +626,7 @@ export default function PaymentsTab ({
                 </div>
 
                 <div>
-                  <p className="text-xs text-[var(--color-text-muted)]">
-                    Payment Method
-                  </p>
+                  <p className="text-xs text-[var(--color-text-muted)]">{t.paymentMethod}</p>
 
                   <p className="mt-1 text-sm text-[var(--color-text-primary)]">
                     {selectedPayment.paymentMode || '—'}
@@ -654,9 +634,7 @@ export default function PaymentsTab ({
                 </div>
 
                 <div>
-                  <p className="text-xs text-[var(--color-text-muted)]">
-                    Payment Type
-                  </p>
+                  <p className="text-xs text-[var(--color-text-muted)]">{t.paymentType}</p>
 
                   <p className="mt-1 text-sm text-[var(--color-text-primary)]">
                     {selectedPayment.paymentType || '—'}
@@ -664,9 +642,7 @@ export default function PaymentsTab ({
                 </div>
 
                 <div>
-                  <p className="text-xs text-[var(--color-text-muted)]">
-                    Provider Reference
-                  </p>
+                  <p className="text-xs text-[var(--color-text-muted)]">{t.providerReference}</p>
 
                   <p className="mt-1 break-all font-mono text-xs text-[var(--color-text-primary)]">
                     {selectedPayment.providerReference || '—'}
@@ -674,9 +650,7 @@ export default function PaymentsTab ({
                 </div>
 
                 <div>
-                  <p className="text-xs text-[var(--color-text-muted)]">
-                    Webhook Event ID
-                  </p>
+                  <p className="text-xs text-[var(--color-text-muted)]">{t.webhookEventId}</p>
 
                   <p className="mt-1 break-all font-mono text-xs text-[var(--color-text-primary)]">
                     {selectedPayment.webhookEventId || '—'}
@@ -684,9 +658,7 @@ export default function PaymentsTab ({
                 </div>
 
                 <div>
-                  <p className="text-xs text-[var(--color-text-muted)]">
-                    Created At
-                  </p>
+                  <p className="text-xs text-[var(--color-text-muted)]">{t.createdAt}</p>
 
                   <p className="mt-1 text-sm text-[var(--color-text-primary)]">
                     {formatDate(selectedPayment.createdAt)}
@@ -694,9 +666,7 @@ export default function PaymentsTab ({
                 </div>
 
                 <div>
-                  <p className="text-xs text-[var(--color-text-muted)]">
-                    Updated At
-                  </p>
+                  <p className="text-xs text-[var(--color-text-muted)]">{t.updatedAt}</p>
 
                   <p className="mt-1 text-sm text-[var(--color-text-primary)]">
                     {formatDate(selectedPayment.updatedAt)}

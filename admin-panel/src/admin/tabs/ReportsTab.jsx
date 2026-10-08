@@ -1,6 +1,7 @@
 import React from 'react'
 import { SecondaryPageShell } from './SecondaryPageShell'
 import { downloadReportCsv } from '../../utils/downloadReportCsv'
+import { useAdminLanguage } from '../../context/AdminLanguageContext'
 
 export default function ReportsTab ({
   onReportSelect,
@@ -9,38 +10,40 @@ export default function ReportsTab ({
   drivers = [],
   users = [],
 }) {
+  const { t } = useAdminLanguage()
+
   const reportRows = [
     {
-      title: 'Earnings Report',
-      description: 'View earnings analytics',
+      title: t.earningsReport,
+      description: t.earningsReportDescription,
       icon: 'ri-money-rupee-circle-line',
       tone: 'blue',
       onClick: () => onReportSelect?.('earnings'),
     },
     {
-      title: 'Bookings Report',
-      description: 'View bookings analytics',
+      title: t.bookingsReport,
+      description: t.bookingsReportDescription,
       icon: 'ri-calendar-check-line',
       tone: 'green',
       onClick: () => onReportSelect?.('bookings'),
     },
     {
-      title: 'Drivers Report',
-      description: 'View driver performance',
+      title: t.driversReport,
+      description: t.driversReportDescription,
       icon: 'ri-steering-2-line',
       tone: 'orange',
       onClick: () => onReportSelect?.('drivers'),
     },
     {
-      title: 'Users Report',
-      description: 'View users analytics',
+      title: t.usersReport,
+      description: t.usersReportDescription,
       icon: 'ri-user-3-line',
       tone: 'purple',
       onClick: () => onReportSelect?.('users'),
     },
     {
-      title: 'Download Reports',
-      description: 'Download data in CSV',
+      title: t.downloadReports,
+      description: t.downloadReportsDescription,
       icon: 'ri-download-2-line',
       tone: 'navy',
       onClick: () => {
@@ -63,8 +66,8 @@ export default function ReportsTab ({
 
   return (
     <SecondaryPageShell
-      title="Reports"
-      subtitle="View platform analytics & reports"
+      title={t.reportsPageTitle}
+      subtitle={t.reportsPageSubtitle}
       rows={reportRows}
     />
   )

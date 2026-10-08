@@ -1,9 +1,11 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { adminApi } from '../services/adminApi'
+import { useAdminLanguage } from '../context/AdminLanguageContext'
 
 export default function AdminChangePassword () {
   const navigate = useNavigate()
+  const { t } = useAdminLanguage()
 
   const [currentPassword, setCurrentPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
@@ -18,17 +20,17 @@ export default function AdminChangePassword () {
     setError('')
 
     if (!currentPassword || !newPassword || !confirmPassword) {
-      setError('Please fill in all fields.')
+      setError(t.fillInAllFields)
       return
     }
 
     if (newPassword.length < 6) {
-      setError('New password must be at least 6 characters.')
+      setError(t.newPasswordMinLength)
       return
     }
 
     if (newPassword !== confirmPassword) {
-      setError('New password and confirmation do not match.')
+      setError(t.passwordConfirmationMismatch)
       return
     }
 
@@ -37,7 +39,7 @@ export default function AdminChangePassword () {
     try {
       await adminApi.changePassword(currentPassword, newPassword)
 
-      setMessage('Password changed successfully.')
+      setMessage(t.passwordChangedSuccessfully)
       setCurrentPassword('')
       setNewPassword('')
       setConfirmPassword('')
@@ -45,7 +47,7 @@ export default function AdminChangePassword () {
       setError(
         err?.response?.data?.message ||
         err?.message ||
-        'Unable to change password.'
+        t.unableToChangePassword
       )
     } finally {
       setLoading(false)
@@ -61,7 +63,7 @@ export default function AdminChangePassword () {
           className="mb-5 inline-flex items-center gap-2 text-sm font-medium text-neutral-600 hover:text-neutral-900"
         >
           <i className="ri-arrow-left-line" />
-          Back to Settings
+          {t.backToSettings}
         </button>
 
         <div className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm sm:p-7">
@@ -71,18 +73,18 @@ export default function AdminChangePassword () {
             </div>
 
             <h1 className="text-xl font-semibold text-neutral-900">
-              Change Password
+              {t.changePassword}
             </h1>
 
             <p className="mt-1 text-sm text-neutral-500">
-              Update your admin account password.
+              {t.changePasswordSubtitle}
             </p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <label className="block">
               <span className="mb-2 block text-sm font-medium text-neutral-700">
-                Current Password
+                {t.currentPasswordLabel}
               </span>
               <input
                 type="password"
@@ -90,13 +92,13 @@ export default function AdminChangePassword () {
                 onChange={(e) => setCurrentPassword(e.target.value)}
                 autoComplete="current-password"
                 className="w-full rounded-xl border border-neutral-300 px-4 py-3 text-sm outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-100"
-                placeholder="Enter current password"
+                placeholder={t.enterCurrentPassword}
               />
             </label>
 
             <label className="block">
               <span className="mb-2 block text-sm font-medium text-neutral-700">
-                New Password
+                {t.newPasswordLabel}
               </span>
               <input
                 type="password"
@@ -104,13 +106,13 @@ export default function AdminChangePassword () {
                 onChange={(e) => setNewPassword(e.target.value)}
                 autoComplete="new-password"
                 className="w-full rounded-xl border border-neutral-300 px-4 py-3 text-sm outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-100"
-                placeholder="Enter new password"
+                placeholder={t.enterNewPassword}
               />
             </label>
 
             <label className="block">
               <span className="mb-2 block text-sm font-medium text-neutral-700">
-                Confirm New Password
+                {t.confirmNewPasswordLabel}
               </span>
               <input
                 type="password"
@@ -118,7 +120,7 @@ export default function AdminChangePassword () {
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 autoComplete="new-password"
                 className="w-full rounded-xl border border-neutral-300 px-4 py-3 text-sm outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-100"
-                placeholder="Confirm new password"
+                placeholder={t.confirmNewPassword}
               />
             </label>
 
@@ -139,7 +141,7 @@ export default function AdminChangePassword () {
               disabled={loading}
               className="w-full rounded-xl bg-orange-500 px-4 py-3 text-sm font-semibold text-white transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {loading ? 'Changing Password…' : 'Change Password'}
+              {loading ? t.changingPassword : t.changePassword}
             </button>
           </form>
         </div>
